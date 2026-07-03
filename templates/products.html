@@ -29,7 +29,7 @@
            class="filter-tab {% if active_filter == cat.name|lower %}active{% endif %}"
            data-filter="{{ cat.name|lower }}"
            id="filter-{{ cat.name|lower }}">
-          <i data-lucide="{% if 'electr' in cat.name|lower %}laptop{% elif 'fash' in cat.name|lower or 'appar' in cat.name|lower %}shirt{% elif 'home' in cat.name|lower or 'liv' in cat.name|lower %}home{% elif 'food' in cat.name|lower or 'tea' in cat.name|lower or 'coff' in cat.name|lower or 'bev' in cat.name|lower %}coffee{% elif 'well' in cat.name|lower or 'beauty' in cat.name|lower %}heart{% else %}package{% endif %}" style="margin-right: 4px;"></i> {{ cat.display_name }}
+          <i data-lucide="{% if 'electr' in cat.name|lower %}laptop{% elif 'fash' in cat.name|lower or 'appar' in cat.name|lower or 'cloth' in cat.name|lower or 'wear' in cat.name|lower %}shirt{% elif 'home' in cat.name|lower or 'liv' in cat.name|lower %}home{% elif 'tea' in cat.name|lower or 'coff' in cat.name|lower or 'bev' in cat.name|lower %}coffee{% elif 'spice' in cat.name|lower %}flame{% elif 'food' in cat.name|lower %}utensils{% elif 'well' in cat.name|lower or 'beauty' in cat.name|lower %}heart{% else %}package{% endif %}" style="margin-right: 4px;"></i> {{ cat.display_name }}
         </a>
         {% endfor %}
       </div>

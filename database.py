@@ -218,6 +218,39 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
+    # Seed products only if table is empty
+    cursor.execute("SELECT COUNT(*) FROM products")
+    count = cursor.fetchone()[0]
+    if count == 0:
+        products = [
+            ('Assam Black Tea', 'Tea', 'Rich, full-bodied Assam black tea with a bold malty flavor. Sourced directly from single-estate tea gardens.', 'Tea.jpg', 180.0, 50, 1, '250g'),
+            ('Organic Green Tea', 'Tea', 'Fresh, anti-oxidant rich green tea leaves with a clean, delicate finish.', 'Green-Tea.jpg', 220.0, 40, 0, '200g'),
+            ('Garam Masala', 'Spices', 'A highly aromatic blend of premium roasted spices including cardamom, cinnamon, cloves, and nutmeg.', 'Garam-Masala.jpg', 150.0, 80, 1, '100g'),
+            ('Pure Turmeric Powder', 'Spices', 'High-curcumin golden turmeric powder ground from sun-dried roots.', 'Turmeric-Powder.jpg', 110.0, 120, 0, '200g'),
+            ('Black Pepper Powder', 'Spices', 'Bold, pungent ground black pepper sourced from Malabar.', 'Black-Papper.jpg', 130.0, 60, 0, '100g'),
+            ('Red Chilli Powder', 'Spices', 'Vibrant, medium-hot ground red chillies for rich color and heat.', 'Red-Chilli-Powder.jpg', 120.0, 90, 1, '150g'),
+            ('Aamchur Powder', 'Spices', 'Tangy dry mango powder perfect for adding a sour punch to dishes.', 'Aamchur-Powder.jpg', 95.0, 70, 0, '100g'),
+            ('Premium Cotton T-Shirt', 'Cloths', 'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.', 'fashion.png', 599.0, 150, 1, '1 Unit'),
+            ('Canvas Tote Bag', 'Cloths', 'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.', 'fashion.png', 349.0, 110, 0, '1 Unit')
+        ]
+        cursor.executemany(
+            "INSERT INTO products (name, category, description, image_filename, price, stocks, is_bestseller, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            products
+        )
+        conn.commit()
+        print(f"[OK] Seeded {len(products)} products.")
+
+    # Seed product images if product_images is empty
+    cursor.execute("SELECT COUNT(*) FROM product_images")
+    img_count = cursor.fetchone()[0]
+    if img_count == 0:
+        all_prods = cursor.execute("SELECT id, image_filename FROM products").fetchall()
+        for p in all_prods:
+            cursor.execute("INSERT INTO product_images (product_id, image_filename) VALUES (?, ?)", (p['id'], p['image_filename']))
+            cursor.execute("INSERT INTO product_images (product_id, image_filename) VALUES (?, ?)", (p['id'], p['image_filename']))
+        conn.commit()
+        print("[OK] Seeded default product images.")
+
     # Seed default admin user if no admin exists
     cursor.execute("SELECT COUNT(*) FROM users WHERE is_admin = 1")
     admin_count = cursor.fetchone()[0]
@@ -230,6 +263,65 @@ def init_db():
         )
         conn.commit()
         print("[OK] Seeded default admin account (admin@thesaveur.com / admin123).")
+
+    # Seed carousel slides if empty
+    cursor.execute("SELECT COUNT(*) FROM carousel_slides")
+    slide_count = cursor.fetchone()[0]
+    if slide_count == 0:
+        slides_data = [
+            (
+                'hero_tea_garden.png',
+                'leaf',
+                'Direct from Source',
+                "Premium Handpicked\nOrganic Tea",
+                'Sourced from single-estate organic gardens in Assam and Darjeeling. 100% natural, whole-leaf teas.',
+                'Shop Teas',
+                '/products?category=tea',
+                0
+            ),
+            (
+                'Garam-Masala.jpg',
+                'sparkles',
+                'Aromatic & Pure',
+                "Rich & Authentic\nIndian Spices",
+                'Pure, high-essential-oil spices ground to perfection. No artificial colors or additives.',
+                'Explore Spices',
+                '/products?category=spices',
+                1
+            ),
+            (
+                'fashion.png',
+                'shirt',
+                '100% Cotton',
+                "Premium Organic\nApparel & Cloths",
+                'Sleek, everyday wear crafted from breathable, sustainably sourced organic cotton.',
+                'Shop Apparel',
+                '/products?category=cloths',
+                2
+            )
+        ]
+        cursor.executemany(
+            "INSERT INTO carousel_slides (image_filename, badge_icon, badge_text, title, description, button_text, button_link, slide_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            slides_data
+        )
+        conn.commit()
+        print("[OK] Seeded default carousel slides.")
+
+    # Seed categories if empty
+    cursor.execute("SELECT COUNT(*) FROM categories")
+    cat_count = cursor.fetchone()[0]
+    if cat_count == 0:
+        categories_data = [
+            ('Tea', 'Premium Tea', 'Finest handpicked teas from single-estate gardens.', 'Tea.jpg', 0),
+            ('Spices', 'Authentic Spices', 'Pure, aromatic ground and whole spices to elevate your cooking.', 'Garam-Masala.jpg', 1),
+            ('Cloths', 'Apparel & Cloths', 'Comfortable and stylish premium wear made from organic cotton.', 'fashion.png', 2)
+        ]
+        cursor.executemany(
+            "INSERT INTO categories (name, display_name, description, image_filename, display_order) VALUES (?, ?, ?, ?, ?)",
+            categories_data
+        )
+        conn.commit()
+        print("[OK] Seeded default categories.")
 
     conn.close()
     print("[OK] Database initialized successfully.")

@@ -599,6 +599,53 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   50% { transform: translateX(-50%) translateY(8px); }
 }
 
+/* ── Welcome Fallback Hero (no carousel slides) ─────────────── */
+.hero-bg--gradient {
+  background: linear-gradient(135deg, #1a0a00 0%, #2d1200 30%, #1c1006 60%, #0d0d0d 100%) !important;
+  background-image: none !important;
+}
+.hero-content--center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+.welcome-logo-wrap {
+  margin-bottom: 28px;
+  animation: heroFadeUp 0.8s ease 0s both;
+}
+.welcome-logo {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--amber);
+  box-shadow: 0 0 0 6px rgba(200,134,10,0.2), 0 8px 40px rgba(0,0,0,0.5);
+}
+.welcome-title {
+  font-size: clamp(2rem, 5vw, 3.5rem) !important;
+  background: linear-gradient(90deg, var(--amber-light), #fff, var(--amber-light));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: heroFadeUp 0.8s ease 0.2s both, shimmer 3s linear infinite;
+  margin-bottom: 16px !important;
+}
+.welcome-subtitle {
+  color: rgba(255,255,255,0.8) !important;
+  font-size: 1.15rem !important;
+  max-width: 500px;
+  margin: 0 auto 28px !important;
+  animation: heroFadeUp 0.8s ease 0.35s both;
+}
+@keyframes shimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+
 /* ── Trust Bar ─────────────────────────────────────────────── */
 .trust-bar {
   background: var(--green-dark);
@@ -821,6 +868,15 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   text-transform: uppercase;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
+}
+.product-badge.tea {
+  background: linear-gradient(135deg, #1abc9c, #16a085);
+}
+.product-badge.spices {
+  background: linear-gradient(135deg, var(--amber), var(--amber-light));
+}
+.product-badge.cloths {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
 }
 .product-badge.spice {
   background: linear-gradient(135deg, var(--amber), var(--amber-light));
@@ -1814,6 +1870,15 @@ i[data-lucide],
   border-radius: var(--radius-pill);
   letter-spacing: 0.05em;
   z-index: 2;
+}
+.product-badge.tea {
+  background: #1abc9c;
+}
+.product-badge.spices {
+  background: var(--amber);
+}
+.product-badge.cloths {
+  background: #9b59b6;
 }
 .product-badge.spice {
   background: var(--amber);
