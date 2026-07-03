@@ -259,7 +259,7 @@ def init_db():
         admin_pass_hash = hashlib.sha256('admin123'.encode('utf-8')).hexdigest()
         cursor.execute(
             "INSERT INTO users (id, full_name, email, password_hash, is_admin) VALUES (?, ?, ?, ?, 1)",
-            (generate_user_id(), 'System Admin', admin_email, admin_pass_hash)
+            ('USR-ADMIN', 'System Admin', admin_email, admin_pass_hash)
         )
         conn.commit()
         print("[OK] Seeded default admin account (admin@thesaveur.com / admin123).")
