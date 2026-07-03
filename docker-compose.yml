@@ -8,6 +8,8 @@ services:
 
     env_file:
       - .env
+    environment:
+      - DATA_DIR=/app/data
     volumes:
       - sqlite_data:/app/data        # Persistent database storage
       - ./static:/app/static         # Static files

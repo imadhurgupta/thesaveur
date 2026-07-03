@@ -20,6 +20,7 @@ COPY . .
 
 # Create directory for SQLite database volume
 RUN mkdir -p /app/data
+ENV DATA_DIR=/app/data
 
 # Expose port
 EXPOSE 8000
