@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Our Products – Premium Tea & Spices | The Saveur{% endblock %}
-{% block meta_desc %}Browse The Saveur's full range of premium teas and spices. Filter by category and enquire for bulk pricing.{% endblock %}
+{% block title %}Our Products – Premium Online Store | The Saveur{% endblock %}
+{% block meta_desc %}Browse The Saveur's full range of premium products. Filter by category and enquire for bulk pricing.{% endblock %}
 
 {% block content %}
 
@@ -9,8 +9,8 @@
   <section class="page-hero" aria-label="Products Page Hero">
     <div class="container">
       <div class="section-tag">Our Catalogue</div>
-      <h1>Premium Tea & Spices</h1>
-      <p>Sourced from the finest farms across India. Pure, natural, authentic.</p>
+      <h1>Premium Products</h1>
+      <p>Sourced from the finest partners and creators. Pure, reliable, authentic.</p>
     </div>
   </section>
 
@@ -29,7 +29,7 @@
            class="filter-tab {% if active_filter == cat.name|lower %}active{% endif %}"
            data-filter="{{ cat.name|lower }}"
            id="filter-{{ cat.name|lower }}">
-          <i data-lucide="{% if cat.name|lower == 'tea' %}coffee{% elif cat.name|lower == 'spice' %}flame{% else %}package{% endif %}" style="margin-right: 4px;"></i> {{ cat.display_name }}
+          <i data-lucide="{% if 'electr' in cat.name|lower %}laptop{% elif 'fash' in cat.name|lower or 'appar' in cat.name|lower %}shirt{% elif 'home' in cat.name|lower or 'liv' in cat.name|lower %}home{% elif 'food' in cat.name|lower or 'tea' in cat.name|lower or 'coff' in cat.name|lower or 'bev' in cat.name|lower %}coffee{% elif 'well' in cat.name|lower or 'beauty' in cat.name|lower %}heart{% else %}package{% endif %}" style="margin-right: 4px;"></i> {{ cat.display_name }}
         </a>
         {% endfor %}
       </div>
@@ -60,7 +60,7 @@
                 alt="{{ product.name }}"
                 loading="lazy"
               />
-              <span class="product-badge {{ 'spice' if product.category == 'Spice' else '' }}">
+              <span class="product-badge {{ product.category|lower }}">
                 {{ product.category }}
               </span>
               {% if product.is_bestseller %}
@@ -116,7 +116,7 @@
         <div>
           <h3 style="font-family:'Playfair Display',serif; color:var(--white); margin-bottom:8px;">Need a Bulk Order?</h3>
           <p style="color:rgba(255,255,255,0.75); font-size:0.95rem; max-width:520px;">
-            We supply to retailers, restaurants, and wholesalers across India. Get custom pricing for large quantities.
+            We supply to retailers, businesses, and wholesalers across India. Get custom pricing for large quantities.
           </p>
         </div>
         <a href="{{ url_for('contact') }}" class="btn btn-primary" id="bulk-cta-btn" style="flex-shrink:0;">

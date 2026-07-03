@@ -32,3 +32,10 @@ Thumbs.db
 
 # ── SSL certs (managed on server, not in Git) ─────────────
 nginx/certs/
+
+# ── Vercel build output ────────────────────────────────────
+.vercel/
+
+# ── Scratch scripts ────────────────────────────────────────
+clear_db.py
+inspect_db.py

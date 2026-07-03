@@ -411,8 +411,12 @@
   }
 
   .badge.tea { background: rgba(45,80,22,0.1); color: var(--green-primary); }
-
   .badge.spice { background: rgba(200,134,10,0.1); color: var(--amber); }
+  .badge.electronics { background: rgba(52,152,219,0.1); color: #3498db; }
+  .badge.fashion { background: rgba(155,89,182,0.1); color: #9b59b6; }
+  .badge.home { background: rgba(230,126,34,0.1); color: #e67e22; }
+  .badge.food { background: rgba(46,204,113,0.1); color: #2ecc71; }
+  .badge.wellness { background: rgba(231,76,60,0.1); color: #e74c3c; }
 
   .badge.bestseller { background: #fdf3e0; color: #d35400; border: 1px solid rgba(211,84,0,0.2); }
 
@@ -1378,7 +1382,7 @@
 
               <td>
 
-                <span class="badge {{ 'tea' if prod.category.lower() == 'tea' else 'spice' }}">
+                <span class="badge {{ prod.category.lower() }}">
 
                   {{ prod.category }}
 

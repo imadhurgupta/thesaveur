@@ -21,8 +21,13 @@ from email.mime.text import MIMEText
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'am_trader_dev_secret_key_2024')
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images')
+UPLOAD_FOLDER = os.environ.get(
+    'UPLOAD_FOLDER',
+    os.path.join(os.path.dirname(__file__), 'static', 'images')
+)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_file(filename):
@@ -1417,6 +1422,10 @@ def handle_google_user_login(email, name):
 
 
 # ─────── Admin Dashboard ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+@app.route('/admin')
+def admin_redirect():
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/dashboard')
 @admin_required
