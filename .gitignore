@@ -1,0 +1,34 @@
+# ── Python & OS ───────────────────────────────────────────
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ── Environment & Secrets (NEVER commit these) ─────────────
+.env
+.env.*
+!.env.example
+
+# ── Database (persistent data, not in Git) ─────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Docker volumes & build artifacts ──────────────────────
+*.tar
+*.log
+
+# ── IDE ────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS files ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── SSL certs (managed on server, not in Git) ─────────────
+nginx/certs/

@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+
+{% block title %}Order {{ order.order_number if order.order_number else '#' ~ order.id }} - Admin | The Saveur{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ═══ Page Layout ════════════════════════════════════════════ */
+  .order-detail-page {
+    padding: 140px 24px 80px;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--cream);
+  }
+
+  .od-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 28px;
+    transition: color 0.2s;
+  }
+  .od-back-link:hover { color: var(--green-primary); }
+  .od-back-link svg { width: 16px; height: 16px; }
+
+  /* ═══ Page Header ════════════════════════════════════════════ */
+  .od-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .od-header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--green-dark);
+    margin-bottom: 6px;
+  }
+  .od-header-left .od-meta {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+  .od-header-left .od-meta span {
+    margin-right: 16px;
+  }
+
+  /* Status Badge */
+  .od-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .od-status-badge.processing { background: rgba(52,152,219,0.12); color: #2980b9; }
+  .od-status-badge.shipped    { background: rgba(230,126,34,0.12); color: #d35400; }
+  .od-status-badge.delivered  { background: rgba(46,204,113,0.12); color: #27ae60; }
+  .od-status-badge.cancelled  { background: rgba(231,76,60,0.12);  color: #c0392b; }
+  .od-status-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse-dot 1.8s infinite;
+  }
+  .od-status-badge.delivered .dot,
+  .od-status-badge.cancelled .dot { animation: none; }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* ═══ Two-Column Layout ══════════════════════════════════════ */
+  .od-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .od-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ═══ Cards ══════════════════════════════════════════════════ */
+  .od-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .od-card:last-child { margin-bottom: 0; }
+  .od-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background: rgba(0,0,0,0.015);
+  }
+  .od-card-header h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+  .od-card-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(90,158,53,0.1);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--green-primary);
+    flex-shrink: 0;
+  }
+  .od-card-icon svg { width: 18px; height: 18px; }
+  .od-card-body { padding: 24px; }
+
+  /* ═══ Order Items ════════════════════════════════════════════ */
+  .od-item-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .od-item-row:first-child { padding-top: 0; }
+  .od-item-row:last-child  { padding-bottom: 0; border-bottom: none; }
+
+  .od-item-thumb {
+    width: 72px; height: 72px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid rgba(0,0,0,0.08);
+    flex-shrink: 0;
+    background: #f5f5f5;
+  }
+  .od-item-info { flex: 1; }
+  .od-item-name {
+    font-weight: 700;
+    color: var(--text-dark);
+    font-size: 0.97rem;
+    margin-bottom: 4px;
+  }
+  .od-item-sku {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .od-item-qty {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .od-item-price {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .od-item-price .unit { font-size: 0.8rem; color: var(--text-muted); }
+  .od-item-price .total {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--green-dark);
+  }
+
+  /* ═══ Price Summary ══════════════════════════════════════════ */
+  .od-price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .od-price-row:last-child { border-bottom: none; }
+  .od-price-row.total {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    padding-top: 14px;
+    border-top: 2px solid rgba(0,0,0,0.08);
+    border-bottom: none;
+  }
+  .od-price-row.total .amt { color: var(--green-dark); font-size: 1.2rem; }
+
+  /* ═══ Info List ══════════════════════════════════════════════ */
+  .od-info-list { list-style: none; margin: 0; padding: 0; }
+  .od-info-list li {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    font-size: 0.9rem;
+  }
+  .od-info-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .od-info-list li:first-child { padding-top: 0; }
+  .od-info-label {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    min-width: 110px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .od-info-value {
+    color: var(--text-dark);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* ═══ Status Changer ═════════════════════════════════════════ */
+  .od-status-form {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .od-status-form select {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid rgba(0,0,0,0.12);
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: var(--white);
+    color: var(--text-dark);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .od-status-form select:focus {
+    outline: none;
+    border-color: var(--green-primary);
+  }
+  .od-status-form button {
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    background: var(--green-primary);
+    color: white;
+    border: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .od-status-form button:hover { background: var(--green-dark); transform: translateY(-1px); }
+  .od-status-form button:active { transform: translateY(0); }
+
+  /* Status timeline */
+  .od-timeline {
+    padding: 8px 0;
+    position: relative;
+  }
+  .od-timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 16px;
+    bottom: 16px;
+    width: 2px;
+    background: rgba(0,0,0,0.07);
+  }
+  .od-timeline-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 0;
+    position: relative;
+    z-index: 1;
+  }
+  .od-timeline-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    border: 2px solid rgba(0,0,0,0.08);
+    background: var(--white);
+    transition: all 0.3s;
+  }
+  .od-timeline-dot.active {
+    background: var(--green-primary);
+    border-color: var(--green-primary);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(90,158,53,0.15);
+  }
+  .od-timeline-dot.done {
+    background: rgba(46,204,113,0.1);
+    border-color: #2ecc71;
+    color: #2ecc71;
+  }
+  .od-timeline-dot.cancelled {
+    background: rgba(231,76,60,0.1);
+    border-color: #e74c3c;
+    color: #e74c3c;
+  }
+  .od-timeline-text { padding-top: 6px; }
+  .od-timeline-title { font-size: 0.88rem; font-weight: 700; color: var(--text-dark); }
+  .od-timeline-sub   { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+  /* ═══ Action Danger Zone ═════════════════════════════════════ */
+  .od-danger-zone {
+    border: 1.5px solid rgba(231,76,60,0.3);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    background: rgba(231,76,60,0.02);
+  }
+  .od-danger-zone p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+  }
+  .btn-danger {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent;
+    border: 1.5px solid #e74c3c;
+    color: #e74c3c;
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-danger:hover { background: #e74c3c; color: white; }
+  .btn-danger svg { width: 14px; height: 14px; }
+
+  /* ═══ Toast ══════════════════════════════════════════════════ */
+  #toast-container {
+    position: fixed; top: 24px; right: 24px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .od-toast {
+    background: var(--white);
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-left: 4px solid var(--green-primary);
+    display: flex; align-items: center; gap: 12px;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    min-width: 260px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+  .od-toast.show { transform: translateX(0); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="order-detail-page">
+
+  <!-- Back -->
+  <a href="{{ url_for('admin_dashboard') }}#orders-tab" class="od-back-link" onclick="sessionStorage.setItem('adminTab','orders');">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to Admin Dashboard
+  </a>
+
+  <!-- Header -->
+  <div class="od-header">
+    <div class="od-header-left">
+      <h1>Order {{ order.order_number if order.order_number else '#' ~ order.id }}</h1>
+      <div class="od-meta">
+        <span>📅 {{ order.created_at }}</span>
+        <span>💳 {{ order.payment_method }}</span>
+      </div>
+    </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <span class="od-status-badge {{ order.status.lower() }}" id="live-status-badge">
+        <span class="dot"></span>
+        {{ order.status }}
+      </span>
+      <a href="{{ url_for('admin_invoice', id=order.id) }}" target="_blank"
+         style="display:inline-flex; align-items:center; gap:7px; padding:9px 16px; background:var(--green-primary); color:white; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:700; text-decoration:none; transition:background 0.2s;"
+         onmouseover="this.style.background='var(--green-dark)'" onmouseout="this.style.background='var(--green-primary)'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Invoice
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="od-grid">
+
+    <!-- LEFT COLUMN -->
+    <div>
+
+      <!-- Ordered Items -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </div>
+          <h2>Ordered Items ({{ items|length }})</h2>
+        </div>
+        <div class="od-card-body">
+          {% for item in items %}
+          <div class="od-item-row">
+            <img class="od-item-thumb"
+              src="{% if '://' in item.image_filename %}{{ item.image_filename }}{% else %}{{ url_for('static', filename='images/' + item.image_filename) }}{% endif %}"
+              alt="{{ item.product_name }}"
+              onerror="this.src='{{ url_for('static', filename='images/placeholder.jpg') }}'" />
+            <div class="od-item-info">
+              <div class="od-item-name">{{ item.product_name }}</div>
+              <div class="od-item-sku">Unit: {{ item.unit or '—' }}</div>
+              <div class="od-item-qty">Qty: {{ item.quantity }} × ₹{{ item.price }}</div>
+            </div>
+            <div class="od-item-price">
+              <div class="unit">Subtotal</div>
+              <div class="total">₹{{ (item.quantity * item.price) | round(2) }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Price Breakdown -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h2>Price Breakdown</h2>
+        </div>
+        <div class="od-card-body">
+          {% set subtotal = namespace(val=0) %}
+          {% for item in items %}{% set subtotal.val = subtotal.val + (item.quantity * item.price) %}{% endfor %}
+          <div class="od-price-row">
+            <span>Subtotal ({{ items|length }} item{{ 's' if items|length != 1 }})</span>
+            <span>₹{{ subtotal.val | round(2) }}</span>
+          </div>
+          <div class="od-price-row">
+            <span>Shipping</span>
+            <span style="color:var(--green-primary); font-weight:600;">Free</span>
+          </div>
+          <div class="od-price-row">
+            <span>Taxes &amp; Duties</span>
+            <span>Included</span>
+          </div>
+          <div class="od-price-row total">
+            <span>Total Paid</span>
+            <span class="amt">₹{{ order.total_amount }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+
+      <!-- Status Management -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h2>Order Status</h2>
+        </div>
+        <div class="od-card-body">
+
+          <!-- Status Timeline -->
+          <div class="od-timeline" style="margin-bottom:24px;">
+            {% set steps = [('Processing', 'circle'), ('Shipped', 'truck'), ('Delivered', 'check-circle')] %}
+            {% set status_order = {'Processing': 0, 'Shipped': 1, 'Delivered': 2, 'Cancelled': 99} %}
+            {% set current_idx = status_order.get(order.status, 0) %}
+
+            {% if order.status == 'Cancelled' %}
+            <div class="od-timeline-step">
+              <div class="od-timeline-dot cancelled">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              <div class="od-timeline-text">
+                <div class="od-timeline-title">Cancelled</div>
+                <div class="od-timeline-sub">Order was cancelled</div>
+              </div>
+            </div>
+            {% else %}
+              {% for label, icon in steps %}
+              {% set step_idx = loop.index0 %}
+              <div class="od-timeline-step">
+                <div class="od-timeline-dot {% if step_idx < current_idx %}done{% elif step_idx == current_idx %}active{% endif %}">
+                  {% if step_idx < current_idx %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+                  {% elif step_idx == current_idx %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><circle cx="12" cy="12" r="3"/></svg>
+                  {% else %}
+                  <span style="color:var(--text-muted); font-size:0.65rem; font-weight:700;">{{ loop.index }}</span>
+                  {% endif %}
+                </div>
+                <div class="od-timeline-text">
+                  <div class="od-timeline-title" style="{% if step_idx > current_idx %}opacity:0.4;{% endif %}">{{ label }}</div>
+                  <div class="od-timeline-sub">
+                    {% if step_idx < current_idx %}Completed
+                    {% elif step_idx == current_idx %}In progress
+                    {% else %}Pending{% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- Change Status -->
+          <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:10px; font-weight:600;">Update Status</p>
+          <form class="od-status-form" id="status-form" onsubmit="updateStatus(event)">
+            <select id="status-select" name="status">
+              <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+              <option value="Shipped"    {% if order.status == 'Shipped'    %}selected{% endif %}>Shipped</option>
+              <option value="Delivered"  {% if order.status == 'Delivered'  %}selected{% endif %}>Delivered</option>
+              <option value="Cancelled"  {% if order.status == 'Cancelled'  %}selected{% endif %}>Cancelled</option>
+            </select>
+            <button type="submit" id="status-btn">Update</button>
+          </form>
+
+        </div>
+      </div>
+
+      <!-- Customer Info -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <h2>Customer</h2>
+        </div>
+        <div class="od-card-body">
+          <ul class="od-info-list">
+            <li>
+              <span class="od-info-label">Name</span>
+              <span class="od-info-value">{{ order.user_name }}</span>
+            </li>
+            <li>
+              <span class="od-info-label">Email</span>
+              <span class="od-info-value">
+                <a href="mailto:{{ order.user_email }}" style="color:var(--green-primary); text-decoration:none;">{{ order.user_email }}</a>
+              </span>
+            </li>
+            <li>
+              <span class="od-info-label">Contact</span>
+              <span class="od-info-value">
+                <a href="https://wa.me/919500529076?text=Hi%2C%20regarding%20Order%20{{ (order.order_number if order.order_number else '#' ~ order.id) | urlencode }}%20placed%20by%20{{ order.user_name | urlencode }}"
+                   target="_blank"
+                   style="display:inline-flex; align-items:center; gap:6px; color:#25d366; font-size:0.88rem; text-decoration:none; font-weight:600;">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  WhatsApp about this order
+                </a>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Shipping Info -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h2>Shipping Address</h2>
+        </div>
+        <div class="od-card-body">
+          <ul class="od-info-list">
+            <li>
+              <span class="od-info-label">Street</span>
+              <span class="od-info-value">{{ order.shipping_address }}</span>
+            </li>
+            <li>
+              <span class="od-info-label">City</span>
+              <span class="od-info-value">{{ order.city }}</span>
+            </li>
+            <li>
+              <span class="od-info-label">State</span>
+              <span class="od-info-value">{{ order.state }}</span>
+            </li>
+            <li>
+              <span class="od-info-label">PIN Code</span>
+              <span class="od-info-value">{{ order.zip_code }}</span>
+            </li>
+          </ul>
+          <a href="https://maps.google.com/?q={{ order.shipping_address }},{{ order.city }},{{ order.state }},{{ order.zip_code }}"
+             target="_blank" rel="noopener"
+             style="display:inline-flex; align-items:center; gap:6px; margin-top:16px; font-size:0.82rem; color:var(--green-primary); font-weight:600; text-decoration:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            View on Google Maps
+          </a>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon" style="background:rgba(231,76,60,0.1); color:#e74c3c;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h2>Actions</h2>
+        </div>
+        <div class="od-card-body">
+          <div class="od-danger-zone">
+            <p>Cancel this order and mark it as Cancelled. This action cannot be undone.</p>
+            <button class="btn-danger" onclick="cancelOrder()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Cancel Order
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /od-grid -->
+
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+  const ORDER_ID = {{ order.id }};
+  const ORDER_NUMBER = '{{ order.order_number if order.order_number else '#' ~ order.id }}';
+
+  function showToast(msg, color) {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'od-toast';
+    t.style.borderLeftColor = color || 'var(--green-primary)';
+    t.innerHTML = `<span>${msg}</span>`;
+    container.appendChild(t);
+    setTimeout(() => t.classList.add('show'), 50);
+    setTimeout(() => {
+      t.classList.remove('show');
+      setTimeout(() => t.remove(), 400);
+    }, 3500);
+  }
+
+  function updateStatus(e) {
+    e.preventDefault();
+    const select = document.getElementById('status-select');
+    const btn    = document.getElementById('status-btn');
+    const status = select.value;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    fetch(`/admin/update-order-status/${ORDER_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = 'Update';
+      if (data.success) {
+        // Update badge
+        const badge = document.getElementById('live-status-badge');
+        badge.className = `od-status-badge ${status.toLowerCase()}`;
+        badge.innerHTML = `<span class="dot"></span>${status}`;
+        showToast(`✅ Order ${ORDER_NUMBER} status updated to <strong>${status}</strong>`);
+        // Reload page to refresh timeline
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        showToast(`❌ ${data.error || 'Update failed'}`, '#e74c3c');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = 'Update';
+      showToast('❌ Network error. Please try again.', '#e74c3c');
+    });
+  }
+
+  function cancelOrder() {
+    if (!confirm(`Are you sure you want to cancel Order ${ORDER_NUMBER}? This cannot be undone.`)) return;
+    document.getElementById('status-select').value = 'Cancelled';
+    // Trigger update
+    fetch(`/admin/update-order-status/${ORDER_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Cancelled' })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast(`Order ${ORDER_NUMBER} has been cancelled.`, '#e74c3c');
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        showToast(`❌ ${data.error || 'Cancel failed'}`, '#e74c3c');
+      }
+    })
+    .catch(() => showToast('❌ Network error.', '#e74c3c'));
+  }
+
+  // Restore Orders tab when returning to dashboard
+  if (window.performance && window.performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
+    sessionStorage.setItem('adminTab', 'orders');
+  }
+</script>
+{% endblock %}

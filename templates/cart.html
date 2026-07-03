@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart – The Saveur{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cart-container {
+    padding: 140px 24px 80px;
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--cream);
+  }
+
+  .cart-header {
+    margin-bottom: 32px;
+  }
+
+  .cart-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--green-dark);
+  }
+
+  .cart-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .cart-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+
+  /* ── Items List ── */
+  .cart-items-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 24px;
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: 80px 2fr 1fr 1fr auto;
+    gap: 20px;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 16px 0;
+  }
+
+  .cart-item:last-child {
+    border-bottom: none;
+  }
+
+  .cart-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  @media (max-width: 580px) {
+    .cart-item {
+      grid-template-columns: 80px 1fr;
+      grid-template-areas:
+        "img details"
+        "img price"
+        "qty actions";
+      gap: 12px 16px;
+      align-items: center;
+    }
+    .cart-item-img {
+      grid-area: img;
+      width: 80px;
+      height: 80px;
+    }
+    .cart-item-details {
+      grid-area: details;
+    }
+    .cart-item-price {
+      grid-area: price;
+    }
+    .cart-item-qty {
+      grid-area: qty;
+    }
+    .cart-item-actions {
+      grid-area: actions;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 0;
+      gap: 16px;
+    }
+  }
+
+  .cart-item-img {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .cart-item-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+  .cart-item-name a {
+    color: inherit;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  .cart-item-name a:hover {
+    color: var(--green-primary);
+  }
+
+  .cart-item-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .cart-item-price {
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .quantity-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .quantity-input {
+    width: 50px;
+    padding: 6px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 4px;
+    text-align: center;
+    font-family: inherit;
+    font-weight: 600;
+  }
+
+  .cart-item-total {
+    font-weight: 700;
+    color: var(--green-dark);
+    font-size: 1.1rem;
+    text-align: right;
+  }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .remove-btn:hover {
+    background: rgba(231,76,60,0.1);
+  }
+  .remove-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ── Summary Card ── */
+  .summary-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 28px;
+    position: sticky;
+    top: 140px;
+  }
+
+  .summary-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    color: var(--green-dark);
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding-bottom: 12px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 0.95rem;
+    color: var(--text-mid);
+  }
+
+  .summary-row.total {
+    border-top: 1px solid rgba(0,0,0,0.08);
+    padding-top: 16px;
+    margin-top: 16px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--green-dark);
+  }
+
+  .empty-cart {
+    text-align: center;
+    padding: 80px 24px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="cart-container">
+  <div class="cart-header">
+    <h1>Your Shopping Cart</h1>
+  </div>
+
+  {% if cart_items %}
+  <div class="cart-grid">
+    
+    <!-- Left: Items -->
+    <div class="cart-items-card">
+      {% for item in cart_items %}
+      <div class="cart-item">
+        <!-- Image -->
+        <img class="cart-item-img" 
+             src="{% if '://' in item.image_filename %}{{ item.image_filename }}{% else %}{{ url_for('static', filename='images/' + item.image_filename) }}{% endif %}" 
+             alt="{{ item.name }}" />
+        
+        <!-- Details -->
+        <div class="cart-item-details">
+          <div class="cart-item-name">
+            <a href="{{ url_for('product_detail', id=item.id) }}">{{ item.name }}</a>
+          </div>
+          <div class="cart-item-meta">Unit: {{ item.unit }}</div>
+        </div>
+
+        <!-- Price -->
+        <div class="cart-item-price">
+          ₹{{ item.price }}
+        </div>
+
+        <!-- Quantity Form -->
+        <div class="cart-item-qty">
+          <form class="quantity-form" action="{{ url_for('update_cart', product_id=item.id) }}" method="POST">
+            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.stocks }}" class="quantity-input" onchange="this.form.submit()" />
+          </form>
+        </div>
+
+        <!-- Action / Total -->
+        <div class="cart-item-actions">
+          <div class="cart-item-total">
+            ₹{{ item.item_total }}
+          </div>
+          <form action="{{ url_for('remove_from_cart', product_id=item.id) }}" method="POST">
+            <button type="submit" class="remove-btn" title="Remove item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Right: Summary -->
+    <div class="summary-card">
+      <h2 class="summary-title">Order Summary</h2>
+      
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span>₹{{ subtotal }}</span>
+      </div>
+      <div class="summary-row">
+        <span>Delivery Charge</span>
+        <span style="color:#2ecc71; font-weight:600;">FREE</span>
+      </div>
+      
+      <div class="summary-row total">
+        <span>Total Amount</span>
+        <span>₹{{ subtotal }}</span>
+      </div>
+
+      <a href="{{ url_for('checkout') }}" class="btn btn-primary" style="width:100%; margin-top:20px; text-align:center;">
+        Proceed to Checkout →
+      </a>
+      <a href="{{ url_for('products') }}" class="btn btn-outline" style="width:100%; margin-top:10px; text-align:center;">
+        Continue Shopping
+      </a>
+    </div>
+
+  </div>
+  {% else %}
+  <div class="empty-cart">
+    <div style="font-size:4rem; margin-bottom:16px;">🛒</div>
+    <h2 style="color:var(--green-dark); margin-bottom:8px;">Your cart is empty</h2>
+    <p style="color:var(--text-muted); margin-bottom:24px;">Add some premium tea or spices to your cart to get started.</p>
+    <a href="{{ url_for('products') }}" class="btn btn-primary">Browse Products</a>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

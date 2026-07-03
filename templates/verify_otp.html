@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}{% if purpose == 'signup' %}Verify Email – The Saveur{% else %}Verify OTP – The Saveur{% endif %}{% endblock %}
+{% block meta_desc %}Enter the 6-digit OTP verification code sent to your email to verify your identity.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 24px 60px;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 40%, rgba(45,80,22,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 70%, rgba(200,134,10,0.07) 0%, transparent 60%),
+      var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Floating spice orbs in background */
+  .auth-page::before,
+  .auth-page::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+    animation: float-orb 8s ease-in-out infinite;
+  }
+  .auth-page::before {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(45,80,22,0.12), transparent);
+    top: -100px; left: -100px;
+  }
+  .auth-page::after {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(200,134,10,0.10), transparent);
+    bottom: -80px; right: -80px;
+    animation-delay: -4s;
+  }
+
+  @keyframes float-orb {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%       { transform: translateY(-20px) scale(1.05); }
+  }
+
+  /* ── Auth Card ─────────────────────────────────────────────── */
+  .auth-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 4px 24px rgba(45,80,22,0.10),
+      0 32px 80px rgba(0,0,0,0.12),
+      inset 0 1px 0 rgba(255,255,255,0.8);
+    padding: 48px 44px;
+    animation: card-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Card Header ────────────────────────────────────────────── */
+  .auth-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 24px;
+    box-shadow: 0 8px 24px rgba(45,80,22,0.3);
+    animation: icon-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  }
+  @keyframes icon-pop {
+    from { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  .auth-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .auth-subtext {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 36px;
+    line-height: 1.4;
+  }
+  .auth-email-display {
+    color: var(--green-dark);
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  /* ── OTP Inputs Group ───────────────────────────────────────── */
+  .otp-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  .otp-input {
+    width: 50px;
+    height: 60px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--green-dark);
+    background: rgba(255,255,255,0.9);
+    transition: var(--transition);
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .otp-input:focus {
+    border-color: var(--green-light);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(90,158,53,0.12);
+  }
+
+  /* ── Submit Button ────────────────────────────────────────────── */
+  .auth-submit {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--green-primary) 0%, var(--green-light) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: var(--transition);
+    box-shadow: 0 6px 20px rgba(45,80,22,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--green-light) 0%, var(--green-primary) 100%);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  .auth-submit:hover::before { opacity: 1; }
+  .auth-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(45,80,22,0.45); }
+  .auth-submit:active { transform: translateY(0); }
+  .auth-submit span { position: relative; z-index: 1; }
+
+  /* ── Resend link ─────────────────────────────────────────────── */
+  .auth-resend {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .auth-resend a {
+    color: var(--green-primary);
+    font-weight: 600;
+    transition: var(--transition);
+  }
+  .auth-resend a:hover { color: var(--green-light); text-decoration: underline; }
+
+  @media (max-width: 500px) {
+    .auth-card { padding: 36px 20px; }
+    .auth-heading { font-size: 1.6rem; }
+    .otp-input {
+      width: 40px;
+      height: 50px;
+      font-size: 1.25rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+
+    <!-- Icon -->
+    <div class="auth-icon">{% if purpose == 'signup' %}✉️{% else %}🛡️{% endif %}</div>
+
+    <!-- Header -->
+    <h1 class="auth-heading">{% if purpose == 'signup' %}Verify Your Email{% else %}Verify OTP{% endif %}</h1>
+    <p class="auth-subtext">
+      {% if purpose == 'signup' %}
+        We've sent a 6-digit code to confirm your email address.<br>
+      {% else %}
+        We've sent a 6-digit OTP code to reset your password.<br>
+      {% endif %}
+      <span class="auth-email-display">{{ email or session.get('otp_email') or session.get('reset_email', '') }}</span>
+    </p>
+
+    <!-- OTP Form -->
+    <form class="auth-form" method="POST" action="{{ url_for('verify_otp') }}" id="otp-form">
+
+      <!-- OTP Digit Inputs -->
+      <div class="otp-group">
+        <input type="text" name="otp-1" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required autofocus autocomplete="off" placeholder="-" />
+        <input type="text" name="otp-2" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required autocomplete="off" placeholder="-" />
+        <input type="text" name="otp-3" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required autocomplete="off" placeholder="-" />
+        <input type="text" name="otp-4" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required autocomplete="off" placeholder="-" />
+        <input type="text" name="otp-5" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required autocomplete="off" placeholder="-" />
+        <input type="text" name="otp-6" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required autocomplete="off" placeholder="-" />
+      </div>
+
+      <!-- Hidden field in case JS is disabled and user submits a merged code somehow -->
+      <input type="hidden" name="otp" id="otp-hidden" />
+
+      <!-- Submit -->
+      <button type="submit" class="auth-submit" id="verify-btn">
+        <span>Verify OTP Code →</span>
+      </button>
+    </form>
+
+    <p class="auth-resend">
+      Didn't get the code?
+      <form method="POST" action="{{ url_for('resend_otp') }}" style="display:inline;">
+        <button type="submit" style="background:none; border:none; color:var(--green-primary); font-weight:600; cursor:pointer; font-family:inherit; font-size:inherit; padding:0; transition:color 0.2s;"
+                onmouseover="this.style.color='var(--green-light)'" onmouseout="this.style.color='var(--green-primary)'">
+          Resend OTP
+        </button>
+      </form>
+    </p>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const inputs = document.querySelectorAll('.otp-input');
+  const hiddenInput = document.getElementById('otp-hidden');
+  const form = document.getElementById('otp-form');
+
+  inputs.forEach((input, index) => {
+    // Jump focus on typing
+    input.addEventListener('input', (e) => {
+      const target = e.target;
+      const val = target.value;
+      
+      // Keep only numbers
+      target.value = val.replace(/[^0-9]/g, '');
+
+      if (target.value.length === 1) {
+        if (index < inputs.length - 1) {
+          inputs[index + 1].focus();
+        }
+      }
+      updateHiddenValue();
+    });
+
+    // Jump back focus on backspace
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && input.value.length === 0) {
+        if (index > 0) {
+          inputs[index - 1].focus();
+        }
+      }
+    });
+
+    // Handle paste event
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').trim();
+      if (/^\d{6}$/.test(text)) {
+        for (let i = 0; i < 6; i++) {
+          inputs[i].value = text[i];
+        }
+        inputs[5].focus();
+        updateHiddenValue();
+      }
+    });
+  });
+
+  function updateHiddenValue() {
+    let code = '';
+    inputs.forEach(input => {
+      code += input.value;
+    });
+    hiddenInput.value = code;
+  }
+</script>
+{% endblock %}

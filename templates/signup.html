@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up – The Saveur{% endblock %}
+{% block meta_desc %}Create a free The Saveur account to explore premium teas and spices sourced directly from the finest farms in India.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 24px 60px;
+    background:
+      radial-gradient(ellipse 80% 60% at 80% 20%, rgba(200,134,10,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 20% 80%, rgba(45,80,22,0.08) 0%, transparent 60%),
+      var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .auth-page::before,
+  .auth-page::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+    animation: float-orb 9s ease-in-out infinite;
+  }
+  .auth-page::before {
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(200,134,10,0.10), transparent);
+    top: -120px; right: -100px;
+  }
+  .auth-page::after {
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(45,80,22,0.10), transparent);
+    bottom: -100px; left: -80px;
+    animation-delay: -4.5s;
+  }
+
+  @keyframes float-orb {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%       { transform: translateY(-24px) scale(1.06); }
+  }
+
+  /* ── Auth Card ─────────────────────────────────────────────── */
+  .auth-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 500px;
+    background: rgba(255, 255, 255, 0.87);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.65);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 4px 24px rgba(200,134,10,0.08),
+      0 32px 80px rgba(0,0,0,0.12),
+      inset 0 1px 0 rgba(255,255,255,0.8);
+    padding: 48px 44px;
+    animation: card-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Card Header ────────────────────────────────────────────── */
+  .auth-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--amber), var(--amber-light));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 24px;
+    box-shadow: 0 8px 24px rgba(200,134,10,0.35);
+    animation: icon-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  }
+  @keyframes icon-pop {
+    from { opacity: 0; transform: scale(0.5) rotate(10deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  .auth-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .auth-subtext {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 36px;
+  }
+
+  /* ── Form Fields ─────────────────────────────────────────────── */
+  .auth-form .form-group {
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .auth-form label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-mid);
+    margin-bottom: 8px;
+  }
+  .input-wrapper {
+    position: relative;
+  }
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+  .input-wrapper:focus-within .input-icon {
+    color: var(--amber);
+  }
+  .auth-form input:not([type="checkbox"]) {
+    width: 100%;
+    padding: 14px 16px 14px 46px;
+    border: 1.5px solid rgba(0,0,0,0.10);
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.97rem;
+    color: var(--text-dark);
+    background: rgba(255,255,255,0.9);
+    transition: var(--transition);
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .auth-form input:not([type="checkbox"]):focus {
+    border-color: var(--amber);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(200,134,10,0.12);
+  }
+
+  /* Password strength bar */
+  .strength-bar-wrap {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    height: 4px;
+  }
+  .strength-seg {
+    flex: 1;
+    border-radius: 2px;
+    background: rgba(0,0,0,0.08);
+    transition: background 0.3s ease;
+  }
+  .strength-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-weight: 500;
+    height: 16px;
+    transition: var(--transition);
+  }
+
+  /* Password toggle */
+  .pwd-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+  }
+  .pwd-toggle svg { width: 18px; height: 18px; }
+  .pwd-toggle:hover { color: var(--amber); }
+
+  /* Terms checkbox */
+  .terms-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .terms-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--amber);
+    cursor: pointer;
+  }
+  .terms-group label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    cursor: pointer;
+    line-height: 1.5;
+  }
+  .terms-group label a {
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .terms-group.has-error label {
+    color: #e74c3c !important;
+    font-weight: 500;
+  }
+  .terms-error-message {
+    color: #e74c3c;
+    font-size: 0.8rem;
+    margin-top: -12px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    display: block;
+    animation: slideInTerms 0.3s ease;
+  }
+  @keyframes slideInTerms {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Submit Button ────────────────────────────────────────────── */
+  .auth-submit {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--amber) 0%, var(--amber-light) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    cursor: not-allowed;
+    margin-top: 4px;
+    transition: var(--transition);
+    opacity: 0.55;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-submit.highlighted {
+    opacity: 1;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(200,134,10,0.40);
+  }
+  .auth-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--amber-light) 0%, var(--amber) 100%);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  .auth-submit.highlighted:hover::before { opacity: 1; }
+  .auth-submit.highlighted:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(200,134,10,0.50); }
+  .auth-submit:active { transform: translateY(0); }
+  .auth-submit span { position: relative; z-index: 1; }
+
+  /* ── Perks row ───────────────────────────────────────────────── */
+  .auth-perks {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .auth-perk {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .auth-perk .perk-icon,
+  .auth-perk svg.perk-icon {
+    color: var(--amber);
+    flex-shrink: 0;
+  }
+
+  /* ── Divider ─────────────────────────────────────────────────── */
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 18px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+  .auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0,0,0,0.1);
+  }
+
+  /* ── Switch link ─────────────────────────────────────────────── */
+  .auth-switch {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .auth-switch a {
+    color: var(--green-primary);
+    font-weight: 600;
+    transition: var(--transition);
+  }
+  .auth-switch a:hover { color: var(--green-light); text-decoration: underline; }
+
+  /* Google Login Button */
+  .google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    background: #ffffff;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius-pill);
+    color: var(--text-dark);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+  }
+  .google-btn:hover {
+    background: #f8f9fa;
+    border-color: rgba(0,0,0,0.18);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+  }
+  .google-btn:active {
+    transform: translateY(0);
+  }
+  .google-icon {
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 540px) {
+    .auth-card { padding: 36px 22px; }
+    .auth-heading { font-size: 1.6rem; }
+    .auth-perks { gap: 12px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="auth-card">
+
+    <!-- Icon -->
+    <div class="auth-icon">✨</div>
+
+    <!-- Header -->
+    <h1 class="auth-heading">Sign Up</h1>
+    <p class="auth-subtext">Create your The Saveur account</p>
+
+    <!-- Sign Up Form -->
+    <form class="auth-form" method="POST" action="{{ url_for('signup') }}" id="signup-form" novalidate>
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label for="full_name">Full Name</label>
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="full_name"
+            name="full_name"
+            placeholder="Your full name"
+            autocomplete="name"
+            required
+          />
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <div class="input-wrapper">
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Min. 6 characters"
+            autocomplete="new-password"
+            required
+            minlength="6"
+          />
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <button type="button" class="pwd-toggle" id="toggle-pwd" aria-label="Toggle password visibility">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <!-- Strength meter -->
+        <div class="strength-bar-wrap" id="strength-bar">
+          <div class="strength-seg" id="seg1"></div>
+          <div class="strength-seg" id="seg2"></div>
+          <div class="strength-seg" id="seg3"></div>
+          <div class="strength-seg" id="seg4"></div>
+        </div>
+        <div class="strength-label" id="strength-label"></div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirm_password">Confirm Password</label>
+        <div class="input-wrapper">
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            placeholder="Re-enter your password"
+            autocomplete="new-password"
+            required
+          />
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg>
+          <button type="button" class="pwd-toggle" id="toggle-cpwd" aria-label="Toggle password visibility">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Terms -->
+      <div class="terms-group">
+        <input type="checkbox" id="terms" name="terms" required />
+        <label for="terms">
+          I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+        </label>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="auth-submit" id="signup-btn">
+        <span>Sign Up →</span>
+      </button>
+    </form>
+
+    <!-- Trust perks -->
+    <div class="auth-perks">
+      <div class="auth-perk">
+        <svg class="perk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Free to join
+      </div>
+      <div class="auth-perk">
+        <svg class="perk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Secure &amp; private
+      </div>
+      <div class="auth-perk">
+        <svg class="perk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Exclusive deals
+      </div>
+    </div>
+
+    <div class="auth-divider">or</div>
+
+    <!-- Google Sign In -->
+    <a href="{{ url_for('google_login') }}" class="google-btn">
+      <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+      </svg>
+      <span>Continue with Google</span>
+    </a>
+
+    <p class="auth-switch">
+      Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+    </p>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Password toggle – main
+  const EYE_SVG     = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const EYE_OFF_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+  const togglePwd  = document.getElementById('toggle-pwd');
+  const pwdInput   = document.getElementById('password');
+  if (togglePwd && pwdInput) {
+    togglePwd.addEventListener('click', () => {
+      const show = pwdInput.type === 'password';
+      pwdInput.type = show ? 'text' : 'password';
+      togglePwd.innerHTML = show ? EYE_OFF_SVG : EYE_SVG;
+    });
+  }
+
+  // Password toggle – confirm
+  const toggleCpwd  = document.getElementById('toggle-cpwd');
+  const cpwdInput   = document.getElementById('confirm_password');
+  if (toggleCpwd && cpwdInput) {
+    toggleCpwd.addEventListener('click', () => {
+      const show = cpwdInput.type === 'password';
+      cpwdInput.type = show ? 'text' : 'password';
+      toggleCpwd.innerHTML = show ? EYE_OFF_SVG : EYE_SVG;
+    });
+  }
+
+  // Password strength meter
+  const segs   = [1,2,3,4].map(i => document.getElementById('seg' + i));
+  const label  = document.getElementById('strength-label');
+  const colors = ['#e74c3c','#e67e22','#f1c40f','#2ecc71'];
+  const labels = ['Weak','Fair','Good','Strong'];
+
+  function calcStrength(pwd) {
+    let score = 0;
+    if (pwd.length >= 6)  score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)) score++;
+    return score;  // 0-4
+  }
+
+  if (pwdInput) {
+    pwdInput.addEventListener('input', () => {
+      const s = calcStrength(pwdInput.value);
+      segs.forEach((seg, i) => {
+        seg.style.background = i < s ? colors[s - 1] : 'rgba(0,0,0,0.08)';
+      });
+      label.textContent = pwdInput.value ? labels[Math.max(0, s - 1)] : '';
+      label.style.color = colors[Math.max(0, s - 1)];
+    });
+  }
+
+  // Confirm password live match indicator
+  if (cpwdInput && pwdInput) {
+    cpwdInput.addEventListener('input', () => {
+      if (!cpwdInput.value) {
+        cpwdInput.style.borderColor = '';
+        return;
+      }
+      const match = cpwdInput.value === pwdInput.value;
+      cpwdInput.style.borderColor = match ? '#2ecc71' : '#e74c3c';
+      cpwdInput.style.boxShadow   = match
+        ? '0 0 0 3px rgba(46,204,113,0.12)'
+        : '0 0 0 3px rgba(231,76,60,0.12)';
+    });
+  }
+
+  // Form submission terms checkbox validation
+  const signupForm = document.getElementById('signup-form');
+  const termsCheckbox = document.getElementById('terms');
+  if (signupForm && termsCheckbox) {
+    signupForm.addEventListener('submit', (e) => {
+      // Remove any existing terms error message
+      const existingError = signupForm.querySelector('.terms-error-message');
+      if (existingError) {
+        existingError.remove();
+      }
+      termsCheckbox.closest('.terms-group').classList.remove('has-error');
+
+      if (!termsCheckbox.checked) {
+        e.preventDefault();
+        
+        // Highlight terms group
+        const termsGroup = termsCheckbox.closest('.terms-group');
+        termsGroup.classList.add('has-error');
+
+        // Create error message
+        const errMsg = document.createElement('span');
+        errMsg.className = 'terms-error-message';
+        errMsg.innerText = 'You must agree to the Terms of Service and Privacy Policy to continue.';
+        
+        // Insert below terms group
+        termsGroup.parentNode.insertBefore(errMsg, termsGroup.nextSibling);
+
+        // Scroll into view
+        termsGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    // Highlight button state toggle
+    const signupBtn = document.getElementById('signup-btn');
+    function updateBtnHighlight() {
+      if (signupBtn) {
+        if (termsCheckbox.checked) {
+          signupBtn.classList.add('highlighted');
+        } else {
+          signupBtn.classList.remove('highlighted');
+        }
+      }
+    }
+
+    // Initialize state
+    updateBtnHighlight();
+
+    // Clear error and update highlight on check
+    termsCheckbox.addEventListener('change', () => {
+      updateBtnHighlight();
+      if (termsCheckbox.checked) {
+        const existingError = signupForm.querySelector('.terms-error-message');
+        if (existingError) {
+          existingError.remove();
+        }
+        termsCheckbox.closest('.terms-group').classList.remove('has-error');
+      }
+    });
+  }
+</script>
+{% endblock %}

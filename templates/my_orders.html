@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders – The Saveur{% endblock %}
+
+{% block extra_head %}
+<style>
+  .orders-container {
+    padding: 140px 24px 80px;
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--cream);
+  }
+
+  .orders-header {
+    margin-bottom: 32px;
+  }
+
+  .orders-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--green-dark);
+  }
+
+  .order-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .order-header {
+    background: rgba(0,0,0,0.02);
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .order-id {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .order-date {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .order-status {
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .order-status.processing {
+    background: rgba(52,152,219,0.1);
+    color: #3498db;
+  }
+  .order-status.shipped {
+    background: rgba(230,126,34,0.1);
+    color: #e67e22;
+  }
+  .order-status.delivered {
+    background: rgba(46,204,113,0.1);
+    color: #2ecc71;
+  }
+  .order-status.cancelled {
+    background: rgba(231,76,60,0.1);
+    color: #e74c3c;
+  }
+
+  .order-body {
+    padding: 24px;
+  }
+
+  .order-item-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .order-item-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .order-item-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .order-item-name {
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .order-item-meta {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .order-footer {
+    padding: 18px 24px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.005);
+  }
+
+  .order-total-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .order-total-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin-top: 4px;
+  }
+
+  .order-shipping-summary {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    max-width: 320px;
+    text-align: right;
+  }
+
+  @media (max-width: 600px) {
+    .order-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .order-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .order-shipping-summary {
+      text-align: left;
+      max-width: 100%;
+    }
+  }
+
+  .no-orders {
+    text-align: center;
+    padding: 60px 24px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="orders-container">
+  <div class="orders-header">
+    <h1>Your Order History</h1>
+  </div>
+
+  {% if orders %}
+    {% for order in orders %}
+    <div class="order-card">
+      <div class="order-header">
+        <div>
+          <span class="order-id">Order {{ order.order_number if order.order_number else '#' ~ order.id }}</span>
+          <div class="order-date">Placed on: {{ order.created_at }}</div>
+        </div>
+        <div>
+          <span class="order-status {{ order.status.lower() }}">{{ order.status }}</span>
+        </div>
+      </div>
+
+      <div class="order-body">
+        {% for item in order['items'] %}
+        <div class="order-item-row">
+          <img class="order-item-thumb" 
+               src="{% if '://' in item.image_filename %}{{ item.image_filename }}{% else %}{{ url_for('static', filename='images/' + item.image_filename) }}{% endif %}" 
+               alt="{{ item.product_name }}" />
+          <div>
+            <span class="order-item-name">{{ item.product_name }}</span>
+            <div class="order-item-meta">Qty: {{ item.quantity }} × ₹{{ item.price }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="order-footer">
+        <div>
+          <span class="order-total-label">Total Amount</span>
+          <div class="order-total-value">₹{{ order.total_amount }}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+          <div class="order-shipping-summary">
+            <strong>Deliver to:</strong> {{ order.shipping_address }}, {{ order.city }}, {{ order.state }} - {{ order.zip_code }}<br>
+            <span style="font-size:0.75rem; color:var(--text-muted);">Paid via: {{ order.payment_method }}</span>
+          </div>
+          <a href="{{ url_for('customer_invoice', id=order.id) }}" target="_blank"
+             style="display:inline-flex; align-items:center; gap:7px; padding:8px 16px; background:rgba(90,158,53,0.1); color:var(--green-dark); border:1.5px solid rgba(90,158,53,0.25); border-radius:8px; font-size:0.8rem; font-weight:700; text-decoration:none; transition:all 0.2s;"
+             onmouseover="this.style.background='rgba(90,158,53,0.18)'" onmouseout="this.style.background='rgba(90,158,53,0.1)'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Invoice
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="no-orders">
+      <div style="font-size:3rem; margin-bottom:16px;">📦</div>
+      <h2 style="color:var(--green-dark); margin-bottom:8px;">No orders found</h2>
+      <p style="color:var(--text-muted); margin-bottom:24px;">You haven't placed any orders yet.</p>
+      <a href="{{ url_for('products') }}" class="btn btn-primary">Start Shopping</a>
+    </div>
+  {% endif %}
+</main>
+{% endblock %}

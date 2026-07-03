@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout – The Saveur{% endblock %}
+
+{% block extra_head %}
+<style>
+  .checkout-container {
+    padding: 140px 24px 80px;
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--cream);
+  }
+
+  .checkout-header {
+    margin-bottom: 32px;
+  }
+
+  .checkout-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--green-dark);
+  }
+
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .checkout-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+
+  .checkout-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 32px;
+  }
+
+  .checkout-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    color: var(--green-dark);
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding-bottom: 12px;
+  }
+
+  /* Form */
+  .checkout-form .form-group {
+    margin-bottom: 18px;
+  }
+
+  .checkout-form label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .checkout-form input,
+  .checkout-form select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    background: rgba(0,0,0,0.01);
+    transition: var(--transition);
+  }
+
+  .checkout-form input:focus,
+  .checkout-form select:focus {
+    outline: none;
+    border-color: var(--green-primary);
+    box-shadow: 0 0 0 3px rgba(90,158,53,0.15);
+    background: #fff;
+  }
+
+  /* Payment Radio Options */
+  .payment-methods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+  }
+  @media (max-width: 480px) {
+    .payment-methods {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .payment-method-card {
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: var(--radius-sm);
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    position: relative;
+  }
+  .payment-method-card input {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    margin: 0;
+  }
+  .payment-method-card:hover {
+    border-color: var(--green-light);
+  }
+  .payment-method-card.selected {
+    border-color: var(--green-primary);
+    background: rgba(90,158,53,0.03);
+  }
+  .payment-method-card svg {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+  }
+  .payment-method-card.selected svg {
+    color: var(--green-primary);
+  }
+  .payment-method-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  /* Order Summary List */
+  .order-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(0,0,0,0.08);
+  }
+  .order-summary-item:last-child {
+    border-bottom: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="checkout-container">
+  <div class="checkout-header">
+    <h1>Secure Checkout</h1>
+  </div>
+
+  <div class="checkout-grid">
+    
+    <!-- Left: Shipping Address & Payment -->
+    <div class="checkout-card">
+      <h2 class="checkout-title">Shipping & Billing Address</h2>
+      
+      <form class="checkout-form" id="checkout-form" action="{{ url_for('checkout_submit') }}" method="POST">
+        <!-- Address -->
+        <div class="form-group">
+          <label for="address">Street Address *</label>
+          <input type="text" id="address" name="address" required value="{{ user.shipping_address or '' }}" placeholder="Apartment, suite, unit, building, street, etc." />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">City *</label>
+            <input type="text" id="city" name="city" required value="{{ user.city or '' }}" placeholder="e.g. New Delhi" />
+          </div>
+          <div class="form-group">
+            <label for="state">State *</label>
+            <input type="text" id="state" name="state" required value="{{ user.state or '' }}" placeholder="e.g. Delhi" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="zip">Zip / Postal Code *</label>
+          <input type="text" id="zip" name="zip" required value="{{ user.zip_code or '' }}" placeholder="e.g. 110001" />
+        </div>
+
+        <!-- Payment Method -->
+        <h2 class="checkout-title" style="margin-top: 36px;">Payment Method</h2>
+        
+        <div class="payment-methods">
+          <!-- UPI -->
+          <div class="payment-method-card selected" onclick="selectPaymentMethod(this, 'UPI')">
+            <input type="radio" name="payment_method" value="UPI" checked style="display:none;" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span class="payment-method-title">UPI / QR Code</span>
+          </div>
+
+          <!-- Cards -->
+          <div class="payment-method-card" onclick="selectPaymentMethod(this, 'Card')">
+            <input type="radio" name="payment_method" value="Card" style="display:none;" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span class="payment-method-title">Card (Debit/Credit)</span>
+          </div>
+
+          <!-- Net Banking -->
+          <div class="payment-method-card" onclick="selectPaymentMethod(this, 'NetBanking')">
+            <input type="radio" name="payment_method" value="NetBanking" style="display:none;" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="payment-method-title">Net Banking</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:36px; padding:14px; font-size:1rem;">
+          Place Order (₹{{ subtotal }})
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Summary Sidebar -->
+    <div class="checkout-card" style="padding: 24px;">
+      <h2 class="checkout-title" style="margin-bottom:16px;">Order Summary</h2>
+      
+      <div style="max-height: 280px; overflow-y:auto; margin-bottom: 20px;">
+        {% for item in cart_items %}
+        <div class="order-summary-item">
+          <div>
+            <div style="font-weight:600; color:var(--text-dark); font-size:0.92rem;">{{ item.name }}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">Qty: {{ item.quantity }} × ₹{{ item.price }}</div>
+          </div>
+          <div style="font-weight:600; color:var(--text-dark);">₹{{ item.item_total }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="border-top:1px solid rgba(0,0,0,0.06); padding-top:16px;">
+        <div class="summary-row" style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:var(--text-muted);">
+          <span>Items Subtotal</span>
+          <span>₹{{ subtotal }}</span>
+        </div>
+        <div class="summary-row" style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:var(--text-muted);">
+          <span>Shipping Charge</span>
+          <span style="color:#2ecc71; font-weight:600;">FREE</span>
+        </div>
+        <div class="summary-row total" style="display:flex; justify-content:space-between; border-top:1px solid rgba(0,0,0,0.08); padding-top:14px; font-size:1.2rem; font-weight:700; color:var(--green-dark);">
+          <span>Order Total</span>
+          <span>₹{{ subtotal }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function selectPaymentMethod(cardElement, methodValue) {
+    // Deselect all
+    document.querySelectorAll('.payment-method-card').forEach(card => {
+      card.classList.remove('selected');
+      const radio = card.querySelector('input[type="radio"]');
+      if (radio) radio.checked = false;
+    });
+
+    // Select this
+    cardElement.classList.add('selected');
+    const radio = cardElement.querySelector('input[type="radio"]');
+    if (radio) {
+      radio.checked = true;
+    }
+  }
+</script>
+{% endblock %}

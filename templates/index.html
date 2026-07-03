@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block title %}The Saveur – Premium Tea & Spices from India{% endblock %}
+{% block meta_desc %}The Saveur brings you the finest quality tea and spices sourced directly from India's best gardens and farms. Bulk orders, pan-India shipping.{% endblock %}
+
+{% block content %}
+
+  <!-- ══════════════════════════════════════════════════════
+       HERO CAROUSEL SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="hero" id="hero" aria-label="Hero Section">
+    <!-- Carousel Slides -->
+    <div class="hero-carousel">
+      {% for slide in carousel_slides %}
+      <div class="hero-slide {% if loop.first %}active{% endif %}">
+        <div class="hero-bg" style="background-image: url('{% if '://' in slide.image_filename %}{{ slide.image_filename }}{% else %}{{ url_for('static', filename='images/' + slide.image_filename) }}{% endif %}');" role="img" aria-label="{{ slide.title }}"></div>
+        <div class="hero-overlay"></div>
+        <div class="container">
+          <div class="hero-content">
+            {% if slide.badge_text %}
+            <div class="hero-badge">
+              {% if slide.badge_icon %}
+                <i data-lucide="{{ slide.badge_icon }}"></i>
+              {% endif %}
+              {{ slide.badge_text }}
+            </div>
+            {% endif %}
+            <h1>
+              {{ slide.title | replace('\n', '<br/>') | safe }}
+            </h1>
+            {% if slide.description %}
+            <p>{{ slide.description }}</p>
+            {% endif %}
+            <div class="hero-actions">
+              <a href="{{ slide.button_link }}" class="btn btn-primary">
+                <i data-lucide="shopping-cart"></i> {{ slide.button_text }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Carousel Controls -->
+    {% if carousel_slides|length > 1 %}
+    <button class="carousel-control prev" aria-label="Previous Slide"><i data-lucide="chevron-left"></i></button>
+    <button class="carousel-control next" aria-label="Next Slide"><i data-lucide="chevron-right"></i></button>
+    {% endif %}
+
+    <!-- Carousel Indicators -->
+    {% if carousel_slides|length > 1 %}
+    <div class="carousel-indicators">
+      {% for slide in carousel_slides %}
+      <span class="indicator {% if loop.first %}active{% endif %}" data-slide="{{ loop.index0 }}"></span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       TRUST BAR SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="trust-bar" aria-label="Trust Indicators">
+    <div class="container">
+      <div class="trust-bar-grid">
+        <div class="trust-item reveal stagger-1">
+          <div class="trust-icon-box">
+            <i data-lucide="package"></i>
+          </div>
+          <div class="trust-info">
+            <span class="trust-number" data-target="1200" data-suffix="+">1200+</span>
+            <span class="trust-label">Orders Handpicked & Delivered</span>
+          </div>
+        </div>
+        <div class="trust-item reveal stagger-2">
+          <div class="trust-icon-box">
+            <i data-lucide="leaf"></i>
+          </div>
+          <div class="trust-info">
+            <span class="trust-number" data-target="100" data-suffix="%">100%</span>
+            <span class="trust-label">Certified Pure & Natural</span>
+          </div>
+        </div>
+        <div class="trust-item reveal stagger-3">
+          <div class="trust-icon-box">
+            <i data-lucide="globe"></i>
+          </div>
+          <div class="trust-info">
+            <span class="trust-number" data-target="28" data-suffix="+">28+</span>
+            <span class="trust-label">States Across India Served</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       CURATED CATEGORIES SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="category-section" id="categories" aria-label="Shop by Category">
+    <div class="container">
+      <div class="text-center section-header reveal">
+        <span class="section-tag">Premium Collection</span>
+        <h2 class="section-title">Shop by Category</h2>
+        <p class="section-subtitle">
+          Discover our curated selection of premium organic teas and handpicked Indian spices.
+        </p>
+      </div>
+
+      <div class="category-grid">
+        {% for cat in categories %}
+        <a href="{{ url_for('products', category=cat.name|lower) }}" class="category-card reveal stagger-{{ loop.index }}">
+          <div class="category-card-bg" style="background-image: url('{% if '://' in cat.image_filename %}{{ cat.image_filename }}{% else %}{{ url_for('static', filename='images/' + cat.image_filename) }}{% endif %}');"></div>
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <h3>{{ cat.display_name }}</h3>
+            <p>{{ cat.description }}</p>
+            <span class="btn-link">Explore Collection <i data-lucide="arrow-right"></i></span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       SOURCING JOURNEY (STORY) SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="journey-section" id="journey" aria-label="Sourcing Journey">
+    <div class="container">
+      <div class="journey-grid">
+        <div class="journey-content reveal-left">
+          <span class="section-tag">Our Sourcing</span>
+          <h2>From Sun-Kissed Farms to Your Kitchen</h2>
+          <p>
+            The Saveur brings you ingredients exactly as nature intended. We partner directly with small-holder tea estates in Assam and spice growers across Kerala, ensuring fair wages and sustainable agriculture.
+          </p>
+          <div class="journey-steps">
+            <div class="journey-step">
+              <span class="step-num">01</span>
+              <div>
+                <h4>Handpicked Selection</h4>
+                <p>Only the tenderest two leaves and a bud, and whole grade spices are selected.</p>
+              </div>
+            </div>
+            <div class="journey-step">
+              <span class="step-num">02</span>
+              <div>
+                <h4>Traditional Processing</h4>
+                <p>Sun-dried and slowly ground to preserve essential oils, rich aroma, and native taste.</p>
+              </div>
+            </div>
+            <div class="journey-step">
+              <span class="step-num">03</span>
+              <div>
+                <h4>Aroma-Lock Packaging</h4>
+                <p>Packed in food-grade resealable pouches that block moisture, light, and air.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="journey-image-wrap reveal-right">
+          <div class="journey-image-card" style="background-image: url('{{ url_for('static', filename='images/hero_tea_garden.png') }}');"></div>
+          <div class="journey-badge">
+            <i data-lucide="award"></i>
+            <div>
+              <strong>100% Quality</strong>
+              <span>Lab Tested</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       BEST SELLERS SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="bestsellers-section" id="bestsellers" aria-label="Best Selling Products">
+    <div class="container">
+      <div class="text-center section-header reveal">
+        <span class="section-tag">Highly Recommended</span>
+        <h2 class="section-title">Our Best Sellers</h2>
+        <p class="section-subtitle">
+          Loved by thousands of customers across India — handpicked for quality and flavour.
+        </p>
+      </div>
+
+      <div class="products-grid">
+        {% for product in bestsellers %}
+        <article class="product-card reveal stagger-{{ loop.index }}">
+          <a href="{{ url_for('product_detail', id=product.id) }}" class="product-img-link">
+            <div class="product-img-wrap">
+              <img
+                src="{% if '://' in product.image_filename %}{{ product.image_filename }}{% else %}{{ url_for('static', filename='images/' + product.image_filename) }}{% endif %}"
+                alt="{{ product.name }}"
+                loading="lazy"
+              />
+              <span class="product-badge {{ 'spice' if product.category == 'Spice' else '' }}">
+                {{ product.category }}
+              </span>
+              {% if product.is_bestseller %}
+              <span class="bestseller-tag">⭐ Best Seller</span>
+              {% endif %}
+            </div>
+          </a>
+          <div class="product-body">
+            <h3 class="product-name">
+              <a href="{{ url_for('product_detail', id=product.id) }}">{{ product.name }}</a>
+            </h3>
+            
+            <div class="product-rating">
+              <div class="stars">★★★★★</div>
+              <span class="rating-text">4.9 (48 reviews)</span>
+            </div>
+
+            <p class="product-desc">{{ product.description }}</p>
+
+            <div class="product-footer">
+              <div class="product-price-box">
+                <span class="price-symbol">₹</span>
+                <span class="price-val">{{ product.price }}</span>
+                <span class="price-unit">/ {{ product.unit }}</span>
+              </div>
+              <div class="stock-status">
+                {% if product.stocks > 10 %}
+                  <span class="stock-pill in-stock">In Stock</span>
+                {% elif product.stocks > 0 %}
+                  <span class="stock-pill low-stock">Low Stock</span>
+                {% else %}
+                  <span class="stock-pill out-of-stock">Out of Stock</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="product-actions">
+              {% if product.stocks > 0 %}
+              <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" style="margin: 0; width: 100%;">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-primary add-to-cart-btn" style="width:100%; border-radius:12px; padding:12px; gap:8px; justify-content:center; font-size:0.9rem;">
+                  <i data-lucide="shopping-cart" style="width:16px; height:16px;"></i> Add to Cart
+                </button>
+              </form>
+              {% else %}
+              <button class="btn btn-white" style="width:100%; border-radius:12px; padding:12px; cursor:not-allowed; justify-content:center; opacity:0.6; font-size:0.9rem;" disabled>
+                Out of Stock
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+
+      <div class="text-center" style="margin-top:56px;">
+        <a href="{{ url_for('products') }}" class="btn btn-outline" id="view-all-btn">
+          Explore All Products <i data-lucide="arrow-right" style="margin-left:8px;"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       CUSTOMER TESTIMONIALS SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="testimonials-section" id="testimonials" aria-label="Customer Reviews">
+    <div class="container">
+      <div class="text-center section-header reveal">
+        <span class="section-tag">Customer Reviews</span>
+        <h2 class="section-title">What Our Patrons Say</h2>
+        <p class="section-subtitle">
+          Real reviews from tea connoisseurs and culinary experts across India.
+        </p>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal stagger-1">
+          <div class="testimonial-rating">★★★★★</div>
+          <p class="testimonial-text">
+            "The aroma of the Garam Masala is unmatched. It reminds me of the authentic spices ground on traditional mortar stones by my grandmother. Pure and fresh!"
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar"><i data-lucide="user"></i></div>
+            <div>
+              <strong>Priya Sharma</strong>
+              <span class="verified-buyer"><i data-lucide="check-circle"></i> Verified Buyer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal stagger-2">
+          <div class="testimonial-rating">★★★★★</div>
+          <p class="testimonial-text">
+            "We switched to The Saveur's Assam Black Tea for our café, and our customers instantly noticed the rich color and strong, malty flavor. Exceptionally good quality."
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar"><i data-lucide="user"></i></div>
+            <div>
+              <strong>Chef Amit Kapoor</strong>
+              <span class="verified-buyer"><i data-lucide="check-circle"></i> Verified Buyer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal stagger-3">
+          <div class="testimonial-rating">★★★★★</div>
+          <p class="testimonial-text">
+            "The resealable pouch keeps the spices perfectly fresh even in highly humid coastal weather. Fast delivery and premium eco-friendly packaging."
+          </p>
+          <div class="testimonial-author">
+            <div class="author-avatar"><i data-lucide="user"></i></div>
+            <div>
+              <strong>Sneha Reddy</strong>
+              <span class="verified-buyer"><i data-lucide="check-circle"></i> Verified Buyer</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       BULK ENQUIRY SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="enquiry-section" id="enquiry" aria-label="Quick Enquiry">
+    <div class="container">
+      <div class="enquiry-inner">
+
+        <!-- Left: Text -->
+        <div class="enquiry-text reveal-left">
+          <span class="section-tag">Bulk Orders</span>
+          <h2>Partner with The Saveur for Wholesale Supply</h2>
+          <p>
+            Whether you are a retailer, restaurant owner, hospitality manager, or ordering for corporate gifting, we offer bespoke wholesale packaging, custom tea blends, and wholesale pricing.
+          </p>
+          <div class="enquiry-perks">
+            <div class="enquiry-perk">
+              <span class="perk-check">✓</span>
+              <span>Flexible Minimum Order Quantities</span>
+            </div>
+            <div class="enquiry-perk">
+              <span class="perk-check">✓</span>
+              <span>Highly Competitive Direct-from-Farm Pricing</span>
+            </div>
+            <div class="enquiry-perk">
+              <span class="perk-check">✓</span>
+              <span>Custom Labeling & White-Labeling Services</span>
+            </div>
+            <div class="enquiry-perk">
+              <span class="perk-check">✓</span>
+              <span>Fast Pan-India Delivery with Real-Time Tracking</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Form -->
+        <div class="enquiry-form-card reveal-right">
+          <h3>Request a Custom Quote</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:24px;">Send us your requirements and our team will get back within 24 hours.</p>
+          <form action="{{ url_for('submit_enquiry') }}" method="POST" id="home-enquiry-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="home-name">Your Name *</label>
+                <input type="text" id="home-name" name="name" placeholder="John Doe" required />
+              </div>
+              <div class="form-group">
+                <label for="home-email">Email Address *</label>
+                <input type="email" id="home-email" name="email" placeholder="you@example.com" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="home-phone">Phone Number</label>
+                <input type="tel" id="home-phone" name="phone" placeholder="+91 98765 43210" />
+              </div>
+              <div class="form-group">
+                <label for="home-product">Product Interest</label>
+                <select id="home-product" name="product_interest">
+                  <option value="">Select a category…</option>
+                  <option>Premium Assam Tea</option>
+                  <option>Green Tea Selection</option>
+                  <option>Whole Spice Collections</option>
+                  <option>Powdered Ground Spices</option>
+                  <option>Bulk Custom Order</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="home-message">Message *</label>
+              <textarea id="home-message" name="message" placeholder="Specify quantity (e.g. 50kg, 500kg) and any special requirements..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;" id="home-submit-btn">
+              <i data-lucide="send" style="margin-right:8px; width:16px; height:16px;"></i> Send Enquiry Request
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       FAQ SECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="faq-section" id="faq" aria-label="Frequently Asked Questions">
+    <div class="container">
+      <div class="text-center section-header reveal">
+        <span class="section-tag">Common Enquiries</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">
+          Everything you need to know about our sourcing, payments, and shipping.
+        </p>
+      </div>
+
+      <div class="faq-list" role="list">
+
+        <div class="faq-item" role="listitem">
+          <button class="faq-question" aria-expanded="false" id="faq-q1">
+            Do you offer bulk or wholesale pricing?
+            <span class="faq-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="faq-answer" role="region" aria-labelledby="faq-q1">
+            <div class="faq-answer-inner">
+              Yes! We offer special bulk and wholesale pricing for businesses, restaurants, and retailers. Simply fill out our enquiry form or contact us directly with your requirements and quantity, and we'll send you a customized quote within 24 hours.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" role="listitem">
+          <button class="faq-question" aria-expanded="false" id="faq-q2">
+            Are your products 100% natural and free from additives?
+            <span class="faq-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="faq-answer" role="region" aria-labelledby="faq-q2">
+            <div class="faq-answer-inner">
+              Absolutely. All our teas and spices are sourced directly from farmers and processed without any artificial colours, preservatives, or additives. We believe in delivering nature in its purest form to your kitchen.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" role="listitem">
+          <button class="faq-question" aria-expanded="false" id="faq-q3">
+            Which states do you ship to?
+            <span class="faq-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="faq-answer" role="region" aria-labelledby="faq-q3">
+            <div class="faq-answer-inner">
+              We ship pan-India to all 28+ states. Delivery typically takes 3–7 business days depending on your location. We use trusted logistics partners to ensure your products arrive fresh and well-packaged.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" role="listitem">
+          <button class="faq-question" aria-expanded="false" id="faq-q4">
+            Is custom packaging available for my brand?
+            <span class="faq-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="faq-answer" role="region" aria-labelledby="faq-q4">
+            <div class="faq-answer-inner">
+              Yes, we offer white-label and custom packaging solutions for businesses looking to brand our premium products under their own label. Minimum order quantities apply. Contact us to discuss your requirements.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" role="listitem">
+          <button class="faq-question" aria-expanded="false" id="faq-q5">
+            How do I place an order?
+            <span class="faq-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="faq-answer" role="region" aria-labelledby="faq-q5">
+            <div class="faq-answer-inner">
+              Simply add items to your cart, check out with your delivery details, and place your order. Our team will verify it and coordinate delivery immediately. For wholesale orders, please use our quick enquiry form.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const slides = document.querySelectorAll('.hero-slide');
+    const indicators = document.querySelectorAll('.indicator');
+    const prevBtn = document.querySelector('.carousel-control.prev');
+    const nextBtn = document.querySelector('.carousel-control.next');
+    let currentSlide = 0;
+    let slideInterval;
+
+    function showSlide(index) {
+      if (!slides.length) return;
+      slides.forEach(slide => slide.classList.remove('active'));
+      indicators.forEach(ind => ind.classList.remove('active'));
+      
+      currentSlide = (index + slides.length) % slides.length;
+      slides[currentSlide].classList.add('active');
+      indicators[currentSlide].classList.add('active');
+    }
+
+    function nextSlide() {
+      showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      showSlide(currentSlide - 1);
+    }
+
+    function startAutoplay() {
+      slideInterval = setInterval(nextSlide, 6000);
+    }
+
+    function stopAutoplay() {
+      clearInterval(slideInterval);
+    }
+
+    if (slides.length > 0) {
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          prevSlide();
+          stopAutoplay();
+          startAutoplay();
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          nextSlide();
+          stopAutoplay();
+          startAutoplay();
+        });
+      }
+
+      indicators.forEach(indicator => {
+        indicator.addEventListener('click', () => {
+          showSlide(parseInt(indicator.getAttribute('data-slide')));
+          stopAutoplay();
+          startAutoplay();
+        });
+      });
+
+      startAutoplay();
+    }
+  });
+</script>
+{% endblock %}

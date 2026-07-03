@@ -1,0 +1,4248 @@
+{% extends "base.html" %}
+
+
+
+{% block title %}Admin Dashboard &ndash; The Saveur{% endblock %}
+
+
+
+{% block extra_head %}
+
+<style>
+
+  /* ────── Dashboard Layout ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .dashboard-container {
+
+    padding: 140px 24px 80px;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    background: var(--cream);
+
+  }
+
+
+
+  .dashboard-header {
+
+    margin-bottom: 40px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+  }
+
+
+
+  .dashboard-title h1 {
+
+    font-size: 2.2rem;
+
+    color: var(--green-dark);
+
+    margin-bottom: 6px;
+
+  }
+
+  .dashboard-title p {
+
+    color: var(--text-muted);
+
+    font-size: 0.95rem;
+
+  }
+
+
+
+  /* ────── Stats Grid ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .stats-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 24px;
+
+    margin-bottom: 44px;
+
+  }
+
+
+
+  .stat-card {
+
+    background: var(--white);
+
+    padding: 28px;
+
+    border-radius: var(--radius-md);
+
+    box-shadow: var(--shadow-sm);
+
+    border: 1px solid rgba(0,0,0,0.05);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+
+    transition: var(--transition);
+
+  }
+
+  .stat-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: var(--shadow-md);
+
+  }
+
+
+
+  .stat-icon {
+
+    width: 60px;
+
+    height: 60px;
+
+    border-radius: var(--radius-md);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+  }
+
+  .stat-icon svg {
+
+    width: 24px;
+
+    height: 24px;
+
+  }
+
+  .stat-icon.products {
+
+    background: linear-gradient(135deg, rgba(200,134,10,0.1), rgba(200,134,10,0.2));
+
+    color: var(--amber);
+
+  }
+
+  .stat-icon.enquiries {
+
+    background: linear-gradient(135deg, rgba(45,80,22,0.1), rgba(45,80,22,0.2));
+
+    color: var(--green-primary);
+
+  }
+
+  .stat-icon.users {
+
+    background: linear-gradient(135deg, rgba(52,152,219,0.1), rgba(52,152,219,0.2));
+
+    color: #3498db;
+
+  }
+
+  .stat-icon.pending {
+
+    background: linear-gradient(135deg, rgba(231,76,60,0.1), rgba(231,76,60,0.2));
+
+    color: #e74c3c;
+
+  }
+
+  .stat-icon.stocks {
+
+    background: linear-gradient(135deg, rgba(155,89,182,0.1), rgba(155,89,182,0.2));
+
+    color: #9b59b6;
+
+  }
+
+
+
+  .stat-info h3 {
+
+    font-size: 0.85rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+
+    color: var(--text-muted);
+
+    margin-bottom: 4px;
+
+    font-family: 'Inter', sans-serif;
+
+  }
+
+  .stat-number {
+
+    font-size: 2.2rem;
+
+    font-weight: 700;
+
+    color: var(--text-dark);
+
+    line-height: 1.1;
+
+    font-family: 'Playfair Display', serif;
+
+  }
+
+
+
+  /* ────── Tab System ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .dashboard-tabs {
+
+    display: flex;
+
+    gap: 12px;
+
+    border-bottom: 2px solid rgba(0,0,0,0.06);
+
+    margin-bottom: 36px;
+
+    padding-bottom: 2px;
+
+  }
+
+
+
+  .tab-btn {
+
+    background: none;
+
+    border: none;
+
+    padding: 12px 24px;
+
+    font-family: 'Inter', sans-serif;
+
+    font-size: 0.95rem;
+
+    font-weight: 600;
+
+    color: var(--text-muted);
+
+    cursor: pointer;
+
+    position: relative;
+
+    transition: var(--transition);
+
+  }
+
+  .tab-btn:hover {
+
+    color: var(--green-primary);
+
+  }
+
+  .tab-btn.active {
+
+    color: var(--green-primary);
+
+  }
+
+  .tab-btn.active::after {
+
+    content: '';
+
+    position: absolute;
+
+    bottom: -4px;
+
+    left: 0;
+
+    right: 0;
+
+    height: 4px;
+
+    background: var(--green-primary);
+
+    border-radius: 2px;
+
+  }
+
+
+
+  .tab-content {
+
+    display: none;
+
+    animation: fadeIn 0.4s ease;
+
+  }
+
+  .tab-content.active {
+
+    display: block;
+
+  }
+
+
+
+  @keyframes fadeIn {
+
+    from { opacity: 0; transform: translateY(10px); }
+
+    to { opacity: 1; transform: translateY(0); }
+
+  }
+
+
+
+  /* ────── Tables & Lists ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .card-container {
+
+    background: var(--white);
+
+    border-radius: var(--radius-md);
+
+    box-shadow: var(--shadow-sm);
+
+    border: 1px solid rgba(0,0,0,0.05);
+
+    padding: 32px;
+
+    overflow: hidden;
+
+  }
+
+
+
+  .table-wrapper {
+
+    overflow-x: auto;
+
+  }
+
+
+
+  .admin-table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    text-align: left;
+
+    font-size: 0.92rem;
+
+  }
+
+  .admin-table th {
+
+    background: rgba(0,0,0,0.02);
+
+    color: var(--text-dark);
+
+    font-weight: 700;
+
+    padding: 16px 20px;
+
+    border-bottom: 2px solid rgba(0,0,0,0.06);
+
+    text-transform: uppercase;
+
+    font-size: 0.78rem;
+
+    letter-spacing: 0.05em;
+
+  }
+
+  .admin-table td {
+
+    padding: 18px 20px;
+
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+
+    color: var(--text-mid);
+
+    vertical-align: middle;
+
+  }
+
+  .admin-table tr:hover td {
+
+    background: rgba(45,80,22,0.01);
+
+  }
+
+
+
+  /* Badges */
+
+  .badge {
+
+    display: inline-block;
+
+    padding: 4px 10px;
+
+    border-radius: var(--radius-pill);
+
+    font-size: 0.75rem;
+
+    font-weight: 600;
+
+  }
+
+  .badge.tea { background: rgba(45,80,22,0.1); color: var(--green-primary); }
+
+  .badge.spice { background: rgba(200,134,10,0.1); color: var(--amber); }
+
+  .badge.bestseller { background: #fdf3e0; color: #d35400; border: 1px solid rgba(211,84,0,0.2); }
+
+  .badge.admin { background: rgba(52,152,219,0.1); color: #3498db; }
+
+  .badge.user { background: rgba(127,140,141,0.1); color: #7f8c8d; }
+
+
+
+  /* Product Thumbnail */
+
+  .prod-thumb {
+
+    width: 50px;
+
+    height: 50px;
+
+    border-radius: var(--radius-sm);
+
+    object-fit: cover;
+
+    border: 1px solid rgba(0,0,0,0.08);
+
+  }
+
+
+
+  /* Action buttons */
+
+  .action-btn-group {
+
+    display: flex;
+
+    gap: 8px;
+
+  }
+
+  .action-btn {
+
+    background: none;
+
+    border: none;
+
+    cursor: pointer;
+
+    width: 34px;
+
+    height: 34px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition: var(--transition);
+
+    color: var(--text-muted);
+
+  }
+
+  .action-btn.view:hover { background: rgba(52,152,219,0.1); color: #3498db; }
+
+  .action-btn.edit:hover { background: rgba(200,134,10,0.1); color: var(--amber); }
+
+  .action-btn.delete:hover { background: rgba(192,57,43,0.1); color: #c0392b; }
+
+  .action-btn svg { width: 18px; height: 18px; }
+
+
+
+  /* ────── Add Product Form / Header ────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .section-action-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 24px;
+
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+  }
+
+  .section-action-header h2 {
+
+    font-size: 1.4rem;
+
+    color: var(--green-dark);
+
+  }
+
+
+
+  /* ────── Modal popup styles ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .modal-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0,0,0,0.5);
+
+    backdrop-filter: blur(4px);
+
+    z-index: 2000;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 24px;
+
+    animation: fadeInOverlay 0.3s ease;
+
+  }
+
+  .modal-overlay.active { display: flex; }
+
+
+
+  .modal-card {
+
+    background: var(--white);
+
+    border-radius: var(--radius-md);
+
+    box-shadow: var(--shadow-lg);
+
+    width: 100%;
+
+    max-width: 520px;
+
+    padding: 36px;
+
+    position: relative;
+
+    animation: scaleInCard 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  }
+
+
+
+  @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+
+  @keyframes scaleInCard {
+
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+
+    to { opacity: 1; transform: scale(1) translateY(0); }
+
+  }
+
+
+
+  .modal-close {
+
+    position: absolute;
+
+    top: 20px;
+
+    right: 20px;
+
+    background: none;
+
+    border: none;
+
+    font-size: 1.5rem;
+
+    cursor: pointer;
+
+    color: var(--text-muted);
+
+    transition: var(--transition);
+
+  }
+
+  .modal-close:hover { color: var(--text-dark); }
+
+
+
+  .modal-title {
+
+    font-family: 'Playfair Display', serif;
+
+    font-size: 1.6rem;
+
+    color: var(--green-dark);
+
+    margin-bottom: 24px;
+
+  }
+
+
+
+  .modal-form {
+
+    max-height: 65vh;
+
+    overflow-y: auto;
+
+    padding-right: 8px;
+
+  }
+
+  .modal-form::-webkit-scrollbar {
+
+    width: 6px;
+
+  }
+
+  .modal-form::-webkit-scrollbar-track {
+
+    background: rgba(0,0,0,0.02);
+
+    border-radius: 3px;
+
+  }
+
+  .modal-form::-webkit-scrollbar-thumb {
+
+    background: rgba(0,0,0,0.15);
+
+    border-radius: 3px;
+
+  }
+
+  .modal-form::-webkit-scrollbar-thumb:hover {
+
+    background: rgba(0,0,0,0.25);
+
+  }
+
+
+
+  /* Form controls inside Modal */
+
+  .modal-form .form-group {
+
+    margin-bottom: 18px;
+
+  }
+
+  .modal-form label {
+
+    display: block;
+
+    font-size: 0.82rem;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+
+    color: var(--text-mid);
+
+    margin-bottom: 6px;
+
+  }
+
+  .modal-form input,
+
+  .modal-form select,
+
+  .modal-form textarea {
+
+    width: 100%;
+
+    padding: 12px 14px;
+
+    border: 1.5px solid rgba(0,0,0,0.1);
+
+    border-radius: var(--radius-sm);
+
+    font-family: 'Inter', sans-serif;
+
+    font-size: 0.95rem;
+
+    color: var(--text-dark);
+
+    outline: none;
+
+    background: #fff;
+
+    transition: var(--transition);
+
+  }
+
+  .modal-form input:focus,
+
+  .modal-form select:focus,
+
+  .modal-form textarea:focus {
+
+    border-color: var(--green-light);
+
+  }
+
+  .modal-form textarea { resize: vertical; }
+
+
+
+  .checkbox-group {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 8px;
+
+  }
+
+  .checkbox-group input[type="checkbox"] {
+
+    width: 18px;
+
+    height: 18px;
+
+    accent-color: var(--green-primary);
+
+    cursor: pointer;
+
+  }
+
+  .checkbox-group label { margin-bottom: 0; text-transform: none; font-weight: 500; cursor: pointer; }
+
+
+
+  .modal-actions {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 12px;
+
+    margin-top: 28px;
+
+  }
+
+
+
+  /* ────── Detail view style ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+  .detail-row {
+
+    margin-bottom: 16px;
+
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+
+    padding-bottom: 12px;
+
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-label {
+
+    font-size: 0.75rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.05em;
+
+    color: var(--text-muted);
+
+    font-weight: 700;
+
+    margin-bottom: 4px;
+
+  }
+
+  .detail-value {
+
+    font-size: 0.95rem;
+
+    color: var(--text-dark);
+
+    line-height: 1.5;
+
+  }
+
+
+
+  @media (max-width: 900px) {
+
+    .stats-grid { grid-template-columns: 1fr; gap: 16px; }
+
+  }
+
+
+
+  @media (max-width: 768px) {
+
+    .dashboard-container {
+
+      padding: 110px 16px 60px;
+
+    }
+
+    .dashboard-header {
+
+      flex-direction: column;
+
+      align-items: flex-start;
+
+      gap: 16px;
+
+    }
+
+    .dashboard-tabs {
+
+      overflow-x: auto;
+
+      white-space: nowrap;
+
+      padding-bottom: 8px;
+
+      margin-bottom: 24px;
+
+      -webkit-overflow-scrolling: touch;
+
+      gap: 4px;
+
+    }
+
+    .tab-btn {
+
+      flex: 0 0 auto;
+
+      padding: 10px 16px;
+
+      font-size: 0.88rem;
+
+    }
+
+    .card-container {
+
+      padding: 20px 14px;
+
+    }
+
+    .admin-table th {
+
+      padding: 12px 14px;
+
+      font-size: 0.72rem;
+
+    }
+
+    .admin-table td {
+
+      padding: 14px 14px;
+
+      font-size: 0.85rem;
+
+    }
+
+    .modal-card {
+
+      padding: 24px 20px;
+
+      max-height: 90vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+    }
+
+    .modal-actions {
+
+      flex-direction: column;
+
+      gap: 10px;
+
+    }
+
+    .modal-actions .btn {
+
+      width: 100%;
+
+      justify-content: center;
+
+    }
+
+  }
+
+
+
+  /* Cloud Picker File grid */
+
+  .cloud-file-card {
+
+    border: 1.5px solid rgba(0,0,0,0.08);
+
+    border-radius: var(--radius-sm);
+
+    padding: 8px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    position: relative;
+
+    background: #fff;
+
+  }
+
+  .cloud-file-card:hover {
+
+    border-color: var(--green-light);
+
+    transform: translateY(-2px);
+
+    box-shadow: var(--shadow-sm);
+
+  }
+
+  .cloud-file-card.selected {
+
+    border-color: var(--green-primary);
+
+    background: rgba(90,158,53,0.04);
+
+  }
+
+  .cloud-file-card img {
+
+    width: 100%;
+
+    height: 70px;
+
+    object-fit: cover;
+
+    border-radius: 2px;
+
+    margin-bottom: 6px;
+
+    border: 1px solid rgba(0,0,0,0.05);
+
+  }
+
+  .cloud-file-name {
+
+    font-size: 0.72rem;
+
+    font-weight: 600;
+
+    color: var(--text-dark);
+
+    word-break: break-all;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+  }
+
+  .cloud-checkbox {
+
+    position: absolute;
+
+    top: 6px;
+
+    right: 6px;
+
+    width: 16px;
+
+    height: 16px;
+
+    accent-color: var(--green-primary);
+
+  }
+
+
+
+  /* Selected Image Thumbnail Badge in modal */
+
+  .selected-img-badge {
+
+    position: relative;
+
+    width: 60px;
+
+    height: 60px;
+
+    border-radius: var(--radius-sm);
+
+    border: 1px solid rgba(0,0,0,0.1);
+
+    overflow: hidden;
+
+  }
+
+  .selected-img-badge img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+  }
+
+  .selected-img-remove {
+
+    position: absolute;
+
+    top: -2px;
+
+    right: -2px;
+
+    background: #e74c3c;
+
+    color: #fff;
+
+    border: none;
+
+    border-radius: 50%;
+
+    width: 18px;
+
+    height: 18px;
+
+    font-size: 0.75rem;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+
+    z-index: 10;
+
+  }
+
+  .selected-img-remove:hover {
+
+    background: #c0392b;
+
+  }
+
+  /* Custom Select Dropdown for Badge Icon */
+  .custom-select-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .custom-select-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    background: #fff;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+  }
+
+  .custom-select-trigger:hover {
+    border-color: var(--amber);
+  }
+
+  .custom-select-trigger .selected-icon-container {
+    display: flex;
+    align-items: center;
+    color: var(--amber);
+  }
+
+  .custom-select-trigger .selected-icon-container svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .custom-select-trigger .dropdown-chevron {
+    margin-left: auto;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    transition: transform 0.3s ease;
+  }
+
+  .custom-select-wrapper.open .dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  .custom-select-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    z-index: 100;
+    max-height: 240px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .custom-select-wrapper.open .custom-select-options {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .custom-select-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    transition: var(--transition);
+  }
+
+  .custom-select-option:hover {
+    background: rgba(200, 134, 10, 0.08);
+    color: var(--amber);
+  }
+
+  .custom-select-option svg {
+    width: 18px;
+    height: 18px;
+    color: var(--amber);
+  }
+
+</style>
+
+{% endblock %}
+
+
+
+{% block content %}
+
+<main class="dashboard-container">
+
+
+
+  <!-- Header -->
+
+  <header class="dashboard-header">
+
+    <div class="dashboard-title">
+
+      <h1>Admin Dashboard</h1>
+
+      <p>Manage products, carousel slides, categories, and customer orders.</p>
+
+    </div>
+
+    <div style="font-size: 0.9rem; background: rgba(0,0,0,0.04); padding: 8px 18px; border-radius: var(--radius-pill); font-weight: 500;">
+
+      Logged in as: <strong>{{ session.get('user_name', 'Admin') }}</strong>
+
+    </div>
+
+  </header>
+
+
+
+  <!-- Stats Grid -->
+
+  <section class="stats-grid" aria-label="System Statistics">
+
+    <!-- Products -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon products">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><polygon points="12 22.08 12 12 3 6.92 3 17.08 12 22.08"/><polygon points="12 12 21 6.92 21 17.08 12 22.08"/><polygon points="12 2 21 6.92 12 12 3 6.92 12 2"/><line x1="12" y1="22.08" x2="12" y2="12"/><line x1="3" y1="6.92" x2="12" y2="12"/><line x1="21" y1="6.92" x2="12" y2="12"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Products</h3>
+
+        <div class="stat-number">{{ total_products }}</div>
+
+      </div>
+
+    </div>
+
+    <!-- Total Stock -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon stocks">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2.18" ry="2.18"/><rect x="2" y="14" width="20" height="8" rx="2.18" ry="2.18"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Total Stock</h3>
+
+        <div class="stat-number">{{ total_stocks }}</div>
+
+      </div>
+
+    </div>
+
+    <!-- Total Orders -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon pending" style="background: rgba(52, 152, 219, 0.1); color: #3498db;">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Total Orders</h3>
+
+        <div class="stat-number">{{ orders|length }}</div>
+
+      </div>
+
+    </div>
+
+    <!-- Users -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon users">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Registered Users</h3>
+
+        <div class="stat-number">{{ total_users }}</div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- Tab Buttons -->
+
+  <nav class="dashboard-tabs" aria-label="Dashboard navigation tabs">
+
+    <button class="tab-btn active" onclick="switchTab(event, 'orders-tab')">Orders</button>
+
+    <button class="tab-btn" onclick="switchTab(event, 'products-tab')">Products</button>
+
+    <button class="tab-btn" onclick="switchTab(event, 'carousel-tab')">Carousel</button>
+
+    <button class="tab-btn" onclick="switchTab(event, 'categories-tab')">Categories</button>
+
+    <button class="tab-btn" onclick="switchTab(event, 'users-tab')">Users</button>
+
+  </nav>
+
+
+
+  <!-- ────── Tab 1: Enquiries content ────── -->
+
+  <!-- ────── Tab 2: Products content ────── -->
+
+  <section id="products-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Manage Products</h2>
+
+        <button class="btn btn-primary btn-sm" onclick="openAddModal()">&#xff0b; Add New Product</button>
+
+      </div>
+
+
+
+      {% if products %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>Image</th>
+
+              <th>Product Name</th>
+
+              <th>Category</th>
+
+              <th>Price</th>
+
+              <th>Stock</th>
+
+              <th>Unit Size</th>
+
+              <th>Status</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for prod in products %}
+
+            <tr>
+
+              <td>
+
+                <img src="{% if '://' in prod.image_filename %}{{ prod.image_filename }}{% else %}{{ url_for('static', filename='images/' + prod.image_filename) }}{% endif %}" alt="" class="prod-thumb" />
+
+              </td>
+
+              <td><strong><a href="{{ url_for('product_detail', id=prod.id) }}" target="_blank" style="color:inherit; text-decoration:none; border-bottom:1px dashed var(--green-primary);">{{ prod.name }} &#x2197;</a></strong></td>
+
+              <td>
+
+                <span class="badge {{ 'tea' if prod.category.lower() == 'tea' else 'spice' }}">
+
+                  {{ prod.category }}
+
+                </span>
+
+              </td>
+
+              <td><strong>&#x20B9;{{ prod.price }}</strong></td>
+
+              <td>
+
+                {% if prod.stocks > 10 %}
+
+                  <span style="color:#2ecc71; font-weight:600;">{{ prod.stocks }}</span>
+
+                {% elif prod.stocks > 0 %}
+
+                  <span style="color:#e67e22; font-weight:600;">{{ prod.stocks }} (Low)</span>
+
+                {% else %}
+
+                  <span style="color:#e74c3c; font-weight:600; text-transform:uppercase; font-size:0.75rem;">Out of Stock</span>
+
+                {% endif %}
+
+              </td>
+
+              <td>{{ prod.unit }}</td>
+
+              <td>
+
+                {% if prod.is_bestseller %}
+
+                  <span class="badge bestseller">Best Seller</span>
+
+                {% else %}
+
+                  <span style="color:var(--text-muted); font-size:0.85rem;">Normal</span>
+
+                {% endif %}
+
+              </td>
+
+              <td>
+
+                <div class="action-btn-group">
+
+                  <button class="action-btn edit edit-product-btn"
+
+                          data-id="{{ prod.id }}"
+
+                          data-name="{{ prod.name|escape }}"
+
+                          data-category="{{ prod.category|escape }}"
+
+                          data-description="{{ prod.description|escape }}"
+
+                          data-images="{{ prod.images_csv|escape }}"
+
+                          data-unit="{{ prod.unit|escape }}"
+
+                          data-bestseller="{{ prod.is_bestseller }}"
+
+                          data-price="{{ prod.price }}"
+
+                          data-stocks="{{ prod.stocks }}"
+
+                          title="Edit product">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+
+                  </button>
+
+                  <form action="{{ url_for('admin_delete_product', id=prod.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');" style="display:inline;">
+
+                    <button type="submit" class="action-btn delete" title="Delete product">
+
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No products found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ────── Tab 5: Carousel content ────── -->
+
+  <section id="carousel-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Carousel Slides</h2>
+
+        <button class="btn btn-primary btn-sm" onclick="openAddSlideModal()"><i data-lucide="plus"></i> Add New Slide</button>
+
+      </div>
+
+
+
+      {% if carousel_slides %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>Image</th>
+
+              <th>Badge</th>
+
+              <th>Title</th>
+
+              <th>Button</th>
+
+              <th>Order</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for slide in carousel_slides %}
+
+            <tr>
+
+              <td>
+
+                <img src="{% if '://' in slide.image_filename %}{{ slide.image_filename }}{% else %}{{ url_for('static', filename='images/' + slide.image_filename) }}{% endif %}" class="prod-thumb" alt="Slide image" />
+
+              </td>
+
+              <td>
+
+                {% if slide.badge_text %}
+
+                  <span class="badge tea"><i data-lucide="{{ slide.badge_icon or 'leaf' }}" style="width:12px; height:12px; vertical-align:middle; margin-right:4px;"></i>{{ slide.badge_text }}</span>
+
+                {% else %}
+
+                  <span style="color:var(--text-muted); font-style:italic;">None</span>
+
+                {% endif %}
+
+              </td>
+
+              <td><strong>{{ slide.title | replace('\n', ' ') }}</strong></td>
+
+              <td>
+
+                <span class="badge bestseller">{{ slide.button_text }}</span> -> <code style="font-size:0.8rem; color:var(--text-muted);">{{ slide.button_link }}</code>
+
+              </td>
+
+              <td>{{ slide.slide_order }}</td>
+
+              <td>
+
+                <div class="action-btn-group">
+
+                  <button class="action-btn edit edit-slide-btn"
+
+                          data-id="{{ slide.id }}"
+
+                          data-badge-text="{{ slide.badge_text|escape }}"
+
+                          data-badge-icon="{{ slide.badge_icon|escape }}"
+
+                          data-title="{{ slide.title|replace('\n', '\\n')|escape }}"
+
+                          data-description="{{ slide.description|replace('\n', '\\n')|escape }}"
+
+                          data-button-text="{{ slide.button_text|escape }}"
+
+                          data-button-link="{{ slide.button_link|escape }}"
+
+                          data-order="{{ slide.slide_order }}"
+
+                          data-image="{{ slide.image_filename|escape }}"
+
+                          title="Edit slide">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+
+                  </button>
+
+                  <form action="/admin/delete-slide/{{ slide.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this slide?');" style="display:inline;">
+
+                    <button type="submit" class="action-btn delete" title="Delete slide">
+
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No slides found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ────── Tab 6: Categories content ────── -->
+
+  <section id="categories-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Categories</h2>
+
+        <button class="btn btn-primary btn-sm" onclick="openAddCategoryModal()"><i data-lucide="plus"></i> Add New Category</button>
+
+      </div>
+
+
+
+      {% if categories %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>Image</th>
+
+              <th>Name (URL Slug)</th>
+
+              <th>Display Name</th>
+
+              <th>Description</th>
+
+              <th>Order</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for cat in categories %}
+
+            <tr>
+
+              <td>
+
+                <img src="{% if '://' in cat.image_filename %}{{ cat.image_filename }}{% else %}{{ url_for('static', filename='images/' + cat.image_filename) }}{% endif %}" class="prod-thumb" alt="Category image" />
+
+              </td>
+
+              <td><code style="font-size:0.85rem; background:rgba(0,0,0,0.04); padding:2px 6px; border-radius:4px;">{{ cat.name }}</code></td>
+
+              <td><strong>{{ cat.display_name }}</strong></td>
+
+              <td style="max-width:320px; font-size:0.85rem; line-height:1.4;">{{ cat.description }}</td>
+
+              <td>{{ cat.display_order }}</td>
+
+              <td>
+
+                <div class="action-btn-group">
+
+                  <button class="action-btn edit edit-category-btn"
+
+                          data-id="{{ cat.id }}"
+
+                          data-name="{{ cat.name|escape }}"
+
+                          data-display-name="{{ cat.display_name|escape }}"
+
+                          data-description="{{ cat.description|escape }}"
+
+                          data-order="{{ cat.display_order }}"
+
+                          data-image="{{ cat.image_filename|escape }}"
+
+                          title="Edit category">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+
+                  </button>
+
+                  <form action="/admin/delete-category/{{ cat.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this category? (Note: Products in this category will not be deleted, but they will no longer be filterable)');" style="display:inline;">
+
+                    <button type="submit" class="action-btn delete" title="Delete category">
+
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No categories found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ────── Tab 3: Users content ────── -->
+
+  <section id="users-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Registered Users</h2>
+
+      </div>
+
+
+
+      {% if users %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>ID</th>
+
+              <th>Full Name</th>
+
+              <th>Email</th>
+
+              <th>Role</th>
+
+              <th>Date Joined</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for usr in users %}
+
+            <tr>
+
+              <td>#{{ usr.id }}</td>
+
+              <td><strong>{{ usr.full_name }}</strong></td>
+
+              <td>{{ usr.email }}</td>
+
+              <td>
+
+                <span class="badge {{ 'admin' if usr.is_admin else 'user' }}">
+
+                  {{ 'Administrator' if usr.is_admin else 'Customer' }}
+
+                </span>
+
+              </td>
+
+              <td>{{ usr.created_at.split()[0] if usr.created_at else '' }}</td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No users found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ────── Tab 4: Orders content ────── -->
+
+  <section id="orders-tab" class="tab-content active">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Customer Orders</h2>
+
+      </div>
+
+
+
+      <div class="table-wrapper" id="admin-orders-table-wrapper" style="display:{% if orders %}block{% else %}none{% endif %};">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>Order ID</th>
+
+              <th>Customer</th>
+
+              <th>Items Ordered</th>
+
+              <th>Total Amount</th>
+
+              <th>Shipping Address</th>
+
+              <th>Status</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody id="admin-orders-tbody">
+
+            {% for ord in orders %}
+
+            <tr id="order-row-{{ ord.id }}">
+
+              <td><strong>{{ ord.order_number if ord.order_number else '#' ~ ord.id }}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">{{ ord.created_at.split()[0] if ord.created_at else '' }}</span></td>
+
+              <td><strong>{{ ord.user_name }}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">{{ ord.user_email }}</span></td>
+
+              <td>
+
+                <div style="font-size:0.85rem; line-height:1.4;">
+
+                  {% for item in ord['items'] %}
+
+                    &bull; {{ item.product_name }} ({{ item.quantity }}x)<br>
+
+                  {% endfor %}
+
+                </div>
+
+              </td>
+
+              <td><strong>&#x20B9;{{ ord.total_amount }}</strong></td>
+
+              <td style="max-width:200px; font-size:0.85rem; line-height:1.4;">
+
+                {{ ord.shipping_address }}<br>
+
+                {{ ord.city }}, {{ ord.state }} - {{ ord.zip_code }}
+
+              </td>
+
+              <td>
+
+                <span class="badge {{ ord.status.lower() }}" id="order-status-badge-{{ ord.id }}" style="background:
+
+                  {% if ord.status == 'Processing' %}rgba(52,152,219,0.1); color:#3498db;
+
+                  {% elif ord.status == 'Shipped' %}rgba(230,126,34,0.1); color:#e67e22;
+
+                  {% elif ord.status == 'Delivered' %}rgba(46,204,113,0.1); color:#2ecc71;
+
+                  {% else %}rgba(231,76,60,0.1); color:#e74c3c;{% endif %}; font-weight:600;">
+
+                  {{ ord.status }}
+
+                </span>
+
+              </td>
+
+              <td>
+
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+
+                  <form action="{{ url_for('admin_update_order_status', id=ord.id) }}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
+
+                    <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, {{ ord.id }})">
+
+                      <option value="Processing" {% if ord.status == 'Processing' %}selected{% endif %}>Processing</option>
+
+                      <option value="Shipped" {% if ord.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+
+                      <option value="Delivered" {% if ord.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+
+                      <option value="Cancelled" {% if ord.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+
+                    </select>
+
+                  </form>
+
+                  <a href="{{ url_for('admin_order_detail', id=ord.id) }}"
+
+                     title="View Order Details"
+
+                     style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; background:rgba(90,158,53,0.1); color:var(--green-primary); border:1px solid rgba(90,158,53,0.2); text-decoration:none; transition:background 0.2s;"
+
+                     onmouseover="this.style.background='rgba(90,158,53,0.2)'" onmouseout="this.style.background='rgba(90,158,53,0.1)'">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+
+                  </a>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      <div id="no-orders-msg" style="display:{% if orders %}none{% else %}block{% endif %}; text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No orders found.
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: ADD/EDIT PRODUCT
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="product-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('product-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="prod-modal-title">Add New Product</h2>
+
+    
+
+    <form class="modal-form" id="prod-modal-form" method="POST" action="" enctype="multipart/form-data">
+
+      <!-- Name -->
+
+      <div class="form-group">
+
+        <label for="prod-name">Product Name *</label>
+
+        <input type="text" id="prod-name" name="name" required placeholder="e.g. Cardamom Powder" />
+
+      </div>
+
+      
+
+      <!-- Category & Unit -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="prod-category">Category *</label>
+
+          <select id="prod-category" name="category" required>
+
+            {% for cat in categories %}
+
+              <option value="{{ cat.name }}">{{ cat.display_name }}</option>
+
+            {% endfor %}
+
+          </select>
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="prod-unit">Unit Size *</label>
+
+          <input type="text" id="prod-unit" name="unit" required placeholder="e.g. 200g, 1kg" />
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Price & Stocks -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="prod-price">Price (&#x20B9;) *</label>
+
+          <input type="number" id="prod-price" name="price" required step="0.01" min="0" placeholder="e.g. 150.00" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="prod-stocks">Stocks *</label>
+
+          <input type="number" id="prod-stocks" name="stocks" required min="0" placeholder="e.g. 100" />
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Image Manager -->
+
+      <div class="form-group">
+
+        <label>Product Images *</label>
+
+        
+
+        <!-- Tab buttons for upload source -->
+
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+
+          <button type="button" class="btn btn-outline btn-sm active" id="btn-tab-local" onclick="setImageTab('local')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="laptop" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Local Files</button>
+
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tab-drive" onclick="setImageTab('drive')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="hard-drive" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Google Drive</button>
+
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tab-onedrive" onclick="setImageTab('onedrive')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="cloud" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> OneDrive</button>
+
+        </div>
+
+
+
+        <!-- Local upload input -->
+
+        <div id="tab-input-local" style="display:block;">
+
+          <input type="file" id="prod-local-images" name="local_images" multiple accept="image/*" style="display:none;" onchange="handleLocalFiles(this.files)" />
+
+          <button type="button" class="btn btn-outline" style="width:100%; border-style:dashed; border-color:var(--green-primary); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:8px;" onclick="document.getElementById('prod-local-images').click()">
+
+            <i data-lucide="upload-cloud" style="width:28px; height:28px; color:var(--green-primary)"></i>
+
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark);">Choose Local Files</span>
+
+            <span style="font-size:0.75rem; color:var(--text-muted);">PNG, JPG, JPEG, WEBP (multiple)</span>
+
+          </button>
+
+        </div>
+
+
+
+        <!-- Google Drive button -->
+
+        <div id="tab-input-drive" style="display:none;">
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+
+            <div style="display:flex; gap:8px;">
+
+              <input type="text" id="gdrive-paste-url" placeholder="Paste shared Google Drive file URL here..." style="flex:1; padding:10px; border:1px solid rgba(0,0,0,0.15); border-radius:4px; font-size:0.85rem;" />
+
+              <button type="button" class="btn btn-primary" onclick="resolveGoogleDriveUrl()" style="padding:10px 16px; font-size:0.85rem; height:fit-content; align-self:center;">Resolve</button>
+
+            </div>
+
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR</div>
+
+            <button type="button" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; padding:12px; gap:8px;" onclick="openGooglePickerAPI()">
+
+              <i data-lucide="hard-drive" style="width:20px; height:20px; color:#0F9D58"></i>
+
+              Browse via Google Drive API
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- OneDrive button -->
+
+        <div id="tab-input-onedrive" style="display:none;">
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+
+            <div style="display:flex; gap:8px;">
+
+              <input type="text" id="onedrive-paste-url" placeholder="Paste shared OneDrive link (1drv.ms or live.com)..." style="flex:1; padding:10px; border:1px solid rgba(0,0,0,0.15); border-radius:4px; font-size:0.85rem;" />
+
+              <button type="button" class="btn btn-primary" onclick="resolveOneDriveUrl()" style="padding:10px 16px; font-size:0.85rem; height:fit-content; align-self:center;">Resolve</button>
+
+            </div>
+
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR</div>
+
+            <button type="button" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; padding:12px; gap:8px;" onclick="openOneDrivePickerSDK()">
+
+              <i data-lucide="cloud" style="width:20px; height:20px; color:#0078d4"></i>
+
+              Browse via OneDrive SDK
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- Selected / Current Images Gallery -->
+
+        <div style="margin-top:16px;">
+
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">Selected Images</div>
+
+          <div id="selected-images-gallery" style="display:flex; flex-wrap:wrap; gap:8px; min-height:50px; padding:8px; border:1px dashed rgba(0,0,0,0.1); border-radius:var(--radius-sm); background:rgba(0,0,0,0.01);">
+
+            <div style="color:var(--text-muted); font-size:0.8rem; margin:auto; font-style:italic;" id="gallery-empty-msg">No images selected yet</div>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- Hidden input for remote/manually set filenames -->
+
+        <input type="hidden" id="prod-remote-images" name="remote_images" />
+
+        
+
+        <!-- Keep original images field hidden for compatibility -->
+
+        <input type="hidden" id="prod-image" name="images" />
+
+      </div>
+
+
+
+      <!-- Description -->
+
+      <div class="form-group">
+
+        <label for="prod-description">Description</label>
+
+        <textarea id="prod-description" name="description" rows="3" placeholder="Describe the product details, source, flavor profile..."></textarea>
+
+      </div>
+
+
+
+      <!-- Bestseller checkbox -->
+
+      <div class="checkbox-group">
+
+        <input type="checkbox" id="prod-bestseller" name="is_bestseller" value="1" />
+
+        <label for="prod-bestseller">Mark as Best Seller</label>
+
+      </div>
+
+
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('product-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm" id="prod-submit-btn">
+
+          <span>Save Product</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: CLOUD DRIVE FILE PICKER
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="cloud-picker-modal" class="modal-overlay">
+
+  <div class="modal-card" style="max-width: 650px;">
+
+    <button type="button" class="modal-close" onclick="closeModal('cloud-picker-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="cloud-picker-title">Select from Google Drive</h2>
+
+    
+
+    <div style="display:flex; gap:16px; margin-bottom:16px;">
+
+      <!-- Sidebar locations -->
+
+      <div style="width:140px; border-right:1px solid rgba(0,0,0,0.08); padding-right:12px; display:flex; flex-direction:column; gap:8px;">
+
+        <div style="font-weight:700; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Locations</div>
+
+        <button type="button" class="btn btn-sm" style="text-align:left; justify-content:flex-start; width:100%; font-size:0.82rem; background:rgba(0,0,0,0.04);" id="cloud-sidebar-root"><i data-lucide="folder" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> My Drive</button>
+
+        <button type="button" class="btn btn-sm" style="text-align:left; justify-content:flex-start; width:100%; font-size:0.82rem; background:none; color:var(--text-muted);" disabled><i data-lucide="users" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> Shared with me</button>
+
+        <button type="button" class="btn btn-sm" style="text-align:left; justify-content:flex-start; width:100%; font-size:0.82rem; background:none; color:var(--text-muted);" disabled><i data-lucide="clock" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> Recent</button>
+
+      </div>
+
+
+
+      <!-- File explorer grid -->
+
+      <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.02); padding:6px 12px; border-radius:4px; font-size:0.82rem;">
+
+          <span style="color:var(--text-muted);" id="cloud-path">My Drive > Product Images</span>
+
+          <span style="font-weight:600; color:var(--green-primary);" id="selected-cloud-count">0 items selected</span>
+
+        </div>
+
+
+
+        <div id="cloud-file-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-height:260px; overflow-y:auto; padding:4px;">
+
+          <!-- Grid items filled by JS -->
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- Actions -->
+
+    <div class="modal-actions" style="border-top:1px solid rgba(0,0,0,0.06); padding-top:16px; margin-top:16px;">
+
+      <button class="btn btn-outline btn-sm" onclick="closeModal('cloud-picker-modal')">Cancel</button>
+
+      <button class="btn btn-primary btn-sm" onclick="confirmCloudSelection()">Select Images</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: ADD/EDIT CAROUSEL SLIDE
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="slide-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('slide-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="slide-modal-title">Add Carousel Slide</h2>
+
+    
+
+    <form class="modal-form" id="slide-modal-form" method="POST" action="" enctype="multipart/form-data" spellcheck="false">
+
+      <!-- Badge Text & Icon -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="slide-badge-text">Badge Text</label>
+
+          <input type="text" id="slide-badge-text" name="badge_text" placeholder="e.g. Direct from the Source" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="slide-badge-icon">Badge Icon (Lucide)</label>
+
+          <input type="hidden" id="slide-badge-icon" name="badge_icon" value="leaf" />
+          <div class="custom-select-wrapper">
+            <div class="custom-select-trigger" onclick="toggleCustomSelect(event)">
+              <span class="selected-icon-container"><i data-lucide="leaf"></i></span>
+              <span class="selected-text-container">Leaf</span>
+              <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+            </div>
+            <div class="custom-select-options">
+              <div class="custom-select-option" data-value="leaf" onclick="selectCustomOption(this)">
+                <i data-lucide="leaf"></i> Leaf
+              </div>
+              <div class="custom-select-option" data-value="star" onclick="selectCustomOption(this)">
+                <i data-lucide="star"></i> Star
+              </div>
+              <div class="custom-select-option" data-value="sparkles" onclick="selectCustomOption(this)">
+                <i data-lucide="sparkles"></i> Sparkles
+              </div>
+              <div class="custom-select-option" data-value="coffee" onclick="selectCustomOption(this)">
+                <i data-lucide="coffee"></i> Coffee
+              </div>
+              <div class="custom-select-option" data-value="package" onclick="selectCustomOption(this)">
+                <i data-lucide="package"></i> Package
+              </div>
+              <div class="custom-select-option" data-value="globe" onclick="selectCustomOption(this)">
+                <i data-lucide="globe"></i> Globe
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Title -->
+
+      <div class="form-group">
+
+        <label for="slide-title">Slide Title *</label>
+
+        <textarea id="slide-title" name="title" rows="2" required placeholder="Use \n for line breaks, e.g. Nature's Finest\nTea & Spices"></textarea>
+
+      </div>
+
+
+
+      <!-- Description -->
+
+      <div class="form-group">
+
+        <label for="slide-description">Description</label>
+
+        <textarea id="slide-description" name="description" rows="3" placeholder="Brief subtitle text under the main heading..."></textarea>
+
+      </div>
+
+
+
+      <!-- Button Text & Button Link -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="slide-button-text">Button Text</label>
+
+          <input type="text" id="slide-button-text" name="button_text" placeholder="e.g. Explore Products" />
+
+        </div>
+
+        <div class="form-group">
+          <label for="slide-button-link">Button Link</label>
+          <select id="slide-button-link" name="button_link" spellcheck="false">
+            <option value="/products">All Products (/products)</option>
+            <option value="/products?category=Tea">Tea Products (/products?category=Tea)</option>
+            <option value="/products?category=Spice">Spice Products (/products?category=Spice)</option>
+            <option value="/about">About Us (/about)</option>
+            <option value="/contact">Contact Us (/contact)</option>
+            <option value="/cart">Cart Page (/cart)</option>
+            <option value="/">Home Page (/)</option>
+          </select>
+        </div>
+
+      </div>
+
+
+
+      <!-- Order -->
+
+      <div class="form-group">
+
+        <label for="slide-order">Display Order</label>
+
+        <input type="number" id="slide-order" name="slide_order" min="0" placeholder="e.g. 0, 1, 2" />
+
+      </div>
+
+
+
+      <!-- Image selection -->
+
+      <div class="form-group">
+
+        <label>Slide Image</label>
+
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Upload local file or input remote URL below.</div>
+
+        <input type="file" id="slide-local-images" name="local_images" accept="image/*" style="padding:4px; font-size:0.85rem;" />
+
+        <div style="margin:8px 0; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-align:center;">OR</div>
+
+        <input type="text" id="slide-remote-images" name="remote_images" placeholder="URL or filename (e.g. hero_tea_garden.png)" style="font-size:0.85rem; padding:8px 10px;" />
+
+      </div>
+
+
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('slide-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+
+          <span>Save Slide</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: ADD/EDIT CATEGORY
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="category-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('category-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="cat-modal-title">Add Category</h2>
+
+    
+
+    <form class="modal-form" id="cat-modal-form" method="POST" action="" enctype="multipart/form-data">
+
+      <!-- Technical Name & Display Name -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="cat-name">Category Name (Technical Slug) *</label>
+
+          <input type="text" id="cat-name" name="name" required placeholder="e.g. Tea, Spice (Single-word)" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="cat-display-name">Display Name *</label>
+
+          <input type="text" id="cat-display-name" name="display_name" required placeholder="e.g. Premium Teas" />
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Description -->
+
+      <div class="form-group">
+
+        <label for="cat-description">Description</label>
+
+        <textarea id="cat-description" name="description" rows="3" placeholder="Brief summary of category products..."></textarea>
+
+      </div>
+
+
+
+      <!-- Order -->
+
+      <div class="form-group">
+
+        <label for="cat-order">Display Order</label>
+
+        <input type="number" id="cat-order" name="display_order" min="0" placeholder="e.g. 0, 1, 2" />
+
+      </div>
+
+
+
+      <!-- Image selection -->
+
+      <div class="form-group">
+
+        <label>Category Image</label>
+
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Upload local file or input remote URL below.</div>
+
+        <input type="file" id="cat-local-images" name="local_images" accept="image/*" style="padding:4px; font-size:0.85rem;" />
+
+        <div style="margin:8px 0; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-align:center;">OR</div>
+
+        <input type="text" id="cat-remote-images" name="remote_images" placeholder="URL or filename (e.g. Tea.jpg)" style="font-size:0.85rem; padding:8px 10px;" />
+
+      </div>
+
+
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('category-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+
+          <span>Save Category</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<!-- Google Identity Services, Google APIs Client, and Microsoft OneDrive Live SDK -->
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<script src="https://apis.google.com/js/api.js" async defer></script>
+
+<script src="https://js.live.net/v7.2/OneDrive.js" async defer></script>
+
+<script>
+
+  // Google Picker Configurations
+
+  const GOOGLE_CLIENT_ID = "{{ google_client_id }}";
+
+  const GOOGLE_API_KEY = ""; // Configure if Picker requires Developer Key
+
+  
+
+  // Microsoft OneDrive Client ID
+
+  const ONEDRIVE_CLIENT_ID = "";
+
+  // Tabs switcher logic
+
+  function switchTab(evt, tabId) {
+
+    // Hide all contents
+
+    document.querySelectorAll('.tab-content').forEach(content => {
+
+      content.classList.remove('active');
+
+    });
+
+    
+
+    // Remove active state from all buttons
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+
+      btn.classList.remove('active');
+
+    });
+
+
+
+    // Show current tab and activate button
+
+    const targetTab = document.getElementById(tabId);
+
+    if (targetTab) targetTab.classList.add('active');
+
+
+
+    if (evt && evt.currentTarget) {
+
+      evt.currentTarget.classList.add('active');
+
+    } else {
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => {
+
+        const onc = b.getAttribute('onclick');
+
+        return onc && onc.includes(tabId);
+
+      });
+
+      if (btn) btn.classList.add('active');
+
+    }
+
+    localStorage.setItem('admin_active_tab', tabId);
+
+  }
+
+
+
+  // Modals management
+
+  function openModal(id) {
+
+    document.getElementById(id).classList.add('active');
+
+  }
+
+
+
+  function closeModal(id) {
+
+    document.getElementById(id).classList.remove('active');
+
+  }
+
+
+
+
+
+
+
+  // List of currently selected/uploaded images (mix of local blobs and remote/already seeded URLs)
+
+  let activeImages = [];
+
+
+
+  function setImageTab(tab) {
+
+    document.getElementById('tab-input-local').style.display = tab === 'local' ? 'block' : 'none';
+
+    document.getElementById('tab-input-drive').style.display = tab === 'drive' ? 'block' : 'none';
+
+    document.getElementById('tab-input-onedrive').style.display = tab === 'onedrive' ? 'block' : 'none';
+
+    
+
+    document.getElementById('btn-tab-local').classList.toggle('active', tab === 'local');
+
+    document.getElementById('btn-tab-drive').classList.toggle('active', tab === 'drive');
+
+    document.getElementById('btn-tab-onedrive').classList.toggle('active', tab === 'onedrive');
+
+  }
+
+
+
+  // Previews local uploaded files
+
+  function handleLocalFiles(files) {
+
+    for (let i = 0; i < files.length; i++) {
+
+      const file = files[i];
+
+      const objectUrl = URL.createObjectURL(file);
+
+      activeImages.push({
+
+        type: 'local',
+
+        name: file.name,
+
+        url: objectUrl
+
+      });
+
+    }
+
+    updateSelectedImagesGallery();
+
+  }
+
+
+
+  // Real Google Picker & OneDrive SDK Integrations
+
+  let oauthToken = null;
+
+
+
+  function openGooglePickerAPI() {
+
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("your-google-client-id")) {
+
+      alert("Please configure a valid GOOGLE_CLIENT_ID in your .env file to use the Google Picker API.");
+
+      return;
+
+    }
+
+    
+
+    try {
+
+      const client = google.accounts.oauth2.initTokenClient({
+
+        client_id: GOOGLE_CLIENT_ID,
+
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
+
+        callback: (tokenResponse) => {
+
+          if (tokenResponse && tokenResponse.access_token) {
+
+            oauthToken = tokenResponse.access_token;
+
+            loadGooglePicker(oauthToken);
+
+          }
+
+        },
+
+      });
+
+      client.requestAccessToken();
+
+    } catch (e) {
+
+      console.error(e);
+
+      alert("Failed to initialize Google Auth Client. Please make sure Google Identity Services SDK is loaded and GOOGLE_CLIENT_ID is correct.");
+
+    }
+
+  }
+
+
+
+  function loadGooglePicker(token) {
+
+    gapi.load('picker', {
+
+      callback: () => {
+
+        const view = new google.picker.View(google.picker.ViewId.DOCS);
+
+        view.setMimeTypes('image/png,image/jpeg,image/jpg,image/webp');
+
+        
+
+        const picker = new google.picker.PickerBuilder()
+
+          .addView(view)
+
+          .setOAuthToken(token)
+
+          .setDeveloperKey(GOOGLE_API_KEY)
+
+          .setCallback(googlePickerCallback)
+
+          .build();
+
+        picker.setVisible(true);
+
+      }
+
+    });
+
+  }
+
+
+
+  function googlePickerCallback(data) {
+
+    if (data.action == google.picker.Action.PICKED) {
+
+      const doc = data.docs[0];
+
+      const name = doc.name;
+
+      const fileId = doc.id;
+
+      const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+
+      
+
+      if (!activeImages.some(img => img.name === name)) {
+
+        activeImages.push({
+
+          type: 'remote',
+
+          name: name,
+
+          url: directUrl
+
+        });
+
+        updateSelectedImagesGallery();
+
+      }
+
+    }
+
+  }
+
+
+
+  function openOneDrivePickerSDK() {
+
+    const odOptions = {
+
+      clientId: ONEDRIVE_CLIENT_ID || "00000000-0000-0000-0000-000000000000",
+
+      action: "share",
+
+      multiSelect: true,
+
+      openInNewWindow: true,
+
+      advanced: {
+
+        redirectUri: window.location.origin + "/admin/dashboard"
+
+      },
+
+      success: function(files) {
+
+        if (files && files.value) {
+
+          files.value.forEach(file => {
+
+            const name = file.name;
+
+            const embedUrl = file.permissions && file.permissions[0] && file.permissions[0].link 
+
+              ? file.permissions[0].link.webUrl 
+
+              : file.webUrl;
+
+            
+
+            let directUrl = embedUrl;
+
+            if (embedUrl.includes("redir")) {
+
+              directUrl = embedUrl.replace("redir", "embed");
+
+            }
+
+            
+
+            if (!activeImages.some(img => img.name === name)) {
+
+              activeImages.push({
+
+                type: 'remote',
+
+                name: name,
+
+                url: directUrl
+
+              });
+
+            }
+
+          });
+
+          updateSelectedImagesGallery();
+
+        }
+
+      },
+
+      cancel: function() {
+
+        console.log("OneDrive picker cancelled");
+
+      },
+
+      error: function(e) {
+
+        console.error("OneDrive picker error", e);
+
+        alert("OneDrive Picker SDK requires a valid Client ID configured. You can paste the direct shared URL instead!");
+
+      }
+
+    };
+
+    
+
+    if (typeof OneDrive !== "undefined") {
+
+      OneDrive.open(odOptions);
+
+    } else {
+
+      alert("OneDrive SDK is still loading or blocked. Please paste the direct sharing link below instead!");
+
+    }
+
+  }
+
+
+
+  // Paste URL Resolvers
+
+  function resolveGoogleDriveUrl() {
+
+    const input = document.getElementById('gdrive-paste-url');
+
+    const url = input.value.trim();
+
+    if (!url) {
+
+      alert("Please paste a Google Drive link first.");
+
+      return;
+
+    }
+
+    
+
+    const match = url.match(/(?:https?:\/\/)?drive\.google\.com\/(?:file\/d\/|open\?id=)([^/?\s&]+)/);
+
+    if (match && match[1]) {
+
+      const fileId = match[1];
+
+      const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+
+      const name = `gdrive_${fileId.substring(0, 8)}.jpg`;
+
+      
+
+      if (!activeImages.some(img => img.name === name)) {
+
+        activeImages.push({
+
+          type: 'remote',
+
+          name: name,
+
+          url: directUrl
+
+        });
+
+        updateSelectedImagesGallery();
+
+        input.value = '';
+
+        alert("Google Drive sharing link successfully resolved!");
+
+      } else {
+
+        alert("This image is already added.");
+
+      }
+
+    } else {
+
+      alert("Invalid Google Drive URL. Format must include 'file/d/FILE_ID' or 'open?id=FILE_ID'.");
+
+    }
+
+  }
+
+
+
+  function resolveOneDriveUrl() {
+
+    const input = document.getElementById('onedrive-paste-url');
+
+    const url = input.value.trim();
+
+    if (!url) {
+
+      alert("Please paste a OneDrive link first.");
+
+      return;
+
+    }
+
+    
+
+    fetch('/api/resolve-onedrive', {
+
+      method: 'POST',
+
+      headers: {
+
+        'Content-Type': 'application/json'
+
+      },
+
+      body: JSON.stringify({ url: url })
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+      if (data.success && data.resolved_url) {
+
+        const directUrl = data.resolved_url;
+
+        const name = `onedrive_${Math.random().toString(36).substring(2, 10)}.jpg`;
+
+        
+
+        if (!activeImages.some(img => img.name === name)) {
+
+          activeImages.push({
+
+            type: 'remote',
+
+            name: name,
+
+            url: directUrl
+
+          });
+
+          updateSelectedImagesGallery();
+
+          input.value = '';
+
+          alert("OneDrive sharing link successfully resolved!");
+
+        } else {
+
+          alert("This image is already added.");
+
+        }
+
+      } else {
+
+        alert("Error resolving OneDrive URL: " + (data.error || "Unknown error"));
+
+      }
+
+    })
+
+    .catch(err => {
+
+      console.error(err);
+
+      alert("Failed to resolve OneDrive URL.");
+
+    });
+
+  }
+
+
+
+  function removeImageFromGallery(index) {
+
+    activeImages.splice(index, 1);
+
+    updateSelectedImagesGallery();
+
+  }
+
+
+
+  function updateSelectedImagesGallery() {
+
+    const gallery = document.getElementById('selected-images-gallery');
+
+    gallery.innerHTML = '';
+
+    
+
+    if (activeImages.length === 0) {
+
+      gallery.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; margin:auto; font-style:italic;" id="gallery-empty-msg">No images selected yet</div>';
+
+      document.getElementById('prod-remote-images').value = '';
+
+      document.getElementById('prod-image').value = '';
+
+      return;
+
+    }
+
+    
+
+    activeImages.forEach((img, index) => {
+
+      const card = document.createElement('div');
+
+      card.className = 'selected-img-badge';
+
+      
+
+      let imgSrc = img.url;
+
+      // If it's a local filename (not url / blob), resolve from static folder
+
+      if (img.type === 'remote' && !img.url.startsWith('http') && !img.url.startsWith('blob')) {
+
+        imgSrc = "/static/images/" + img.url;
+
+      }
+
+      
+
+      card.innerHTML = `
+
+        <button type="button" class="selected-img-remove" onclick="removeImageFromGallery(${index})">&times;</button>
+
+        <img src="${imgSrc}" alt="${img.name}" />
+
+      `;
+
+      
+
+      gallery.appendChild(card);
+
+    });
+
+    
+
+    // Sync to hidden input
+
+    const remoteList = activeImages
+
+      .filter(img => img.type === 'remote')
+
+      .map(img => img.url);
+
+    
+
+    document.getElementById('prod-remote-images').value = remoteList.join(',');
+
+    document.getElementById('prod-image').value = remoteList.join(',');
+
+  }
+
+
+
+  // Open add product modal
+
+  function openAddModal() {
+
+    document.getElementById('prod-modal-title').textContent = 'Add New Product';
+
+    document.getElementById('prod-modal-form').action = "{{ url_for('admin_add_product') }}";
+
+    
+
+    // Clear inputs
+
+    document.getElementById('prod-name').value = '';
+
+    document.getElementById('prod-category').value = 'Tea';
+
+    document.getElementById('prod-unit').value = '100g';
+
+    document.getElementById('prod-price').value = '0.00';
+
+    document.getElementById('prod-stocks').value = '0';
+
+    document.getElementById('prod-remote-images').value = '';
+
+    document.getElementById('prod-image').value = '';
+
+    document.getElementById('prod-local-images').value = '';
+
+    document.getElementById('prod-description').value = '';
+
+    document.getElementById('prod-bestseller').checked = false;
+
+    
+
+    activeImages = [];
+
+    updateSelectedImagesGallery();
+
+    setImageTab('local');
+
+    
+
+    openModal('product-modal');
+
+  }
+
+
+
+  // Open edit product modal
+
+  function openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks) {
+
+    document.getElementById('prod-modal-title').textContent = 'Edit Product';
+
+    document.getElementById('prod-modal-form').action = "/admin/edit-product/" + id;
+
+    
+
+    // Fill inputs
+
+    document.getElementById('prod-name').value = name;
+
+    document.getElementById('prod-category').value = category;
+
+    document.getElementById('prod-unit').value = unit;
+
+    document.getElementById('prod-price').value = price;
+
+    document.getElementById('prod-stocks').value = stocks;
+
+    document.getElementById('prod-description').value = description;
+
+    document.getElementById('prod-bestseller').checked = isBestseller === 1 || isBestseller === true;
+
+    document.getElementById('prod-local-images').value = '';
+
+    
+
+    // Load existing images
+
+    activeImages = [];
+
+    if (imagesCsv) {
+
+      imagesCsv.split(',').forEach(img => {
+
+        const trimmed = img.trim();
+
+        if (trimmed) {
+
+          activeImages.push({
+
+            type: 'remote',
+
+            name: trimmed,
+
+            url: trimmed
+
+          });
+
+        }
+
+      });
+
+    }
+
+    updateSelectedImagesGallery();
+
+    setImageTab('local');
+
+    
+
+    openModal('product-modal');
+
+  }
+
+
+
+  // Custom Select helper for Slide Badge Icon
+  function setCustomSlideBadgeIcon(icon) {
+    const input = document.getElementById('slide-badge-icon');
+    if (input) input.value = icon;
+    const trigger = document.querySelector('.custom-select-trigger');
+    if (trigger) {
+      const capText = icon.charAt(0).toUpperCase() + icon.slice(1);
+      trigger.querySelector('.selected-icon-container').innerHTML = `<i data-lucide="${icon}"></i>`;
+      trigger.querySelector('.selected-text-container').textContent = capText;
+      lucide.createIcons();
+    }
+  }
+
+  function toggleCustomSelect(e) {
+    if (e) { e.stopPropagation(); }
+    const wrapper = document.querySelector('.custom-select-wrapper');
+    if (wrapper) wrapper.classList.toggle('open');
+  }
+
+  function selectCustomOption(element) {
+    const value = element.getAttribute('data-value');
+    setCustomSlideBadgeIcon(value);
+    const wrapper = document.querySelector('.custom-select-wrapper');
+    if (wrapper) wrapper.classList.remove('open');
+  }
+
+  // Close custom select when clicking outside
+  document.addEventListener('click', function(e) {
+    const wrapper = document.querySelector('.custom-select-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      wrapper.classList.remove('open');
+    }
+  });
+
+  // Open Add Slide Modal
+  function openAddSlideModal() {
+    document.getElementById('slide-modal-title').textContent = 'Add Carousel Slide';
+    document.getElementById('slide-modal-form').action = "{{ url_for('admin_add_slide') }}";
+    
+    // Clear inputs
+    document.getElementById('slide-badge-text').value = '';
+    setCustomSlideBadgeIcon('leaf');
+    document.getElementById('slide-title').value = '';
+    document.getElementById('slide-description').value = '';
+    document.getElementById('slide-button-text').value = 'Explore Products';
+    document.getElementById('slide-button-link').value = '/products';
+    document.getElementById('slide-order').value = '0';
+    document.getElementById('slide-local-images').value = '';
+    document.getElementById('slide-remote-images').value = '';
+    
+    openModal('slide-modal');
+  }
+
+  // Open Edit Slide Modal
+  function openEditSlideModal(id, badgeText, badgeIcon, title, description, buttonText, buttonLink, order, imageFilename) {
+    document.getElementById('slide-modal-title').textContent = 'Edit Carousel Slide';
+    document.getElementById('slide-modal-form').action = "/admin/edit-slide/" + id;
+    
+    // Fill inputs
+    document.getElementById('slide-badge-text').value = badgeText || '';
+    setCustomSlideBadgeIcon(badgeIcon || 'leaf');
+    document.getElementById('slide-title').value = title || '';
+    document.getElementById('slide-description').value = description || '';
+    document.getElementById('slide-button-text').value = buttonText || 'Explore Products';
+    document.getElementById('slide-button-link').value = buttonLink || '/products';
+    document.getElementById('slide-order').value = order !== undefined ? order : '0';
+    document.getElementById('slide-local-images').value = '';
+    document.getElementById('slide-remote-images').value = imageFilename || '';
+    
+    openModal('slide-modal');
+  }
+
+
+
+  // Open Add Category Modal
+
+  function openAddCategoryModal() {
+
+    document.getElementById('cat-modal-title').textContent = 'Add Category';
+
+    document.getElementById('cat-modal-form').action = "{{ url_for('admin_add_category') }}";
+
+    
+
+    // Clear inputs
+
+    document.getElementById('cat-name').value = '';
+
+    document.getElementById('cat-display-name').value = '';
+
+    document.getElementById('cat-description').value = '';
+
+    document.getElementById('cat-order').value = '0';
+
+    document.getElementById('cat-local-images').value = '';
+
+    document.getElementById('cat-remote-images').value = '';
+
+    
+
+    openModal('category-modal');
+
+  }
+
+
+
+  // Open Edit Category Modal
+
+  function openEditCategoryModal(id, name, displayName, description, order, imageFilename) {
+
+    document.getElementById('cat-modal-title').textContent = 'Edit Category';
+
+    document.getElementById('cat-modal-form').action = "/admin/edit-category/" + id;
+
+    
+
+    // Fill inputs
+
+    document.getElementById('cat-name').value = name || '';
+
+    document.getElementById('cat-display-name').value = displayName || '';
+
+    document.getElementById('cat-description').value = description || '';
+
+    document.getElementById('cat-order').value = order !== undefined ? order : '0';
+
+    document.getElementById('cat-local-images').value = '';
+
+    document.getElementById('cat-remote-images').value = imageFilename || '';
+
+    
+
+    openModal('category-modal');
+
+  }
+
+
+
+  // Event listeners for data attribute modals
+
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // Restore active tab if saved
+
+    const savedTab = localStorage.getItem('admin_active_tab') || new URLSearchParams(window.location.search).get('tab');
+
+    if (savedTab && document.getElementById(savedTab)) {
+
+      switchTab(null, savedTab);
+
+    }
+
+
+
+    // Products edit trigger
+
+    document.addEventListener('click', (e) => {
+
+      const btn = e.target.closest('.edit-product-btn');
+
+      if (btn) {
+
+        const id = btn.getAttribute('data-id');
+
+        const name = btn.getAttribute('data-name');
+
+        const category = btn.getAttribute('data-category');
+
+        const description = btn.getAttribute('data-description');
+
+        const imagesCsv = btn.getAttribute('data-images');
+
+        const unit = btn.getAttribute('data-unit');
+
+        const isBestseller = btn.getAttribute('data-bestseller') === '1' || btn.getAttribute('data-bestseller') === 'true';
+
+        const price = btn.getAttribute('data-price');
+
+        const stocks = btn.getAttribute('data-stocks');
+
+        
+
+        openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks);
+
+      }
+
+    });
+
+
+
+    // Carousel slides edit trigger
+
+    document.addEventListener('click', (e) => {
+
+      const btn = e.target.closest('.edit-slide-btn');
+
+      if (btn) {
+
+        const id = btn.getAttribute('data-id');
+
+        const badgeText = btn.getAttribute('data-badge-text');
+
+        const badgeIcon = btn.getAttribute('data-badge-icon');
+
+        const title = btn.getAttribute('data-title').replace(/\\n/g, '\n');
+
+        const description = btn.getAttribute('data-description').replace(/\\n/g, '\n');
+
+        const buttonText = btn.getAttribute('data-button-text');
+
+        const buttonLink = btn.getAttribute('data-button-link');
+
+        const order = btn.getAttribute('data-order');
+
+        const image = btn.getAttribute('data-image');
+
+        
+
+        openEditSlideModal(id, badgeText, badgeIcon, title, description, buttonText, buttonLink, order, image);
+
+      }
+
+    });
+
+
+
+    // Categories edit trigger
+
+    document.addEventListener('click', (e) => {
+
+      const btn = e.target.closest('.edit-category-btn');
+
+      if (btn) {
+
+        const id = btn.getAttribute('data-id');
+
+        const name = btn.getAttribute('data-name');
+
+        const displayName = btn.getAttribute('data-display-name');
+
+        const description = btn.getAttribute('data-description');
+
+        const order = btn.getAttribute('data-order');
+
+        const image = btn.getAttribute('data-image');
+
+        
+
+        openEditCategoryModal(id, name, displayName, description, order, image);
+
+      }
+
+    });
+
+
+
+    // Initialize real-time orders polling
+
+    initOrdersRealTimeManager();
+
+  });
+
+
+
+  // Real-Time Orders Polling & Audio Chime Manager
+
+  let ordersListCache = [];
+
+
+
+  function initOrdersRealTimeManager() {
+
+    const rows = document.querySelectorAll('#admin-orders-tbody tr');
+
+    rows.forEach(row => {
+
+      const idMatch = row.id.match(/order-row-(\d+)/);
+
+      if (idMatch && idMatch[1]) {
+
+        ordersListCache.push(parseInt(idMatch[1]));
+
+      }
+
+    });
+
+    setInterval(pollOrdersData, 5000);
+
+  }
+
+
+
+  function playNotificationSound() {
+
+    try {
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const osc1 = audioCtx.createOscillator();
+
+      const osc2 = audioCtx.createOscillator();
+
+      const gainNode = audioCtx.createGain();
+
+      
+
+      osc1.type = 'sine';
+
+      osc2.type = 'sine';
+
+      
+
+      osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+
+      osc1.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+
+      
+
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+      
+
+      osc1.connect(gainNode);
+
+      gainNode.connect(audioCtx.destination);
+
+      
+
+      osc1.start();
+
+      osc1.stop(audioCtx.currentTime + 0.4);
+
+    } catch (e) {
+
+      console.error("Audio play failed", e);
+
+    }
+
+  }
+
+
+
+  function showOrderToast(orderId, name, amount) {
+
+    playNotificationSound();
+
+    
+
+    let container = document.getElementById('toast-container');
+
+    if (!container) {
+
+      container = document.createElement('div');
+
+      container.id = 'toast-container';
+
+      container.style.position = 'fixed';
+
+      container.style.top = '24px';
+
+      container.style.right = '24px';
+
+      container.style.zIndex = '9999';
+
+      container.style.display = 'flex';
+
+      container.style.flexDirection = 'column';
+
+      container.style.gap = '12px';
+
+      document.body.appendChild(container);
+
+    }
+
+    
+
+    const toast = document.createElement('div');
+
+    toast.style.background = 'var(--white)';
+
+    toast.style.color = 'var(--green-dark)';
+
+    toast.style.padding = '16px 20px';
+
+    toast.style.borderRadius = 'var(--radius-md)';
+
+    toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.05)';
+
+    toast.style.borderLeft = '4px solid var(--green-primary)';
+
+    toast.style.display = 'flex';
+
+    toast.style.alignItems = 'center';
+
+    toast.style.gap = '14px';
+
+    toast.style.transform = 'translateX(120%)';
+
+    toast.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    toast.style.minWidth = '300px';
+
+    
+
+    toast.innerHTML = `
+
+      <div style="background:rgba(46,204,113,0.1); padding:8px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2" width="20" height="20" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+
+      </div>
+
+      <div style="flex:1;">
+
+        <div style="font-weight:700; font-size:0.92rem; margin-bottom:2px;">New Order #${orderId}</div>
+
+        <div style="font-size:0.8rem; color:var(--text-muted);">${name} &middot; &#x20B9;${amount}</div>
+
+      </div>
+
+      <button style="background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;" onclick="this.parentElement.remove()">&times;</button>
+
+    `;
+
+    
+
+    container.appendChild(toast);
+
+    setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 100);
+
+    setTimeout(() => {
+
+      toast.style.transform = 'translateX(120%)';
+
+      setTimeout(() => { toast.remove(); }, 400);
+
+    }, 6000);
+
+  }
+
+
+
+  function showStatusSuccessToast(orderId, status) {
+
+    let container = document.getElementById('toast-container');
+
+    if (!container) {
+
+      container = document.createElement('div');
+
+      container.id = 'toast-container';
+
+      container.style.position = 'fixed';
+
+      container.style.top = '24px';
+
+      container.style.right = '24px';
+
+      container.style.zIndex = '9999';
+
+      container.style.display = 'flex';
+
+      container.style.flexDirection = 'column';
+
+      container.style.gap = '12px';
+
+      document.body.appendChild(container);
+
+    }
+
+    
+
+    const toast = document.createElement('div');
+
+    toast.style.background = 'var(--white)';
+
+    toast.style.color = 'var(--green-dark)';
+
+    toast.style.padding = '12px 18px';
+
+    toast.style.borderRadius = 'var(--radius-md)';
+
+    toast.style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)';
+
+    toast.style.borderLeft = '4px solid var(--amber)';
+
+    toast.style.display = 'flex';
+
+    toast.style.alignItems = 'center';
+
+    toast.style.gap = '10px';
+
+    toast.style.transform = 'translateX(120%)';
+
+    toast.style.transition = 'transform 0.3s ease';
+
+    toast.style.minWidth = '250px';
+
+    
+
+    toast.innerHTML = `
+
+      <div style="background:rgba(200,134,10,0.1); padding:6px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" width="16" height="16" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+
+      </div>
+
+      <div style="flex:1; font-size:0.85rem;">
+
+        Order <strong>#${orderId}</strong> status updated to <strong>${status}</strong>.
+
+      </div>
+
+    `;
+
+    
+
+    container.appendChild(toast);
+
+    setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 50);
+
+    setTimeout(() => {
+
+      toast.style.transform = 'translateX(120%)';
+
+      setTimeout(() => { toast.remove(); }, 300);
+
+    }, 3500);
+
+  }
+
+
+
+  function updateOrderStatusAjax(selectElement, orderId) {
+
+    const status = selectElement.value;
+
+    const badge = document.getElementById('order-status-badge-' + orderId);
+
+    selectElement.disabled = true;
+
+    
+
+    fetch('/admin/update-order-status/' + orderId, {
+
+      method: 'POST',
+
+      headers: {
+
+        'Content-Type': 'application/json'
+
+      },
+
+      body: JSON.stringify({ status: status })
+
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+      selectElement.disabled = false;
+
+      if (data.success) {
+
+        if (badge) {
+
+          badge.textContent = status;
+
+          badge.className = 'badge ' + status.toLowerCase();
+
+          let bg = 'rgba(231,76,60,0.1)';
+
+          let color = '#e74c3c';
+
+          if (status === 'Processing') {
+
+            bg = 'rgba(52,152,219,0.1)';
+
+            color = '#3498db';
+
+          } else if (status === 'Shipped') {
+
+            bg = 'rgba(230,126,34,0.1)';
+
+            color = '#e67e22';
+
+          } else if (status === 'Delivered') {
+
+            bg = 'rgba(46,204,113,0.1)';
+
+            color = '#2ecc71';
+
+          }
+
+          badge.style.background = bg;
+
+          badge.style.color = color;
+
+        }
+
+        showStatusSuccessToast(orderId, status);
+
+      } else {
+
+        alert("Failed to update status: " + (data.error || "Unknown error"));
+
+      }
+
+    })
+
+    .catch(err => {
+
+      selectElement.disabled = false;
+
+      console.error(err);
+
+      alert("Error updating order status.");
+
+    });
+
+  }
+
+
+
+  function pollOrdersData() {
+
+    fetch('/api/admin/orders')
+
+      .then(res => res.json())
+
+      .then(orders => {
+
+        let hasNew = false;
+
+        const orderStat = document.querySelector('.stats-grid .stat-card:nth-child(3) .stat-number');
+
+        if (orderStat) {
+
+          orderStat.textContent = orders.length;
+
+        }
+
+
+
+        orders.forEach(ord => {
+
+          if (!ordersListCache.includes(ord.id)) {
+
+            ordersListCache.push(ord.id);
+
+            hasNew = true;
+
+            showOrderToast(ord.id, ord.user_name, ord.total_amount);
+
+          }
+
+        });
+
+        
+
+        if (hasNew) {
+
+          rebuildOrdersTable(orders);
+
+        } else {
+
+          orders.forEach(ord => {
+
+            const select = document.querySelector(`#order-row-${ord.id} select[name="status"]`);
+
+            if (select && select.value !== ord.status) {
+
+              select.value = ord.status;
+
+              const badge = document.getElementById('order-status-badge-' + ord.id);
+
+              if (badge) {
+
+                badge.textContent = ord.status;
+
+                badge.className = 'badge ' + ord.status.toLowerCase();
+
+                let bg = 'rgba(231,76,60,0.1)';
+
+                let color = '#e74c3c';
+
+                if (ord.status === 'Processing') {
+
+                  bg = 'rgba(52,152,219,0.1)';
+
+                  color = '#3498db';
+
+                } else if (ord.status === 'Shipped') {
+
+                  bg = 'rgba(230,126,34,0.1)';
+
+                  color = '#e67e22';
+
+                } else if (ord.status === 'Delivered') {
+
+                  bg = 'rgba(46,204,113,0.1)';
+
+                  color = '#2ecc71';
+
+                }
+
+                badge.style.background = bg;
+
+                badge.style.color = color;
+
+              }
+
+            }
+
+          });
+
+        }
+
+      })
+
+      .catch(err => console.error("Error polling orders:", err));
+
+  }
+
+
+
+  function rebuildOrdersTable(orders) {
+
+    const wrapper = document.getElementById('admin-orders-table-wrapper');
+
+    const emptyMsg = document.getElementById('no-orders-msg');
+
+    const tbody = document.getElementById('admin-orders-tbody');
+
+    
+
+    if (orders.length > 0) {
+
+      wrapper.style.display = 'block';
+
+      emptyMsg.style.display = 'none';
+
+    } else {
+
+      wrapper.style.display = 'none';
+
+      emptyMsg.style.display = 'block';
+
+      return;
+
+    }
+
+    
+
+    tbody.innerHTML = '';
+
+    orders.forEach(ord => {
+
+      const tr = document.createElement('tr');
+
+      tr.id = `order-row-${ord.id}`;
+
+      let itemsHtml = '';
+
+      ord.items.forEach(item => {
+
+        itemsHtml += `&bull; ${item.product_name} (${item.quantity}x)<br>`;
+
+      });
+
+      const createdDate = ord.created_at ? ord.created_at.split(' ')[0] : '';
+
+      let bg = 'rgba(231,76,60,0.1)';
+
+      let color = '#e74c3c';
+
+      if (ord.status === 'Processing') {
+
+        bg = 'rgba(52,152,219,0.1)';
+
+        color = '#3498db';
+
+      } else if (ord.status === 'Shipped') {
+
+        bg = 'rgba(230,126,34,0.1)';
+
+        color = '#e67e22';
+
+      } else if (ord.status === 'Delivered') {
+
+        bg = 'rgba(46,204,113,0.1)';
+
+        color = '#2ecc71';
+
+      }
+
+      
+
+      tr.innerHTML = `
+
+        <td><strong>${ord.order_number || ('#' + ord.id)}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">${createdDate}</span></td>
+
+        <td><strong>${ord.user_name}</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">${ord.user_email}</span></td>
+
+        <td>
+
+          <div style="font-size:0.85rem; line-height:1.4;">
+
+            ${itemsHtml}
+
+          </div>
+
+        </td>
+
+        <td><strong>&#x20B9;${ord.total_amount}</strong></td>
+
+        <td style="max-width:200px; font-size:0.85rem; line-height:1.4;">
+
+          ${ord.shipping_address}<br>
+
+          ${ord.city}, ${ord.state} - ${ord.zip_code}
+
+        </td>
+
+        <td>
+
+          <span class="badge ${ord.status.toLowerCase()}" id="order-status-badge-${ord.id}" style="background:${bg}; color:${color}; font-weight:600;">
+
+            ${ord.status}
+
+          </span>
+
+        </td>
+
+        <td>
+
+          <form action="/admin/update-order-status/${ord.id}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
+
+            <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, ${ord.id})">
+
+              <option value="Processing" ${ord.status === 'Processing' ? 'selected' : ''}>Processing</option>
+
+              <option value="Shipped" ${ord.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+
+              <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+
+              <option value="Cancelled" ${ord.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+
+            </select>
+
+          </form>
+
+        </td>
+
+      `;
+
+      tbody.appendChild(tr);
+
+    });
+
+  }
+
+
+
+  // Close modals when clicking outside card area
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+
+    overlay.addEventListener('click', (e) => {
+
+      if (e.target === overlay) {
+
+        closeModal(overlay.id);
+
+      }
+
+    });
+
+  });
+
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in – Google Accounts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --google-blue: #1a73e8;
+      --google-gray: #5f6368;
+      --google-light-gray: #dadce0;
+      --google-bg: #ffffff;
+      --border-radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f0f4f9;
+      color: #202124;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      background-color: var(--google-bg);
+      border: 1px solid var(--google-light-gray);
+      border-radius: var(--border-radius);
+      width: 100%;
+      max-width: 450px;
+      padding: 40px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (max-width: 450px) {
+      body {
+        background-color: #ffffff;
+      }
+      .container {
+        border: none;
+        box-shadow: none;
+        padding: 20px 10px;
+      }
+    }
+
+    .logo-container {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .google-logo {
+      height: 24px;
+      display: inline-block;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 400;
+      line-height: 1.33;
+      color: #202124;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #202124;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .app-name {
+      font-weight: 500;
+      color: #2D5016; /* The Saveur Green */
+    }
+
+    /* Demo Notice Box */
+    .demo-notice {
+      background-color: #fdf3e0;
+      border: 1px solid #f9db9c;
+      border-radius: var(--border-radius);
+      padding: 16px;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #6a4a0f;
+    }
+
+    .demo-notice h4 {
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Accounts List */
+    .accounts-list {
+      margin-bottom: 28px;
+    }
+
+    .account-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--google-light-gray);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .account-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #e8f0fe;
+      color: var(--google-blue);
+      font-weight: 500;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      text-transform: uppercase;
+      border: 1px solid rgba(26,115,232,0.15);
+    }
+
+    .account-info {
+      flex: 1;
+      text-align: left;
+    }
+
+    .account-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #3c4043;
+    }
+
+    .account-email {
+      font-size: 12px;
+      color: var(--google-gray);
+      margin-top: 2px;
+    }
+
+    /* Custom Input Form */
+    .custom-form {
+      border-top: 1px solid var(--google-light-gray);
+      padding-top: 20px;
+    }
+
+    .form-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #3c4043;
+      margin-bottom: 16px;
+    }
+
+    .input-field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .input-field input {
+      width: 100%;
+      padding: 16px 12px;
+      border: 1px solid var(--google-light-gray);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-field input:focus {
+      border-color: var(--google-blue);
+      border-width: 2px;
+      padding: 15px 11px; /* adjust for border width */
+    }
+
+    .input-field label {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: var(--google-bg);
+      padding: 0 4px;
+      color: var(--google-gray);
+      transition: all 0.2s;
+      pointer-events: none;
+      font-size: 16px;
+    }
+
+    .input-field input:focus ~ label,
+    .input-field input:not(:placeholder-shown) ~ label {
+      top: 0;
+      font-size: 12px;
+      color: var(--google-blue);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background-color: var(--google-blue);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+    }
+
+    .submit-btn:hover {
+      background-color: #1557b0;
+    }
+
+    .submit-btn:active {
+      background-color: #1c3d5a;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 32px;
+      font-size: 12px;
+      color: var(--google-gray);
+    }
+
+    .footer a {
+      color: var(--google-gray);
+      text-decoration: none;
+      margin-left: 16px;
+    }
+
+    .footer a:hover {
+      color: #202124;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Google Logo -->
+    <div class="logo-container">
+      <svg class="google-logo" viewBox="0 0 74 24" width="74" height="24">
+        <path fill="#EA4335" d="M67.8 11.2c-1.8 0-3.3 1.5-3.3 3.3s1.5 3.3 3.3 3.3 3.3-1.5 3.3-3.3-1.5-3.3-3.3-3.3zm0 5.3c-.9 0-1.8-.8-1.8-2s.8-2 1.8-2 1.8.8 1.8 2-.9 2-1.8 2z"/>
+        <path fill="#FBBC05" d="M57.6 11.2c-1.8 0-3.3 1.5-3.3 3.3s1.5 3.3 3.3 3.3 3.3-1.5 3.3-3.3-1.5-3.3-3.3-3.3zm0 5.3c-.9 0-1.8-.8-1.8-2s.8-2 1.8-2 1.8.8 1.8 2-.9 2-1.8 2z"/>
+        <path fill="#4285F4" d="M47.1 11.2c-1.8 0-3.1 1.5-3.1 3.3s1.3 3.3 3.1 3.3c.9 0 1.6-.4 2-1v.8c0 1.3-.7 2-1.8 2-1 0-1.6-.7-1.8-1.3l-1.3.5c.4 1 1.4 2.1 3.1 2.1 1.8 0 3.2-1.1 3.2-3.5v-6.2h-1.4v.8c-.4-.5-1.1-.8-2-.8zm-.1 5.3c-.9 0-1.7-.8-1.7-2s.8-2 1.7-2 1.7.8 1.7 2-.8 2-1.7 2z"/>
+        <path fill="#34A853" d="M62.6 7.4h1.5v10.1h-1.5z"/>
+        <path fill="#4285F4" d="M38.5 7.4H33v10.1h5.5c2.9 0 4.6-2.1 4.6-5.1s-1.7-5-4.6-5zm-.2 8.7H34.5v-7.3h3.8c1.9 0 3.1 1.3 3.1 3.6s-1.2 3.7-3.1 3.7z"/>
+        <path fill="#EA4335" d="M72.9 14.5h-5.2c.1.9.9 1.5 1.7 1.5.7 0 1.3-.3 1.6-.9l1.3.5c-.5 1-1.6 1.8-2.9 1.8-2 0-3.4-1.5-3.4-3.3 0-2 1.4-3.4 3.3-3.4 2 0 3 1.5 3 3.3 0 .2 0 .4-.1.5zm-3.8-2.1c-.7 0-1.3.5-1.4 1.1h2.8c-.1-.7-.7-1.1-1.4-1.1z"/>
+      </svg>
+    </div>
+
+    <!-- Header Title -->
+    <h1 class="title">Sign in with Google</h1>
+    <p class="subtitle">to continue to <span class="app-name">The Saveur</span></p>
+
+    <!-- Developer/Demo Notice -->
+    <div class="demo-notice">
+      <h4>⚠️ Demo Mode</h4>
+      <p>Google OAuth environment variables are not configured on the server. Select a mock user or create a custom one below to test the authentication flow.</p>
+    </div>
+
+    <!-- Predefined Mock Accounts -->
+    <div class="accounts-list">
+      <a href="{{ url_for('google_callback', mock_email='john.doe@gmail.com', mock_name='John Doe') }}" class="account-item">
+        <div class="avatar" style="background-color: #e8f0fe;">JD</div>
+        <div class="account-info">
+          <div class="account-name">John Doe</div>
+          <div class="account-email">john.doe@gmail.com</div>
+        </div>
+      </a>
+
+      <a href="{{ url_for('google_callback', mock_email='jane.smith@gmail.com', mock_name='Jane Smith') }}" class="account-item">
+        <div class="avatar" style="background-color: #fce8e6; color: #d93025; border-color: rgba(217,48,37,0.15)">JS</div>
+        <div class="account-info">
+          <div class="account-name">Jane Smith</div>
+          <div class="account-email">jane.smith@gmail.com</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Custom Mock Form -->
+    <div class="custom-form">
+      <div class="form-title">Or use a custom mock account:</div>
+      <form action="{{ url_for('google_callback') }}" method="GET">
+        <div class="input-field">
+          <input type="text" id="mock_name" name="mock_name" placeholder=" " required>
+          <label for="mock_name">Full Name</label>
+        </div>
+
+        <div class="input-field">
+          <input type="email" id="mock_email" name="mock_email" placeholder=" " required>
+          <label for="mock_email">Email Address</label>
+        </div>
+
+        <button type="submit" class="submit-btn">Continue to App</button>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div>English (United States)</div>
+      <div>
+        <a href="#">Help</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

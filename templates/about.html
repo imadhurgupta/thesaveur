@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}About Us – The Saveur | Tea & Spices{% endblock %}
+{% block meta_desc %}Learn the story behind The Saveur – our mission to bring pure, authentic Indian teas and spices directly to your home and business.{% endblock %}
+
+{% block content %}
+
+  <!-- ── Page Hero ─────────────────────────────────────── -->
+  <section class="page-hero" aria-label="About Page Hero">
+    <div class="container">
+      <div class="section-tag">Our Story</div>
+      <h1>About The Saveur</h1>
+      <p>A decade of trust, purity, and passion for India's finest flavours.</p>
+    </div>
+  </section>
+
+  <!-- ── Brand Story ───────────────────────────────────── -->
+  <section class="about-story" aria-label="Brand Story">
+    <div class="container">
+      <div class="about-inner">
+
+        <!-- Image -->
+        <div class="reveal-left">
+          <div class="about-img-wrap">
+            <img
+              src="{{ url_for('static', filename='images/Green-Tea.jpg') }}"
+              alt="Premium green tea sourced by The Saveur"
+              loading="lazy"
+            />
+
+          </div>
+        </div>
+
+        <!-- Text -->
+        <div class="about-text reveal-right">
+          <div class="section-tag">Who We Are</div>
+          <h2 class="section-title">Born from a Passion for Purity</h2>
+          <p>
+            The Saveur was founded with a single, unwavering belief: that every Indian household
+            deserves access to genuinely pure, flavour-rich teas and spices — not the diluted,
+            adulterated versions that often flood the market.
+          </p>
+          <p>
+            Starting with just a few products sourced from trusted farmers in Assam and Kerala,
+            we've grown into a trusted supplier for households, restaurants, and retailers across
+            28+ states, while never compromising on the quality that defines us.
+          </p>
+          <p>
+            Every batch we source is rigorously tested, carefully packaged, and delivered with the
+            care it deserves. Because to us, it's not just a spice — it's a tradition, a memory,
+            and a promise of authenticity.
+          </p>
+          <div style="display:flex; gap:16px; margin-top:28px; flex-wrap:wrap;">
+            <a href="{{ url_for('products') }}" class="btn btn-primary">Explore Products</a>
+            <a href="{{ url_for('contact') }}" class="btn btn-outline">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Mission & Vision ──────────────────────────────── -->
+  <section class="mission-section" aria-label="Mission and Vision">
+    <div class="container">
+      <div class="text-center reveal">
+        <div class="section-tag">What Drives Us</div>
+        <h2 class="section-title">Our Mission & Vision</h2>
+      </div>
+      <div class="mission-grid">
+        <div class="mission-card reveal-left">
+          <h3><i data-lucide="target" style="color:var(--amber); vertical-align:-0.1em; margin-right:6px;"></i> Our Mission</h3>
+          <p>
+            To make pure, authentic Indian tea and spices accessible to every household and business
+            across India — by building direct, transparent relationships with farmers and delivering
+            products of uncompromising quality at fair prices.
+          </p>
+        </div>
+        <div class="mission-card reveal-right" style="border-left-color:var(--amber);">
+          <h3><i data-lucide="eye" style="color:var(--amber); vertical-align:-0.15em; margin-right:6px;"></i> Our Vision</h3>
+          <p>
+            To become India's most trusted direct-source tea and spice brand — celebrated for
+            transparency, purity, and a deep respect for the farmers, traditions, and ecosystems
+            that make these flavours possible.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Our Values ────────────────────────────────────── -->
+  <section class="values-section" aria-label="Our Values">
+    <div class="container">
+      <div class="text-center section-header reveal">
+        <div class="section-tag">Core Values</div>
+        <h2 class="section-title">What We Stand For</h2>
+      </div>
+      <div class="values-grid">
+        <div class="value-card reveal stagger-1">
+          <span class="value-icon"><i data-lucide="leaf"></i></span>
+          <h4>Purity First</h4>
+          <p>No additives, no adulterants. We stand by 100% natural products, always.</p>
+        </div>
+        <div class="value-card reveal stagger-2">
+          <span class="value-icon"><i data-lucide="handshake"></i></span>
+          <h4>Farmer Partnership</h4>
+          <p>We build long-term, fair relationships with our growers — their success is ours.</p>
+        </div>
+        <div class="value-card reveal stagger-3">
+          <span class="value-icon"><i data-lucide="search"></i></span>
+          <h4>Transparency</h4>
+          <p>From farm to shelf, we're open about our sourcing, processing, and pricing.</p>
+        </div>
+        <div class="value-card reveal stagger-1">
+          <span class="value-icon"><i data-lucide="refresh-cw"></i></span>
+          <h4>Sustainability</h4>
+          <p>We prioritise eco-conscious farming practices and minimal-waste packaging.</p>
+        </div>
+        <div class="value-card reveal stagger-2">
+          <span class="value-icon"><i data-lucide="zap"></i></span>
+          <h4>Reliability</h4>
+          <p>Consistent quality, on-time delivery, and responsive customer service, every time.</p>
+        </div>
+        <div class="value-card reveal stagger-3">
+          <span class="value-icon"><i data-lucide="heart"></i></span>
+          <h4>Customer Love</h4>
+          <p>Every order matters. We're here before, during, and after your purchase.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats CTA ─────────────────────────────────────── -->
+  <section style="padding:80px 0; background:linear-gradient(135deg,var(--green-dark),var(--green-primary));" aria-label="Company Stats">
+    <div class="container">
+      <div class="about-stats-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0; text-align:center;" class="reveal">
+
+        <div style="padding:0 20px; border-right:1px solid rgba(255,255,255,0.15);">
+          <div style="font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:700; color:var(--amber-light);">10</div>
+          <div style="color:rgba(255,255,255,0.7); font-size:0.85rem; margin-top:4px;">Premium Products</div>
+        </div>
+        <div style="padding:0 20px; border-right:1px solid rgba(255,255,255,0.15);">
+          <div style="font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:700; color:var(--amber-light);">1200+</div>
+          <div style="color:rgba(255,255,255,0.7); font-size:0.85rem; margin-top:4px;">Happy Customers</div>
+        </div>
+        <div style="padding:0 20px;">
+          <div style="font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:700; color:var(--amber-light);">28+</div>
+          <div style="color:rgba(255,255,255,0.7); font-size:0.85rem; margin-top:4px;">States Served</div>
+        </div>
+      </div>
+      <div class="text-center" style="margin-top:40px;">
+        <a href="{{ url_for('contact') }}" class="btn btn-primary">Start Your Order Today</a>
+      </div>
+    </div>
+  </section>
+
+{% endblock %}

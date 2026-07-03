@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice {{ order.order_number if order.order_number else '#' ~ order.id }} – The Saveur</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:    #2D5016;
+      --green-primary: #5a9e35;
+      --amber:         #C8860A;
+      --cream:         #FAF7F2;
+      --text-dark:     #1a1a1a;
+      --text-muted:    #6b6b6b;
+      --border:        rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #e8e8e8;
+      color: var(--text-dark);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    /* ── Action Bar (not printed) ─────────────────────────── */
+    .action-bar {
+      max-width: 900px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .action-bar a, .action-bar button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-back {
+      background: white;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-back:hover { border-color: #aaa; color: var(--text-dark); }
+    .btn-print {
+      background: var(--green-primary);
+      border: 1.5px solid var(--green-primary);
+      color: white;
+    }
+    .btn-print:hover { background: var(--green-dark); border-color: var(--green-dark); }
+    .btn-download {
+      background: var(--amber);
+      border: 1.5px solid var(--amber);
+      color: white;
+    }
+    .btn-download:hover { background: #a36d00; border-color: #a36d00; }
+    .action-bar svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* ── Invoice Paper ────────────────────────────────────── */
+    .invoice-paper {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+      overflow: hidden;
+    }
+
+    /* ── Header Band ──────────────────────────────────────── */
+    .inv-header {
+      background: linear-gradient(135deg, #2D5016 0%, #4a8829 60%, #5a9e35 100%);
+      padding: 40px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .inv-brand { display: flex; align-items: center; gap: 16px; }
+    .inv-brand-logo {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      overflow: hidden;
+    }
+    .inv-brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .inv-brand-text { color: white; }
+    .inv-brand-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.01em;
+    }
+    .inv-brand-text p {
+      font-size: 0.78rem;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+    .inv-brand-address {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.7);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .inv-title-block { text-align: right; color: white; }
+    .inv-title-block .inv-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.7;
+    }
+    .inv-title-block .inv-number {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 4px 0;
+    }
+    .inv-title-block .inv-date {
+      font-size: 0.82rem;
+      opacity: 0.8;
+    }
+    .inv-status-pill {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .inv-status-pill.processing { background: rgba(52,152,219,0.25); color: #a3d5f7; }
+    .inv-status-pill.shipped    { background: rgba(230,126,34,0.25); color: #ffd4a0; }
+    .inv-status-pill.delivered  { background: rgba(46,204,113,0.25); color: #a8f7c8; }
+    .inv-status-pill.cancelled  { background: rgba(231,76,60,0.25);  color: #ffb3aa; }
+
+    /* ── Meta Strip ───────────────────────────────────────── */
+    .inv-meta-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .inv-meta-cell {
+      padding: 22px 24px;
+      border-right: 1px solid var(--border);
+    }
+    .inv-meta-cell:first-child { padding-left: 48px; }
+    .inv-meta-cell:last-child  { border-right: none; padding-right: 48px; }
+    .inv-meta-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .inv-meta-value {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.4;
+    }
+    .inv-meta-value.muted { font-weight: 400; color: var(--text-muted); }
+
+    /* ── Bill To / Ship To ────────────────────────────────── */
+    .inv-addresses {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .inv-address-block {
+      padding: 28px 48px;
+      border-right: 1px solid var(--border);
+    }
+    .inv-address-block:last-child { border-right: none; }
+    .inv-address-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--green-primary);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .inv-address-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
+    .inv-address-detail {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── Items Table ──────────────────────────────────────── */
+    .inv-table-wrap { padding: 0 48px; }
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 32px 0;
+    }
+    .inv-table thead tr {
+      background: var(--cream);
+      border-radius: 8px;
+    }
+    .inv-table th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+    }
+    .inv-table th:first-child { border-radius: 8px 0 0 8px; padding-left: 0; }
+    .inv-table th:last-child  { border-radius: 0 8px 8px 0; text-align: right; padding-right: 0; }
+    .inv-table td {
+      padding: 18px 16px;
+      font-size: 0.9rem;
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .inv-table td:first-child { padding-left: 0; }
+    .inv-table td:last-child  { text-align: right; padding-right: 0; }
+    .inv-table tbody tr:last-child td { border-bottom: none; }
+
+    .inv-prod-name {
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 3px;
+    }
+    .inv-prod-meta {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+    .inv-qty-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(90,158,53,0.08);
+      color: var(--green-dark);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    /* ── Totals ───────────────────────────────────────────── */
+    .inv-totals {
+      padding: 0 48px 36px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .inv-totals-box {
+      width: 320px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .inv-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 20px;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .inv-total-row:last-child { border-bottom: none; }
+    .inv-total-row.grand {
+      background: linear-gradient(135deg, #2D5016, #5a9e35);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 16px 20px;
+    }
+    .inv-total-row .val { font-weight: 600; color: var(--text-dark); }
+    .inv-total-row.grand .val { color: white; font-size: 1.1rem; }
+
+    /* ── Footer ───────────────────────────────────────────── */
+    .inv-footer {
+      margin: 0 48px 40px;
+      padding: 24px 28px;
+      background: var(--cream);
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .inv-footer-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 420px;
+    }
+    .inv-footer-note strong { color: var(--text-dark); font-size: 0.82rem; }
+    .inv-footer-stamp {
+      text-align: right;
+    }
+    .inv-footer-stamp .stamp-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .inv-footer-brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .inv-footer-brand .dot-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #2D5016, #5a9e35);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      color: white;
+    }
+    .inv-footer-brand span {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--green-dark);
+    }
+    .inv-thankyou {
+      text-align: center;
+      padding: 20px 48px 40px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      border-top: 1.5px solid var(--border);
+    }
+    .inv-thankyou strong { color: var(--green-dark); font-size: 0.95rem; display: block; margin-bottom: 6px; }
+
+    /* ── QR Code Block ────────────────────────────────────── */
+    .inv-qr-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .inv-qr-block img {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: white;
+      padding: 4px;
+      display: block;
+    }
+    .inv-qr-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-align: center;
+      font-weight: 600;
+    }
+    .inv-qr-ref {
+      font-size: 0.7rem;
+      color: var(--green-dark);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Watermark for Cancelled ──────────────────────────── */
+    {% if order.status == 'Cancelled' %}
+    .invoice-paper::before {
+      content: 'CANCELLED';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 5rem;
+      font-weight: 900;
+      color: rgba(231,76,60,0.07);
+      pointer-events: none;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+    .invoice-paper { position: relative; }
+    {% endif %}
+
+    /* ── Print Styles ─────────────────────────────────────── */
+    @media print {
+      body { background: white; padding: 0; }
+      .action-bar { display: none !important; }
+      .invoice-paper {
+        box-shadow: none;
+        border-radius: 0;
+        max-width: 100%;
+      }
+      .inv-qr-block img {
+        /* ensure QR renders in print */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .inv-header { padding: 28px 24px; }
+      .inv-meta-cell:first-child { padding-left: 24px; }
+      .inv-meta-cell:last-child  { padding-right: 24px; }
+      .inv-addresses { grid-template-columns: 1fr; }
+      .inv-address-block { padding: 20px 24px; border-right: none; border-bottom: 1px solid var(--border); }
+      .inv-table-wrap { padding: 0 24px; }
+      .inv-totals { padding: 0 24px 28px; }
+      .inv-totals-box { width: 100%; }
+      .inv-footer { padding: 20px; margin: 0 24px 28px; }
+      .inv-thankyou { padding: 16px 24px 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Action Toolbar ── -->
+  <div class="action-bar">
+    <a href="{{ back_url }}" class="btn-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      {{ back_label }}
+    </a>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-print" onclick="window.print()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Invoice
+      </button>
+      <button class="btn-download" onclick="downloadPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       INVOICE PAPER
+  ══════════════════════════════════════════════ -->
+  <div class="invoice-paper" id="invoice-root">
+
+    <!-- Header Band -->
+    <div class="inv-header">
+      <div class="inv-brand">
+        <div class="inv-brand-logo">
+          <img src="/static/images/logo.jpg" alt="The Saveur" onerror="this.parentElement.textContent='🍃'" />
+        </div>
+        <div class="inv-brand-text">
+          <h1>The Saveur</h1>
+          <p>Tea &amp; Spices</p>
+          <div class="inv-brand-address">
+            Premium Quality Tea &amp; Spices<br>
+            info@thesaveur.com · thesaveur.com<br>
+            GSTIN: 29XXXXX1234X1ZX
+          </div>
+        </div>
+      </div>
+      <div class="inv-title-block">
+        <div class="inv-label">Tax Invoice</div>
+        <div class="inv-number">{{ order.order_number if order.order_number else ('#%05d' % order.id) }}</div>
+        <div class="inv-date">Date: {{ order.created_at.split(' ')[0] if order.created_at else 'N/A' }}</div>
+        <div>
+          <span class="inv-status-pill {{ order.status.lower() }}">{{ order.status }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meta Strip -->
+    <div class="inv-meta-strip">
+      <div class="inv-meta-cell">
+        <div class="inv-meta-label">Invoice No.</div>
+        <div class="inv-meta-value">{{ order.order_number if order.order_number else ('INV-2026-%05d' % order.id) }}</div>
+      </div>
+      <div class="inv-meta-cell">
+        <div class="inv-meta-label">Order Date</div>
+        <div class="inv-meta-value">{{ order.created_at.split(' ')[0] if order.created_at else '—' }}</div>
+      </div>
+      <div class="inv-meta-cell">
+        <div class="inv-meta-label">Payment Method</div>
+        <div class="inv-meta-value">{{ order.payment_method }}</div>
+      </div>
+      <div class="inv-meta-cell">
+        <div class="inv-meta-label">Order Status</div>
+        <div class="inv-meta-value" style="color:
+          {%- if order.status == 'Delivered' -%}#27ae60
+          {%- elif order.status == 'Shipped' -%}#d35400
+          {%- elif order.status == 'Processing' -%}#2980b9
+          {%- else -%}#c0392b{%- endif -%}">
+          {{ order.status }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Addresses -->
+    <div class="inv-addresses">
+      <div class="inv-address-block">
+        <div class="inv-address-title">Sold By</div>
+        <div class="inv-address-name">The Saveur</div>
+        <div class="inv-address-detail">
+          Premium Tea &amp; Spice Merchants<br>
+          Tamil Nadu, India<br>
+          Email: info@thesaveur.com<br>
+          GSTIN: 29XXXXX1234X1ZX
+        </div>
+      </div>
+      <div class="inv-address-block">
+        <div class="inv-address-title">Bill To / Ship To</div>
+        <div class="inv-address-name">{{ order.user_name }}</div>
+        <div class="inv-address-detail">
+          {{ order.shipping_address }}<br>
+          {{ order.city }}, {{ order.state }} – {{ order.zip_code }}<br>
+          India<br>
+          {{ order.user_email }}<br>
+          <span style="display:inline-block; margin-top:6px; font-size:0.78rem; color:#8b8b8b; font-weight:600; letter-spacing:0.04em;">
+            Order Ref: {{ order.order_number if order.order_number else ('#%05d' % order.id) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="inv-table-wrap">
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>Product Description</th>
+            <th style="text-align:center;">Unit</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right;">Unit Price</th>
+            <th style="text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set subtotal = namespace(val=0) %}
+          {% for item in items %}
+          {% set line_total = item.quantity * item.price %}
+          {% set subtotal.val = subtotal.val + line_total %}
+          <tr>
+            <td style="color:var(--text-muted); font-size:0.82rem;">{{ loop.index }}</td>
+            <td>
+              <div class="inv-prod-name">{{ item.product_name }}</div>
+              <div class="inv-prod-meta">Natural · Premium Quality · The Saveur</div>
+            </td>
+            <td style="text-align:center;">
+              <span class="inv-qty-badge">{{ item.unit or '—' }}</span>
+            </td>
+            <td style="text-align:center; font-weight:700;">{{ item.quantity }}</td>
+            <td style="text-align:right; color:var(--text-muted);">₹{{ '%.2f' % item.price }}</td>
+            <td style="text-align:right; font-weight:700; color:var(--green-dark);">₹{{ '%.2f' % line_total }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div class="inv-totals">
+      <div class="inv-totals-box">
+        <div class="inv-total-row">
+          <span>Subtotal</span>
+          <span class="val">₹{{ '%.2f' % subtotal.val }}</span>
+        </div>
+        <div class="inv-total-row">
+          <span>Shipping &amp; Handling</span>
+          <span class="val" style="color:#27ae60;">FREE</span>
+        </div>
+        <div class="inv-total-row">
+          <span>GST / Taxes</span>
+          <span class="val">Included</span>
+        </div>
+        <div class="inv-total-row">
+          <span>Discount</span>
+          <span class="val">—</span>
+        </div>
+        <div class="inv-total-row grand">
+          <span>Total Amount</span>
+          <span class="val">₹{{ '%.2f' % order.total_amount }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="inv-footer">
+      <div class="inv-footer-note">
+        <strong>Terms &amp; Conditions</strong>
+        All products are subject to availability. Once shipped, orders cannot be modified.
+        For any queries regarding this invoice, please contact us at
+        <a href="mailto:info@thesaveur.com" style="color:var(--green-primary);">info@thesaveur.com</a>
+        or WhatsApp <a href="https://wa.me/919500529076" style="color:#25d366;">+91 95005 29076</a>.<br><br>
+        This is a computer-generated invoice and does not require a physical signature.
+      </div>
+
+      <!-- QR Code -->
+      {% set qr_data = (order.order_number if order.order_number else ('#%05d' % order.id)) ~ ' | ' ~ order.user_name ~ ' | Total: Rs.' ~ ('%.2f' % order.total_amount) ~ ' | Status: ' ~ order.status %}
+      {% set qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&data=' ~ (qr_data | urlencode) %}
+      <div class="inv-qr-block">
+        <img src="{{ qr_url }}" alt="Order QR Code" loading="eager" />
+        <div class="inv-qr-label">Scan to Verify</div>
+        <div class="inv-qr-ref">{{ order.order_number if order.order_number else ('#%05d' % order.id) }}</div>
+      </div>
+
+      <div class="inv-footer-stamp">
+        <div class="stamp-label">Authorised Signatory</div>
+        <div class="inv-footer-brand">
+          <div class="dot-logo">🍃</div>
+          <span>The Saveur</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px;">For The Saveur Tea &amp; Spices</div>
+      </div>
+    </div>
+
+    <!-- Thank You -->
+    <div class="inv-thankyou">
+      <strong>Thank you for choosing The Saveur! 🙏</strong>
+      Premium quality teas &amp; spices, sourced with care and delivered with love.
+    </div>
+
+  </div><!-- /invoice-paper -->
+
+  <script>
+    function downloadPDF() {
+      // Use browser's print dialog in "Save as PDF" mode
+      const origTitle = document.title;
+      document.title = 'Invoice-{{ order.order_number if order.order_number else order.id }}-TheSaveur';
+      window.print();
+      document.title = origTitle;
+    }
+  </script>
+
+</body>
+</html>

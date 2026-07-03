@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile – The Saveur{% endblock %}
+{% block meta_desc %}Manage your personal information, default shipping addresses, and security settings at The Saveur.{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ═══════════════════════════════════════
+     PROFILE PAGE — LAYOUT
+  ═══════════════════════════════════════ */
+  .profile-container {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 120px 24px 80px;
+  }
+  .profile-header-section {
+    margin-bottom: 36px;
+  }
+  .profile-header-section h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--green-dark);
+    margin-bottom: 8px;
+  }
+  .profile-header-section p {
+    color: var(--text-mid);
+    font-size: 0.95rem;
+  }
+
+  .profile-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 768px) {
+    .profile-layout {
+      grid-template-columns: 1fr;
+    }
+    .profile-container {
+      padding: 100px 16px 60px;
+    }
+  }
+
+  /* ═══════════════════════════════════════
+     SIDEBAR
+  ═══════════════════════════════════════ */
+  .profile-sidebar {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,0.07);
+    padding: 20px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 100px;
+  }
+  .profile-sidebar-avatar {
+    text-align: center;
+    padding: 16px 0 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+  }
+  .profile-avatar-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-family: 'Playfair Display', serif;
+  }
+  .profile-sidebar-name {
+    font-weight: 700;
+    color: var(--green-dark);
+    font-size: 0.95rem;
+    margin-bottom: 3px;
+  }
+  .profile-sidebar-email {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .profile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .profile-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-mid);
+    font-weight: 600;
+    font-size: 0.88rem;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: all 0.2s ease;
+  }
+  .profile-nav-btn .nav-icon {
+    font-size: 1.1rem;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .profile-nav-btn:hover {
+    background: #f0faf5;
+    color: var(--green-primary);
+  }
+  .profile-nav-btn.active {
+    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(27, 67, 50, 0.25);
+  }
+
+  /* ═══════════════════════════════════════
+     PANELS
+  ═══════════════════════════════════════ */
+  .profile-panel {
+    display: none;
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,0.07);
+    padding: 36px 40px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+    animation: fadeIn 0.3s ease;
+  }
+  .profile-panel.active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 600px) {
+    .profile-panel { padding: 24px 20px; }
+  }
+
+  .panel-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.45rem;
+    color: var(--green-dark);
+    margin: 0 0 8px;
+  }
+  .panel-subtitle {
+    font-size: 0.87rem;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+  }
+
+  /* ═══════════════════════════════════════
+     PROFILE FORM FIELDS (override dark .form-group)
+  ═══════════════════════════════════════ */
+  .pf-field {
+    margin-bottom: 18px;
+  }
+  .pf-field label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .pf-field input,
+  .pf-field select {
+    width: 100%;
+    padding: 11px 14px;
+    background: #f8faf9;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    color: var(--text-dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .pf-field input:focus {
+    border-color: var(--green-light);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
+  }
+  .pf-field input:disabled {
+    background: #f0f0f0;
+    color: #999;
+    cursor: not-allowed;
+    border-color: rgba(0,0,0,0.06);
+  }
+  .pf-field input::placeholder {
+    color: #bbb;
+  }
+  .pf-row {
+    display: grid;
+    gap: 16px;
+  }
+  .pf-row-2 { grid-template-columns: 1fr 1fr; }
+  .pf-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 600px) {
+    .pf-row-2, .pf-row-3 { grid-template-columns: 1fr; }
+  }
+
+  .pf-section-divider {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--green-dark);
+    margin: 28px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(0,0,0,0.1);
+  }
+
+  /* ═══════════════════════════════════════
+     SAVE BUTTON
+  ═══════════════════════════════════════ */
+  .pf-save-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 8px;
+    box-shadow: 0 4px 14px rgba(27, 67, 50, 0.2);
+  }
+  .pf-save-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(27, 67, 50, 0.3);
+  }
+  .pf-save-btn:active {
+    transform: translateY(0);
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+
+  <!-- Page Header -->
+  <div class="profile-header-section">
+    <h1>My Account</h1>
+    <p>Manage your profile, default shipping address, and account security.</p>
+  </div>
+
+  <div class="profile-layout">
+
+    <!-- ── Sidebar ─────────────────────────────── -->
+    <aside class="profile-sidebar">
+      <!-- Avatar -->
+      <div class="profile-sidebar-avatar">
+        <div class="profile-avatar-circle">
+          {{ (user.full_name or 'U')[0].upper() }}
+        </div>
+        <div class="profile-sidebar-name">{{ user.full_name }}</div>
+        <div class="profile-sidebar-email">{{ user.email }}</div>
+      </div>
+
+      <!-- Nav -->
+      <nav class="profile-nav" aria-label="Profile sections">
+        <button class="profile-nav-btn active" id="nav-info" onclick="showPanel('panel-info', this)">
+          <span class="nav-icon">👤</span> Personal Details
+        </button>
+        <button class="profile-nav-btn" id="nav-security" onclick="showPanel('panel-security', this)">
+          <span class="nav-icon">🔒</span> Password & Security
+        </button>
+      </nav>
+    </aside>
+
+    <!-- ── Content Panels ─────────────────────── -->
+    <div class="profile-content">
+
+      <!-- Panel 1: Personal Details -->
+      <div id="panel-info" class="profile-panel active">
+        <h2 class="panel-title">Personal Details</h2>
+        <p class="panel-subtitle">Update your name, phone number, and default shipping address.</p>
+
+        <form method="POST" action="/profile/update-info">
+
+          <div class="pf-field">
+            <label for="prof-name">Full Name *</label>
+            <input type="text" id="prof-name" name="full_name" required
+                   value="{{ user.full_name or '' }}" placeholder="Your full name" />
+          </div>
+
+          <div class="pf-row pf-row-2">
+            <div class="pf-field">
+              <label for="prof-email">Email Address</label>
+              <input type="email" id="prof-email" value="{{ user.email }}" disabled
+                     title="Email cannot be changed." />
+            </div>
+            <div class="pf-field">
+              <label for="prof-phone">Phone Number</label>
+              <input type="tel" id="prof-phone" name="phone"
+                     value="{{ user.phone or '' }}" placeholder="+91 98765 43210" />
+            </div>
+          </div>
+
+          <h3 class="pf-section-divider">🏠 Default Shipping Address</h3>
+
+          <div class="pf-field">
+            <label for="prof-address">Street / Area</label>
+            <input type="text" id="prof-address" name="shipping_address"
+                   value="{{ user.shipping_address or '' }}" placeholder="Apartment, street, block…" />
+          </div>
+
+          <div class="pf-row pf-row-3">
+            <div class="pf-field">
+              <label for="prof-city">City</label>
+              <input type="text" id="prof-city" name="city"
+                     value="{{ user.city or '' }}" placeholder="Mumbai" />
+            </div>
+            <div class="pf-field">
+              <label for="prof-state">State</label>
+              <input type="text" id="prof-state" name="state"
+                     value="{{ user.state or '' }}" placeholder="Maharashtra" />
+            </div>
+            <div class="pf-field">
+              <label for="prof-zip">PIN / ZIP Code</label>
+              <input type="text" id="prof-zip" name="zip_code"
+                     value="{{ user.zip_code or '' }}" placeholder="400001" />
+            </div>
+          </div>
+
+          <button type="submit" class="pf-save-btn">💾 Save Changes</button>
+        </form>
+      </div>
+
+      <!-- Panel 2: Password & Security -->
+      <div id="panel-security" class="profile-panel">
+        <h2 class="panel-title">Password & Security</h2>
+        <p class="panel-subtitle">Keep your account secure by using a strong, unique password.</p>
+
+        <form method="POST" action="/profile/change-password">
+
+          <div class="pf-field">
+            <label for="pwd-current">Current Password *</label>
+            <input type="password" id="pwd-current" name="current_password"
+                   required placeholder="••••••••" />
+          </div>
+
+          <div class="pf-row pf-row-2">
+            <div class="pf-field">
+              <label for="pwd-new">New Password *</label>
+              <input type="password" id="pwd-new" name="new_password"
+                     required placeholder="At least 8 characters" />
+            </div>
+            <div class="pf-field">
+              <label for="pwd-confirm">Confirm New Password *</label>
+              <input type="password" id="pwd-confirm" name="confirm_password"
+                     required placeholder="Repeat new password" />
+            </div>
+          </div>
+
+          <button type="submit" class="pf-save-btn">🔐 Update Password</button>
+        </form>
+      </div>
+
+
+    </div><!-- /.profile-content -->
+  </div><!-- /.profile-layout -->
+</div><!-- /.profile-container -->
+
+<script>
+  function showPanel(panelId, btnEl) {
+    document.querySelectorAll('.profile-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.profile-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(panelId).classList.add('active');
+    btnEl.classList.add('active');
+    sessionStorage.setItem('profile_panel', panelId);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = sessionStorage.getItem('profile_panel');
+    if (saved) {
+      const btn = document.querySelector(`[onclick="showPanel('${saved}', this)"]`);
+      if (btn) showPanel(saved, btn);
+    }
+  });
+</script>
+{% endblock %}
