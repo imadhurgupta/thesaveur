@@ -88,10 +88,22 @@
     background: #fff;
   }
 
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 576px) {
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+
   /* Payment Radio Options */
   .payment-methods {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     margin-top: 8px;
   }
@@ -165,9 +177,26 @@
     
     <!-- Left: Shipping Address & Payment -->
     <div class="checkout-card">
-      <h2 class="checkout-title">Shipping & Billing Address</h2>
-      
       <form class="checkout-form" id="checkout-form" action="{{ url_for('checkout_submit') }}" method="POST">
+        
+        <!-- Contact Information -->
+        <h2 class="checkout-title" style="margin-top: 0;">Contact Information</h2>
+        <div class="form-group">
+          <label for="contact_name">Full Name *</label>
+          <input type="text" id="contact_name" name="contact_name" required value="{{ user.full_name or '' }}" placeholder="Your Full Name" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="contact_email">Email Address *</label>
+            <input type="email" id="contact_email" name="contact_email" required value="{{ user.email or '' }}" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label for="contact_phone">Phone Number *</label>
+            <input type="tel" id="contact_phone" name="contact_phone" required value="{{ user.phone or '' }}" placeholder="e.g. +91 9876543210" />
+          </div>
+        </div>
+
+        <h2 class="checkout-title" style="margin-top: 32px;">Shipping & Billing Address</h2>
         <!-- Address -->
         <div class="form-group">
           <label for="address">Street Address *</label>
@@ -194,25 +223,18 @@
         <h2 class="checkout-title" style="margin-top: 36px;">Payment Method</h2>
         
         <div class="payment-methods">
-          <!-- UPI -->
-          <div class="payment-method-card selected" onclick="selectPaymentMethod(this, 'UPI')">
-            <input type="radio" name="payment_method" value="UPI" checked style="display:none;" />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            <span class="payment-method-title">UPI / QR Code</span>
-          </div>
-
-          <!-- Cards -->
-          <div class="payment-method-card" onclick="selectPaymentMethod(this, 'Card')">
-            <input type="radio" name="payment_method" value="Card" style="display:none;" />
+          <!-- Online Payment -->
+          <div class="payment-method-card selected" onclick="selectPaymentMethod(this, 'Online')">
+            <input type="radio" name="payment_method" value="Online" checked style="display:none;" />
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <span class="payment-method-title">Card (Debit/Credit)</span>
+            <span class="payment-method-title">Online Payment</span>
           </div>
 
-          <!-- Net Banking -->
-          <div class="payment-method-card" onclick="selectPaymentMethod(this, 'NetBanking')">
-            <input type="radio" name="payment_method" value="NetBanking" style="display:none;" />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span class="payment-method-title">Net Banking</span>
+          <!-- Cash on Delivery -->
+          <div class="payment-method-card" onclick="selectPaymentMethod(this, 'COD')">
+            <input type="radio" name="payment_method" value="COD" style="display:none;" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+            <span class="payment-method-title">Cash on Delivery (COD)</span>
           </div>
         </div>
 
@@ -259,6 +281,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
   function selectPaymentMethod(cardElement, methodValue) {
     // Deselect all
@@ -275,5 +298,114 @@
       radio.checked = true;
     }
   }
+
+  // Intercept checkout form submission for inline Razorpay popup
+  document.addEventListener('DOMContentLoaded', () => {
+    const checkoutForm = document.getElementById('checkout-form');
+    if (!checkoutForm) return;
+
+    const submitBtn = checkoutForm.querySelector('button[type="submit"]');
+
+    checkoutForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Initializing Secure Payment...';
+
+      try {
+        const formData = new FormData(checkoutForm);
+        const response = await fetch("{{ url_for('checkout_submit') }}", {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+          showToast('error', data.message || 'Order creation failed.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          return;
+        }
+
+        if (data.cod) {
+          showToast('success', 'Order placed successfully! Redirecting...');
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 1500);
+          return;
+        }
+
+        // Initialize Razorpay Inline popup
+        const options = {
+          key: data.razorpay_key_id,
+          amount: data.amount,
+          currency: 'INR',
+          name: 'The Saveur',
+          description: `Order #${data.order_number}`,
+          order_id: data.razorpay_order_id,
+          prefill: {
+            name: data.contact_name,
+            email: data.contact_email,
+            contact: data.contact_phone
+          },
+          theme: { color: '#1b4332' },
+          handler: async function (rzpResponse) {
+            submitBtn.innerHTML = 'Verifying Payment...';
+
+            try {
+              const verifyForm = new FormData();
+              verifyForm.append('order_id', data.order_id);
+              verifyForm.append('razorpay_payment_id', rzpResponse.razorpay_payment_id);
+              verifyForm.append('razorpay_order_id', rzpResponse.razorpay_order_id);
+              verifyForm.append('razorpay_signature', rzpResponse.razorpay_signature);
+              verifyForm.append('is_mock', 'false');
+
+              const verifyResp = await fetch("{{ url_for('checkout_verify') }}", {
+                method: 'POST',
+                body: verifyForm
+              });
+
+              const verifyData = await verifyResp.json();
+              if (verifyData.success) {
+                showToast('success', 'Order placed successfully! Redirecting...');
+                setTimeout(() => {
+                  window.location.href = verifyData.redirect_url;
+                }, 1500);
+              } else {
+                showToast('error', verifyData.message || 'Payment verification failed.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+              }
+            } catch (err) {
+              showToast('error', 'Network error verifying payment.');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              showToast('error', 'Payment cancelled.');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
+            }
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (resp) {
+          showToast('error', resp.error.description || 'Payment failed.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        });
+        rzp.open();
+
+      } catch (err) {
+        showToast('error', 'Failed to connect to order server.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    });
+  });
 </script>
 {% endblock %}

@@ -107,13 +107,65 @@ document.querySelectorAll('.faq-question').forEach(btn => {
 });
 
 
-/* ─── Flash Message Auto-Dismiss ────────────────────────── */
+/* ─── Flash Message Dismiss & Auto-Dismiss ──────────────── */
+function dismissToast(toast) {
+  if (!toast) return;
+  toast.classList.add('dismissed');
+  setTimeout(() => {
+    toast.remove();
+  }, 350);
+}
+
+function showToast(type, message) {
+  let container = document.querySelector('.flash-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'flash-container';
+    document.body.appendChild(container);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `flash-msg ${type}`;
+  toast.setAttribute('role', 'alert');
+  
+  const strokeColor = type === 'success' ? '#10b981' : '#ef4444';
+  const iconName = type === 'success' ? 'check-circle' : 'alert-circle';
+  
+  toast.innerHTML = `
+    <span class="flash-icon">
+      <i data-lucide="${iconName}" style="stroke: ${strokeColor}; width: 20px; height: 20px;"></i>
+    </span>
+    <span class="flash-text">${escapeHtml(message)}</span>
+    <button class="flash-close" aria-label="Close alert" onclick="dismissToast(this.parentElement)">
+      <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+    </button>
+  `;
+  
+  container.appendChild(toast);
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+  
+  setTimeout(() => {
+    dismissToast(toast);
+  }, 5000);
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
+}
+
 document.querySelectorAll('.flash-msg').forEach(msg => {
   setTimeout(() => {
-    msg.style.opacity = '0';
-    msg.style.transform = 'translateX(40px)';
-    msg.style.transition = '0.4s ease';
-    setTimeout(() => msg.remove(), 400);
+    dismissToast(msg);
   }, 5000);
 });
 

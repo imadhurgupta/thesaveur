@@ -150,6 +150,62 @@ orders, fast shipping.{% endblock %}
 </section>
 
 
+{% if site_stats and site_stats.total_reviews > 0 %}
+<!-- ══════════════════════════════════════════════════════
+       OVERALL RATING SECTION
+  ══════════════════════════════════════════════════════ -->
+<section style="padding: 64px 0; background: linear-gradient(135deg, #f9f6f0 0%, #fff 60%, #f4f0e8 100%);" aria-label="Overall Customer Rating">
+  <div class="container">
+
+    <!-- Section Header -->
+    <div class="text-center section-header reveal" style="margin-bottom: 40px;">
+      <span class="section-tag">Verified Buyers</span>
+      <h2 class="section-title">What Our Customers Say</h2>
+      <p class="section-subtitle" style="max-width: 480px; margin: 0 auto;">
+        Thousands of happy buyers have rated our products. Here's what they think overall.
+      </p>
+    </div>
+
+    <!-- Site-Wide Score Badge (centered, prominent) -->
+    <div class="reveal" style="display:flex; justify-content:center;">
+      <div style="display:inline-flex; align-items:center; gap:32px; background:var(--green-dark); color:white; padding:28px 52px; border-radius:var(--radius-pill); box-shadow: 0 10px 40px rgba(15,41,30,0.28);">
+
+        <!-- Big Score -->
+        <div style="text-align:center;">
+          <div style="font-size:3rem; font-weight:900; line-height:1; font-family:'Playfair Display',serif; color:#f1c40f;">{{ site_stats.overall_rating }}</div>
+          <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; opacity:0.65; margin-top:4px;">Overall Rating</div>
+        </div>
+
+        <div style="width:1px; height:52px; background:rgba(255,255,255,0.18);"></div>
+
+        <!-- Stars -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <div style="display:flex; align-items:center; gap:5px;">
+            {% for i in range(1, 6) %}
+              <svg viewBox="0 0 24 24" fill="{% if site_stats.overall_rating >= i %}#f1c40f{% else %}rgba(255,255,255,0.2){% endif %}" width="26" height="26">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            {% endfor %}
+          </div>
+          <div style="font-size:0.8rem; opacity:0.7;">out of 5</div>
+        </div>
+
+        <div style="width:1px; height:52px; background:rgba(255,255,255,0.18);"></div>
+
+        <!-- Total Reviews -->
+        <div style="text-align:center;">
+          <div style="font-size:2rem; font-weight:800; line-height:1;">{{ site_stats.total_reviews }}</div>
+          <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; opacity:0.65; margin-top:4px;">Total Reviews</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endif %}
+
+
 
 <!-- ══════════════════════════════════════════════════════
        TRUST BAR SECTION
@@ -162,7 +218,7 @@ orders, fast shipping.{% endblock %}
           <i data-lucide="package"></i>
         </div>
         <div class="trust-info">
-          <span class="trust-number" data-target="1200" data-suffix="+">1200+</span>
+          <span class="trust-number" data-target="{{ total_delivered_count }}" data-suffix="+">{{ total_delivered_count }}+</span>
           <span class="trust-label">Orders Handpicked & Delivered</span>
         </div>
       </div>
@@ -180,7 +236,7 @@ orders, fast shipping.{% endblock %}
           <i data-lucide="globe"></i>
         </div>
         <div class="trust-info">
-          <span class="trust-number" data-target="28" data-suffix="+">28+</span>
+          <span class="trust-number" data-target="{{ states_served }}" data-suffix="+">{{ states_served }}+</span>
           <span class="trust-label">States Across India Served</span>
         </div>
       </div>
@@ -255,9 +311,25 @@ orders, fast shipping.{% endblock %}
             <a href="{{ url_for('product_detail', id=product.id) }}">{{ product.name }}</a>
           </h3>
 
-          <div class="product-rating">
-            <div class="stars">★★★★★</div>
-            <span class="rating-text">4.9 (48 reviews)</span>
+          <div class="product-rating" style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <div class="stars" style="color:#f1c40f; gap:2px; display:inline-flex;">
+              {% if product.review_count > 0 %}
+                {% for i in range(1, 6) %}
+                  <svg viewBox="0 0 24 24" fill="{% if product.avg_rating >= i %}#f1c40f{% else %}none{% endif %}" stroke="#f1c40f" stroke-width="2" width="14" height="14">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                {% endfor %}
+              {% else %}
+                <span style="color:#ccc;">★★★★★</span>
+              {% endif %}
+            </div>
+            <span class="rating-text" style="font-size:0.8rem; color:var(--text-muted);">
+              {% if product.review_count > 0 %}
+                {{ product.avg_rating }} ({{ product.review_count }} review{{ 's' if product.review_count != 1 }})
+              {% else %}
+                No reviews yet
+              {% endif %}
+            </span>
           </div>
 
           <p class="product-desc">{{ product.description }}</p>

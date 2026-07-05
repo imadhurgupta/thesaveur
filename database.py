@@ -54,6 +54,16 @@ def init_db():
             FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            user_name TEXT NOT NULL,
+            rating INTEGER NOT NULL,
+            comment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS enquiries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -93,6 +103,12 @@ def init_db():
             zip_code TEXT NOT NULL,
             payment_method TEXT NOT NULL,
             status TEXT DEFAULT 'Processing',
+            contact_name TEXT,
+            contact_email TEXT,
+            contact_phone TEXT,
+            razorpay_order_id TEXT,
+            razorpay_payment_id TEXT,
+            razorpay_signature TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         );
@@ -218,6 +234,45 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
+    # Safe migration: contact information on orders
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN contact_name TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN contact_email TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN contact_phone TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Safe migration: Razorpay integration columns
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN razorpay_order_id TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN razorpay_payment_id TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN razorpay_signature TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+
     # Seed products only if table is empty
     cursor.execute("SELECT COUNT(*) FROM products")
     count = cursor.fetchone()[0]
@@ -322,6 +377,26 @@ def init_db():
         )
         conn.commit()
         print("[OK] Seeded default categories.")
+
+    # Seed default reviews if table is empty
+    cursor.execute("SELECT COUNT(*) FROM reviews")
+    review_count = cursor.fetchone()[0]
+    if review_count == 0:
+        reviews_data = [
+            (1, 'Aarav Sharma', 5, 'Absolutely loved the malty flavor of this Assam tea. Tastes exactly like traditional estate tea! Perfect morning brew.'),
+            (1, 'Priya Patel', 4, 'Great quality whole leaves. Very aromatic and soothing. Highly recommended for tea lovers.'),
+            (3, 'Rohan Das', 5, 'Extremely fresh and strong aroma. A little goes a long way. This Garam Masala is a game changer for my cooking!'),
+            (3, 'Anjali Gupta', 5, 'The perfect spice blend for my curries. It adds a premium warmth and richness to the dishes. Will definitely buy again.'),
+            (4, 'Vikram Malhotra', 4, 'Very vibrant yellow color. You can tell it has high curcumin content and is extremely pure.'),
+            (4, 'Meera Sen', 5, 'Excellent purity. Tastes authentic and earthy. Perfect for cooking and making golden milk!'),
+            (6, 'Suresh Kumar', 5, 'Very hot and vibrant red color. Excellent quality chilli powder.')
+        ]
+        cursor.executemany(
+            "INSERT INTO reviews (product_id, user_name, rating, comment) VALUES (?, ?, ?, ?)",
+            reviews_data
+        )
+        conn.commit()
+        print("[OK] Seeded default reviews.")
 
     conn.close()
     print("[OK] Database initialized successfully.")

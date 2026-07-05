@@ -99,6 +99,40 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   transition: var(--transition);
   white-space: nowrap;
 }
+
+/* Global Button Hover & Active States */
+button,
+[class*="btn-"],
+.auth-submit,
+.pwd-toggle,
+.tab-btn,
+.remove-btn,
+.action-btn {
+  transition: var(--transition);
+}
+
+button:hover:not(:disabled),
+[class*="btn-"]:hover:not(:disabled),
+.auth-submit:hover:not(:disabled),
+.pwd-toggle:hover:not(:disabled),
+.tab-btn:hover:not(:disabled),
+.remove-btn:hover:not(:disabled),
+.action-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled),
+.btn:active:not(:disabled),
+[class*="btn-"]:active:not(:disabled),
+.auth-submit:active:not(:disabled),
+.pwd-toggle:active:not(:disabled),
+.tab-btn:active:not(:disabled),
+.remove-btn:active:not(:disabled),
+.action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, var(--amber), var(--amber-light));
   color: var(--white);
@@ -186,8 +220,8 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 .nav-logo-text {
   font-family: 'Cinzel', 'Playfair Display', serif;
   font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--white);
+  font-weight: 900;
+  color: var(--amber-light);
   line-height: 1.1;
   letter-spacing: 0.01em;
 }
@@ -206,8 +240,8 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 .brand-logo-img {
-  height: 42px;
-  width: 42px;
+  height: 48px;
+  width: 48px;
   border-radius: 50%;
   object-fit: cover;
   border: 1.5px solid var(--amber-light);
@@ -215,11 +249,12 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 
 .brand-logo-img-footer {
-  height: 50px;
-  width: 50px;
+  height: 65px;
+  width: 65px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--amber-light);
+  border: 3.5px solid var(--amber);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 /* Nav Links */
@@ -229,9 +264,9 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   gap: 6px;
 }
 .nav-links a {
-  color: rgba(255,255,255,0.8);
+  color: var(--amber-pale);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
   padding: 7px 16px;
   border-radius: var(--radius-pill);
   transition: var(--transition);
@@ -332,33 +367,93 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 }
 .nav-mobile a:hover { color: var(--amber); padding-left: 6px; }
 
-/* ── Flash Messages ───────────────────────────────────────── */
+/* ── Flash Messages (Toasts) ───────────────────────── */
 .flash-container {
   position: fixed;
-  top: 90px;
+  top: 96px;
   right: 24px;
-  z-index: 2000;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 380px;
+  gap: 12px;
+  width: calc(100% - 48px);
+  max-width: 400px;
+  pointer-events: none;
 }
 .flash-msg {
-  padding: 14px 20px;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  font-size: 0.9rem;
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px rgba(15, 41, 30, 0.08), 
+              0 1px 3px rgba(0, 0, 0, 0.02),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.flash-msg.success {
+  border-left: 5px solid #10b981;
+}
+.flash-msg.error {
+  border-left: 5px solid #ef4444;
+}
+.flash-icon {
   display: flex;
   align-items: center;
-  gap: 10px;
-  animation: slideInRight 0.4s ease;
-  box-shadow: var(--shadow-md);
+  justify-content: center;
 }
-.flash-msg.success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
-.flash-msg.error   { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(40px); }
-  to   { opacity: 1; transform: translateX(0); }
+.flash-text {
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-dark);
+}
+.flash-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  opacity: 0.6;
+  padding: 5px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.flash-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+  color: var(--text-dark);
+}
+.flash-msg.dismissed {
+  opacity: 0;
+  transform: translateX(60px) scale(0.95);
+  margin-top: -65px;
+}
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(60px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@media (max-width: 480px) {
+  .flash-container {
+    top: 24px;
+    right: 24px;
+  }
 }
 
 /* ============================================================
@@ -387,16 +482,43 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.8);
+  color: var(--white);
   transition: var(--transition);
   cursor: pointer;
   text-decoration: none;
 }
-.social-btn:hover { background: var(--amber); color: var(--white); transform: translateY(-3px); }
+.social-btn.facebook {
+  background: #1877F2;
+}
+.social-btn.instagram {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+.social-btn.whatsapp {
+  background: #25D366;
+}
+.social-btn.linkedin {
+  background: #0077B5;
+}
+.social-btn:hover {
+  color: var(--white);
+  transform: translateY(-3px);
+  filter: brightness(1.15);
+}
+.social-btn.facebook:hover {
+  box-shadow: 0 4px 15px rgba(24, 119, 242, 0.5);
+}
+.social-btn.instagram:hover {
+  box-shadow: 0 4px 15px rgba(220, 39, 67, 0.5);
+}
+.social-btn.whatsapp:hover {
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.5);
+}
+.social-btn.linkedin:hover {
+  box-shadow: 0 4px 15px rgba(0, 119, 181, 0.5);
+}
 .footer-col h4 {
   font-family: 'Playfair Display', serif;
   font-size: 1rem;
@@ -1525,8 +1647,8 @@ h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
   border: none;
   font-family: inherit;
   font-size: inherit;
-  color: rgba(255,255,255,0.8);
-  font-weight: 500;
+  color: var(--amber-pale);
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;

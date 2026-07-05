@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Payment – The Saveur{% endblock %}
+{% block meta_desc %}Securely complete your payment for Order {{ order.order_number }} at The Saveur.{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Page Layout ── */
+  .payment-page {
+    min-height: 80vh;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
+    padding: 60px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Cards ── */
+  .payment-card,
+  .order-summary-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 20px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    padding: 36px 32px;
+    color: #e8e8e8;
+  }
+
+  .payment-card {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .order-summary-card {
+    width: 100%;
+    max-width: 360px;
+    position: sticky;
+    top: 100px;
+  }
+
+  /* ── Badge / Status ── */
+  .secure-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.35);
+    color: #4ade80;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 20px;
+  }
+
+  .secure-badge svg { flex-shrink: 0; }
+
+  /* ── Headings ── */
+  .payment-card h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 6px;
+  }
+
+  .payment-card .subtitle {
+    color: #9ca3af;
+    font-size: 0.92rem;
+    margin-bottom: 28px;
+  }
+
+  /* ── Amount Display ── */
+  .amount-display {
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.12));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .amount-display .label {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .amount-display .amount {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  .amount-display .currency {
+    font-size: 1rem;
+    color: #a78bfa;
+    font-weight: 700;
+    vertical-align: super;
+    margin-right: 2px;
+  }
+
+  /* ── Contact Info ── */
+  .contact-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .info-chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+
+  .info-chip .chip-label {
+    color: #6b7280;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .info-chip .chip-value {
+    color: #d1d5db;
+    font-size: 0.88rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .info-chip.full-width {
+    grid-column: span 2;
+  }
+
+  /* ── Pay Button ── */
+  .btn-pay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5, #2563eb);
+    color: #fff;
+    box-shadow: 0 4px 24px rgba(124,58,237,0.4);
+  }
+
+  .btn-pay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .btn-pay:hover::before { opacity: 1; }
+  .btn-pay:hover { box-shadow: 0 6px 32px rgba(124,58,237,0.6); transform: translateY(-1px); }
+  .btn-pay:active { transform: translateY(0); }
+  .btn-pay:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  /* Spinner for loading */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-pay.loading .spinner { display: block; }
+  .btn-pay.loading .btn-text { display: none; }
+  .btn-pay.loading .btn-icon { display: none; }
+
+  /* ── Trust Row ── */
+  .trust-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+
+  .trust-item svg { color: #4ade80; flex-shrink: 0; }
+
+  /* ── Order Summary Card ── */
+  .order-summary-card h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #e8e8e8;
+    margin: 0 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .order-num {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+    font-family: monospace;
+  }
+
+  .order-items-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .order-item-name {
+    color: #d1d5db;
+    font-size: 0.88rem;
+    flex: 1;
+  }
+
+  .order-item-qty {
+    color: #9ca3af;
+    font-size: 0.78rem;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .order-item-price {
+    color: #e8e8e8;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 16px 0;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .summary-row .s-label { color: #9ca3af; font-size: 0.85rem; }
+  .summary-row .s-value { color: #e8e8e8; font-size: 0.85rem; font-weight: 600; }
+
+  .summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .summary-total .t-label {
+    color: #e8e8e8;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .summary-total .t-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Razorpay Branding ── */
+  .rz-branding {
+    margin-top: 22px;
+    text-align: center;
+    color: #4b5563;
+    font-size: 0.73rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* ── Mock Banner ── */
+  .mock-banner {
+    background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.08));
+    border: 1px solid rgba(251,191,36,0.4);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #fbbf24;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .mock-banner svg { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Error / Success Overlay ── */
+  .payment-result {
+    display: none;
+    text-align: center;
+    padding: 32px 0 12px;
+  }
+
+  .result-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .result-icon.success { background: rgba(34,197,94,0.15); }
+  .result-icon.error { background: rgba(239,68,68,0.15); }
+
+  .result-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .result-title.success { color: #4ade80; }
+  .result-title.error { color: #f87171; }
+
+  .result-msg { color: #9ca3af; font-size: 0.88rem; margin-bottom: 20px; }
+
+  @media (max-width: 768px) {
+    .contact-info-grid { grid-template-columns: 1fr; }
+    .info-chip.full-width { grid-column: span 1; }
+    .order-summary-card { position: static; }
+    .trust-row { flex-wrap: wrap; gap: 10px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+
+  <!-- ═══ LEFT: Payment Card ═══ -->
+  <div class="payment-card" id="paymentCard">
+
+    <!-- Secure Badge -->
+    <div class="secure-badge">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      SSL Secured Payment
+    </div>
+
+    <h1>Complete Payment</h1>
+    <p class="subtitle">You're one step away from placing your order!</p>
+
+    <!-- Mock Banner (shown only when no real Razorpay keys) -->
+    {% if not razorpay_key_id %}
+    <div class="mock-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span><strong>Test Mode:</strong> Razorpay keys not configured. Clicking "Pay Now" will simulate a successful payment for testing.</span>
+    </div>
+    {% endif %}
+
+    <!-- Amount Display -->
+    <div class="amount-display">
+      <div>
+        <div class="label">Amount to Pay</div>
+        <div class="amount">
+          <span class="currency">₹</span>{{ "%.2f"|format(order.total_amount) }}
+        </div>
+      </div>
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(139,92,246,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+        <line x1="1" y1="10" x2="23" y2="10"/>
+      </svg>
+    </div>
+
+    <!-- Contact Info Summary -->
+    <div class="contact-info-grid">
+      <div class="info-chip">
+        <div class="chip-label">Name</div>
+        <div class="chip-value">{{ order.contact_name or '—' }}</div>
+      </div>
+      <div class="info-chip">
+        <div class="chip-label">Phone</div>
+        <div class="chip-value">{{ order.contact_phone or '—' }}</div>
+      </div>
+      <div class="info-chip full-width">
+        <div class="chip-label">Email</div>
+        <div class="chip-value">{{ order.contact_email or '—' }}</div>
+      </div>
+      <div class="info-chip full-width">
+        <div class="chip-label">Shipping Address</div>
+        <div class="chip-value">{{ order.shipping_address }}, {{ order.city }}, {{ order.state }} – {{ order.zip_code }}</div>
+      </div>
+    </div>
+
+    <!-- Pay Button -->
+    <button class="btn-pay" id="payBtn" onclick="handlePayment()">
+      <div class="spinner"></div>
+      <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+        <line x1="1" y1="10" x2="23" y2="10"/>
+      </svg>
+      <span class="btn-text">Pay ₹{{ "%.2f"|format(order.total_amount) }} Securely</span>
+    </button>
+
+    <!-- Trust Row -->
+    <div class="trust-row">
+      <div class="trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        UPI / Cards
+      </div>
+      <div class="trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Net Banking
+      </div>
+      <div class="trust-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        256-bit Encryption
+      </div>
+    </div>
+
+    <!-- Razorpay Branding -->
+    <div class="rz-branding">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Powered by Razorpay · Secure & Encrypted
+    </div>
+
+    <!-- Payment Result (success/error shown after attempt) -->
+    <div class="payment-result" id="paymentResult">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-msg" id="resultMsg"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══ RIGHT: Order Summary Card ═══ -->
+  <div class="order-summary-card">
+    <h2>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+      Order Summary
+    </h2>
+    <div class="order-num">{{ order.order_number }}</div>
+
+    <!-- Items -->
+    <ul class="order-items-list">
+      {% for item in order_items %}
+      <li class="order-item">
+        <div>
+          <div class="order-item-name">{{ item.product_name }}</div>
+          <span class="order-item-qty">Qty: {{ item.quantity }}</span>
+        </div>
+        <div class="order-item-price">₹{{ "%.2f"|format(item.price * item.quantity) }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Totals -->
+    {% set subtotal = order.total_amount + (order.discount_amount or 0) %}
+    <div class="summary-row">
+      <span class="s-label">Subtotal</span>
+      <span class="s-value">₹{{ "%.2f"|format(subtotal) }}</span>
+    </div>
+    {% if order.discount_amount and order.discount_amount > 0 %}
+    <div class="summary-row">
+      <span class="s-label">
+        Discount
+        {% if order.promo_code %}<span style="color:#a78bfa;font-size:0.75rem;">({{ order.promo_code }})</span>{% endif %}
+      </span>
+      <span class="s-value" style="color:#4ade80;">−₹{{ "%.2f"|format(order.discount_amount) }}</span>
+    </div>
+    {% endif %}
+    <div class="summary-row">
+      <span class="s-label">Shipping</span>
+      <span class="s-value" style="color:#4ade80;">Free</span>
+    </div>
+    <div class="summary-total">
+      <span class="t-label">Total</span>
+      <span class="t-value">₹{{ "%.2f"|format(order.total_amount) }}</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Payment Method -->
+    <div class="summary-row">
+      <span class="s-label">Payment</span>
+      <span class="s-value">{{ order.payment_method }}</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ Hidden Data for JS ═══ -->
+<input type="hidden" id="orderId" value="{{ order.id }}">
+<input type="hidden" id="razorpayOrderId" value="{{ order.razorpay_order_id or '' }}">
+<input type="hidden" id="razorpayKeyId" value="{{ razorpay_key_id or '' }}">
+<input type="hidden" id="orderAmount" value="{{ (order.total_amount * 100)|int }}">
+<input type="hidden" id="contactName" value="{{ order.contact_name or '' }}">
+<input type="hidden" id="contactEmail" value="{{ order.contact_email or '' }}">
+<input type="hidden" id="contactPhone" value="{{ order.contact_phone or '' }}">
+<input type="hidden" id="orderNumber" value="{{ order.order_number }}">
+<input type="hidden" id="verifyUrl" value="{{ url_for('checkout_verify') }}">
+
+<!-- Razorpay JS SDK (only load when real keys present) -->
+{% if razorpay_key_id %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endif %}
+
+<script>
+  const RAZORPAY_KEY_ID  = document.getElementById('razorpayKeyId').value.trim();
+  const RAZORPAY_ORDER_ID = document.getElementById('razorpayOrderId').value.trim();
+  const ORDER_ID          = document.getElementById('orderId').value;
+  const ORDER_AMOUNT      = parseInt(document.getElementById('orderAmount').value, 10);
+  const CONTACT_NAME      = document.getElementById('contactName').value;
+  const CONTACT_EMAIL     = document.getElementById('contactEmail').value;
+  const CONTACT_PHONE     = document.getElementById('contactPhone').value;
+  const ORDER_NUMBER      = document.getElementById('orderNumber').value;
+  const VERIFY_URL        = document.getElementById('verifyUrl').value;
+
+  function setButtonLoading(loading) {
+    const btn = document.getElementById('payBtn');
+    if (loading) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    } else {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  function showResult(type, title, msg) {
+    const resultDiv  = document.getElementById('paymentResult');
+    const iconDiv    = document.getElementById('resultIcon');
+    const titleDiv   = document.getElementById('resultTitle');
+    const msgDiv     = document.getElementById('resultMsg');
+
+    iconDiv.className = 'result-icon ' + type;
+    titleDiv.className = 'result-title ' + type;
+
+    if (type === 'success') {
+      iconDiv.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else {
+      iconDiv.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+    }
+
+    titleDiv.textContent = title;
+    msgDiv.textContent   = msg;
+    resultDiv.style.display = 'block';
+  }
+
+  async function verifyPayment(payload) {
+    setButtonLoading(true);
+    try {
+      const form = new FormData();
+      for (const [k, v] of Object.entries(payload)) form.append(k, v);
+
+      const resp = await fetch(VERIFY_URL, {
+        method: 'POST',
+        body: form
+      });
+
+      const data = await resp.json();
+
+      if (data.success) {
+        showResult('success', 'Payment Successful! 🎉', `Order ${ORDER_NUMBER} is confirmed and being processed.`);
+        document.getElementById('payBtn').style.display = 'none';
+        setTimeout(() => {
+          window.location.href = data.redirect_url;
+        }, 2500);
+      } else {
+        showResult('error', 'Payment Failed', data.message || 'Something went wrong. Please try again.');
+        setButtonLoading(false);
+      }
+    } catch (err) {
+      showResult('error', 'Network Error', 'Could not connect to the server. Please try again.');
+      setButtonLoading(false);
+    }
+  }
+
+  function handlePayment() {
+    // ── Mock / Test mode (no Razorpay keys) ──
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_ORDER_ID) {
+      setButtonLoading(true);
+      verifyPayment({
+        order_id: ORDER_ID,
+        razorpay_payment_id: 'MOCK_PAY_' + Date.now(),
+        razorpay_order_id:   'MOCK_ORD_' + ORDER_ID,
+        razorpay_signature:  'MOCK_SIG',
+        is_mock:             'true'
+      });
+      return;
+    }
+
+    // ── Real Razorpay Checkout ──
+    const options = {
+      key:          RAZORPAY_KEY_ID,
+      amount:       ORDER_AMOUNT,
+      currency:     'INR',
+      name:         'The Saveur',
+      description:  `Order ${ORDER_NUMBER}`,
+      order_id:     RAZORPAY_ORDER_ID,
+      prefill: {
+        name:    CONTACT_NAME,
+        email:   CONTACT_EMAIL,
+        contact: CONTACT_PHONE
+      },
+      theme: { color: '#7c3aed' },
+      handler: function(response) {
+        verifyPayment({
+          order_id:             ORDER_ID,
+          razorpay_payment_id:  response.razorpay_payment_id,
+          razorpay_order_id:    response.razorpay_order_id,
+          razorpay_signature:   response.razorpay_signature,
+          is_mock:              'false'
+        });
+      },
+      modal: {
+        ondismiss: function() {
+          setButtonLoading(false);
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(resp) {
+      showResult('error', 'Payment Failed', resp.error.description || 'Payment could not be processed.');
+      setButtonLoading(false);
+    });
+    rzp.open();
+  }
+
+  // Automatically trigger payment gateway modal immediately on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(handlePayment, 1000);
+  });
+</script>
+{% endblock %}

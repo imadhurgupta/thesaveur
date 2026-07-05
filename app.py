@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from database import get_db, init_db, generate_user_id
 import hashlib
 import random
+import razorpay
 import string
 from datetime import datetime, timedelta
 from functools import wraps
@@ -20,6 +21,19 @@ from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'am_trader_dev_secret_key_2024')
+
+# Razorpay Configuration
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '').strip()
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '').strip()
+IS_REAL_MODE = True
+
+def get_razorpay_client():
+    if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+        try:
+            return razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+        except Exception as e:
+            print(f"[RAZORPAY] Initialization error: {str(e)}")
+    return None
 
 UPLOAD_FOLDER = os.environ.get(
     'UPLOAD_FOLDER',
@@ -65,6 +79,11 @@ def send_otp_email(receiver_email, otp, purpose='reset'):
         heading = "Verify Your Email Address"
         body_text = ("You're almost there! Enter the 6-digit code below to verify your email address "
                      "and complete your account registration. This OTP is valid for 10 minutes.")
+    elif purpose == 'admin_login':
+        subject = "Admin Login OTP – The Saveur"
+        heading = "Admin Login Verification"
+        body_text = ("An administrator login attempt was detected for your account. Enter the 6-digit code "
+                     "below to verify your identity and complete the login. This OTP is valid for 10 minutes.")
     else:
         subject = "Password Reset OTP – The Saveur"
         heading = "Password Reset Request"
@@ -396,17 +415,70 @@ def inject_globals():
 @app.route('/')
 def home():
     db = get_db()
-    bestsellers = db.execute(
+    bestsellers_raw = db.execute(
         "SELECT * FROM products WHERE is_bestseller = 1 LIMIT 6"
     ).fetchall()
+    
+    bestsellers = []
+    for p in bestsellers_raw:
+        p_dict = dict(p)
+        stats = db.execute("""
+            SELECT COUNT(*) AS count, AVG(rating) AS avg
+            FROM reviews
+            WHERE product_id = ?
+        """, (p['id'],)).fetchone()
+        p_dict['review_count'] = stats['count'] if stats else 0
+        p_dict['avg_rating'] = round(stats['avg'], 1) if stats and stats['avg'] else 0.0
+        bestsellers.append(p_dict)
+
     carousel_slides = db.execute(
         "SELECT * FROM carousel_slides ORDER BY slide_order ASC"
     ).fetchall()
     categories = db.execute(
         "SELECT * FROM categories ORDER BY display_order ASC"
     ).fetchall()
+
+    # Fetch per-product review stats for the homepage snapshot
+    product_reviews = db.execute("""
+        SELECT p.id, p.name, p.category, p.image_filename,
+               COUNT(r.id) AS review_count,
+               ROUND(AVG(r.rating), 1) AS avg_rating
+        FROM products p
+        LEFT JOIN reviews r ON r.product_id = p.id
+        WHERE r.id IS NOT NULL
+        GROUP BY p.id
+        HAVING review_count > 0
+        ORDER BY avg_rating DESC, review_count DESC
+        LIMIT 8
+    """).fetchall()
+
+    # Site-wide aggregate
+    site_stats = db.execute("""
+        SELECT COUNT(*) AS total_reviews,
+               ROUND(AVG(rating), 1) AS overall_rating
+        FROM reviews
+    """).fetchone()
+
+    # Site-wide orders statistics (dynamic Trust Bar counters)
+    # Delivered orders: base count of 1200 + actual orders in database (excluding pending payment and cancelled)
+    db_orders_count = db.execute("SELECT COUNT(*) FROM orders WHERE status != 'Pending Payment' AND status != 'Cancelled'").fetchone()[0]
+    total_delivered_count = 1200 + db_orders_count
+
+    # States served: base count of 28 states + distinct states from orders
+    db_states_count = db.execute("SELECT COUNT(DISTINCT state) FROM orders WHERE state IS NOT NULL AND state != ''").fetchone()[0]
+    states_served = max(28, db_states_count)
+
     db.close()
-    return render_template('index.html', bestsellers=bestsellers, carousel_slides=carousel_slides, categories=categories)
+    return render_template(
+        'index.html',
+        bestsellers=bestsellers,
+        carousel_slides=carousel_slides,
+        categories=categories,
+        product_reviews=product_reviews,
+        site_stats=site_stats,
+        total_delivered_count=total_delivered_count,
+        states_served=states_served
+    )
 
 
 # ─────── Products ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -415,30 +487,51 @@ def home():
 def products():
     category = request.args.get('category', 'all').strip()
     db = get_db()
-    
-    # Query categories to match case-insensitively
-    categories = db.execute("SELECT name, display_name FROM categories").fetchall()
-    
+
+    # Query all categories (ordered for display)
+    all_categories = db.execute(
+        "SELECT * FROM categories ORDER BY display_order ASC"
+    ).fetchall()
+
     matched_category_name = None
-    for cat in categories:
+    for cat in all_categories:
         if cat['name'].lower() == category.lower():
             matched_category_name = cat['name']
             break
-            
+
     if matched_category_name:
         products_list = db.execute(
             "SELECT * FROM products WHERE category = ? ORDER BY name",
             (matched_category_name,)
         ).fetchall()
+        categories_with_products = []
     else:
-        # Default to all products if 'all' or unmatched
+        # Default to all products
         products_list = db.execute(
             "SELECT * FROM products ORDER BY category, name"
         ).fetchall()
         category = 'all'
-        
+
+        # Build per-category groups for the "all" view
+        categories_with_products = []
+        for cat in all_categories:
+            cat_prods = db.execute(
+                "SELECT * FROM products WHERE category = ? ORDER BY name",
+                (cat['name'],)
+            ).fetchall()
+            if cat_prods:
+                categories_with_products.append({
+                    'category': cat,
+                    'products': cat_prods
+                })
+
     db.close()
-    return render_template('products.html', products=products_list, active_filter=category)
+    return render_template(
+        'products.html',
+        products=products_list,
+        active_filter=category,
+        categories_with_products=categories_with_products
+    )
 
 
 @app.route('/product/<int:id>')
@@ -458,8 +551,86 @@ def product_detail(id):
     if not image_list and product['image_filename']:
         image_list = [product['image_filename']]
         
+    # Get related/similar products (same category first, limit 4)
+    related_products = db.execute(
+        "SELECT * FROM products WHERE category = ? AND id != ? LIMIT 4",
+        (product['category'], id)
+    ).fetchall()
+    
+    related_products_list = [dict(p) for p in related_products]
+    if len(related_products_list) < 4:
+        exclude_ids = [id] + [p['id'] for p in related_products_list]
+        placeholders = ','.join('?' for _ in exclude_ids)
+        query = f"SELECT * FROM products WHERE id NOT IN ({placeholders}) LIMIT {4 - len(related_products_list)}"
+        additional_products = db.execute(query, tuple(exclude_ids)).fetchall()
+        related_products_list.extend([dict(p) for p in additional_products])
+        
+    # Fetch reviews for this product
+    reviews = db.execute("SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC", (id,)).fetchall()
+    reviews_list = [dict(r) for r in reviews]
+    
+    # Calculate review stats
+    total_reviews = len(reviews_list)
+    avg_rating = 0.0
+    rating_breakdown = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+    if total_reviews > 0:
+        total_stars = sum(r['rating'] for r in reviews_list)
+        avg_rating = round(total_stars / total_reviews, 1)
+        for r in reviews_list:
+            r_val = r['rating']
+            if r_val in rating_breakdown:
+                rating_breakdown[r_val] += 1
+                
+    # Check wishlist
+    wishlist = session.get('wishlist', [])
+    in_wishlist = str(id) in [str(w) for w in wishlist]
+
     db.close()
-    return render_template('product_detail.html', product=product, images=image_list)
+    return render_template(
+        'product_detail.html', 
+        product=product, 
+        images=image_list, 
+        related_products=related_products_list,
+        reviews=reviews_list,
+        total_reviews=total_reviews,
+        avg_rating=avg_rating,
+        rating_breakdown=rating_breakdown,
+        in_wishlist=in_wishlist
+    )
+
+
+@app.route('/product/<int:id>/review', methods=['POST'])
+def add_review(id):
+    if not session.get('user_id'):
+        flash("You must be logged in to submit a review.", "error")
+        return redirect(url_for('login', next=url_for('product_detail', id=id)))
+        
+    rating = request.form.get('rating')
+    comment = request.form.get('comment', '').strip()
+    user_name = session.get('user_name', 'Verified Buyer')
+        
+    if not rating:
+        flash("Please select a star rating.", "error")
+        return redirect(url_for('product_detail', id=id))
+        
+    try:
+        rating_int = int(rating)
+        if not (1 <= rating_int <= 5):
+            raise ValueError()
+    except ValueError:
+        flash("Invalid rating value.", "error")
+        return redirect(url_for('product_detail', id=id))
+        
+    db = get_db()
+    db.execute(
+        "INSERT INTO reviews (product_id, user_name, rating, comment) VALUES (?, ?, ?, ?)",
+        (id, user_name, rating_int, comment)
+    )
+    db.commit()
+    db.close()
+    
+    flash("Thank you! Your review has been submitted successfully.", "success")
+    return redirect(url_for('product_detail', id=id))
 
 
 # ─────── About ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -547,7 +718,12 @@ def add_to_cart(product_id):
     cart[prod_id_str] = cart.get(prod_id_str, 0) + qty
     session['cart'] = cart
     session.modified = True
-    
+
+    # Buy Now: skip cart page, go directly to checkout
+    if request.form.get('buy_now') == '1':
+        flash(f"{product['name']} added. Complete your purchase below.", "success")
+        return redirect(url_for('checkout'))
+
     flash(f"Added {qty} {product['name']} to cart.", "success")
     return redirect(url_for('view_cart'))
 
@@ -586,6 +762,28 @@ def remove_from_cart(product_id):
     session.modified = True
     flash("Item removed from cart.", "success")
     return redirect(url_for('view_cart'))
+
+
+@app.route('/wishlist/toggle/<int:product_id>', methods=['POST'])
+def toggle_wishlist(product_id):
+    """Add or remove a product from the session wishlist."""
+    if 'user_id' not in session:
+        flash("Please log in to save items to your wishlist.", "error")
+        return redirect(url_for('login', next=request.referrer or url_for('products')))
+
+    wishlist = session.get('wishlist', [])
+    prod_str = str(product_id)
+
+    if prod_str in [str(w) for w in wishlist]:
+        wishlist = [w for w in wishlist if str(w) != prod_str]
+        flash("Removed from your wishlist.", "info")
+    else:
+        wishlist.append(prod_str)
+        flash("Added to your wishlist! ❤️", "success")
+
+    session['wishlist'] = wishlist
+    session.modified = True
+    return redirect(request.referrer or url_for('product_detail', id=product_id))
 
 
 # ─────── Checkout & Ordering ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -767,25 +965,25 @@ def checkout():
 @app.route('/checkout/submit', methods=['POST'])
 def checkout_submit():
     if 'user_id' not in session:
-        flash("Session expired. Please log in again.", "error")
-        return redirect(url_for('login'))
+        return jsonify({"success": False, "message": "Session expired. Please log in again."}), 401
         
     cart = session.get('cart', {})
     if not cart:
-        flash("Your cart is empty.", "error")
-        return redirect(url_for('products'))
+        return jsonify({"success": False, "message": "Your cart is empty."}), 400
         
     shipping_address = request.form.get('address', '').strip()
     city = request.form.get('city', '').strip()
     state = request.form.get('state', '').strip()
     zip_code = request.form.get('zip', '').strip()
+    contact_name = request.form.get('contact_name', '').strip()
+    contact_email = request.form.get('contact_email', '').strip()
+    contact_phone = request.form.get('contact_phone', '').strip()
     payment_method = request.form.get('payment_method', 'UPI').strip()
     promo_code_input = request.form.get('promo_code', '').strip().upper()
     discount_amount_input = float(request.form.get('discount_amount', 0) or 0)
 
-    if not shipping_address or not city or not state or not zip_code:
-        flash("Please fill in all shipping details.", "error")
-        return redirect(url_for('checkout'))
+    if not shipping_address or not city or not state or not zip_code or not contact_name or not contact_email or not contact_phone:
+        return jsonify({"success": False, "message": "Please fill in all shipping and contact details."}), 400
 
     db = get_db()
     try:
@@ -795,12 +993,10 @@ def checkout_submit():
         for prod_id, qty in cart.items():
             product = db.execute("SELECT * FROM products WHERE id = ?", (int(prod_id),)).fetchone()
             if not product:
-                flash(f"One of the products in your cart is no longer available.", "error")
-                return redirect(url_for('view_cart'))
+                return jsonify({"success": False, "message": "One of the products in your cart is no longer available."}), 400
 
             if product['stocks'] < qty:
-                flash(f"Insufficient stock for {product['name']}. Only {product['stocks']} available.", "error")
-                return redirect(url_for('view_cart'))
+                return jsonify({"success": False, "message": f"Insufficient stock for {product['name']}. Only {product['stocks']} available."}), 400
 
             total_amount += product['price'] * qty
             order_items_to_create.append({
@@ -838,68 +1034,257 @@ def checkout_submit():
 
         final_total = round(total_amount - final_discount, 2)
 
-        # Create order record
         order_number = generate_order_number()
-        cursor = db.execute(
-            """INSERT INTO orders
-               (user_id, total_amount, shipping_address, city, state, zip_code,
-                payment_method, status, discount_amount, promo_code, order_number)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 'Processing', ?, ?, ?)""",
-            (session['user_id'], final_total, shipping_address, city, state, zip_code,
-             payment_method, final_discount, applied_promo['code'] if applied_promo else '',
-             order_number)
-        )
-        order_id = cursor.lastrowid
 
-        # Create order items and update stock
-        for item in order_items_to_create:
-            db.execute(
-                "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
-                (order_id, item['product_id'], item['quantity'], item['price'])
+        if payment_method == 'COD':
+            # Cash on Delivery: Process and place order immediately
+            cursor = db.execute(
+                """INSERT INTO orders
+                   (user_id, total_amount, shipping_address, city, state, zip_code,
+                    payment_method, status, discount_amount, promo_code, order_number,
+                    contact_name, contact_email, contact_phone, razorpay_order_id)
+                   VALUES (?, ?, ?, ?, ?, ?, 'COD', 'Processing', ?, ?, ?, ?, ?, ?, 'COD')""",
+                (session['user_id'], final_total, shipping_address, city, state, zip_code,
+                 final_discount, applied_promo['code'] if applied_promo else '',
+                 order_number, contact_name, contact_email, contact_phone)
             )
+            order_id = cursor.lastrowid
+
+            # Create order items & decrement stock levels
+            for item in order_items_to_create:
+                db.execute(
+                    "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
+                    (order_id, item['product_id'], item['quantity'], item['price'])
+                )
+                db.execute(
+                    "UPDATE products SET stocks = stocks - ? WHERE id = ?",
+                    (item['quantity'], item['product_id'])
+                )
+
+            # Increment promo code usage if applied
+            if applied_promo:
+                db.execute(
+                    "UPDATE promo_codes SET used_count = used_count + 1 WHERE UPPER(code) = ?",
+                    (applied_promo['code'].upper(),)
+                )
+
+            # Clear cart session
+            session.pop('cart', None)
+            session.modified = True
+
+            db.commit()
+
+            # Send order confirmation email
+            try:
+                send_order_confirmation_email(
+                    contact_email, contact_name, order_number, final_total,
+                    f"{shipping_address}, {city}, {state} - {zip_code}",
+                    order_items_to_create
+                )
+            except Exception as mail_err:
+                print(f"[MAIL] Failed to send order confirmation email: {str(mail_err)}")
+
+            return jsonify({
+                "success": True,
+                "cod": True,
+                "redirect_url": url_for('my_orders')
+            })
+
+        else:
+            # Online Payment: Create in Pending Payment state and generate Razorpay Order
+            cursor = db.execute(
+                """INSERT INTO orders
+                   (user_id, total_amount, shipping_address, city, state, zip_code,
+                    payment_method, status, discount_amount, promo_code, order_number,
+                    contact_name, contact_email, contact_phone, razorpay_order_id)
+                   VALUES (?, ?, ?, ?, ?, ?, 'Online', 'Pending Payment', ?, ?, ?, ?, ?, ?, '')""",
+                (session['user_id'], final_total, shipping_address, city, state, zip_code,
+                 final_discount, applied_promo['code'] if applied_promo else '',
+                 order_number, contact_name, contact_email, contact_phone)
+            )
+            order_id = cursor.lastrowid
+
+            # Create order items
+            for item in order_items_to_create:
+                db.execute(
+                    "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
+                    (order_id, item['product_id'], item['quantity'], item['price'])
+                )
+
+            # Generate Razorpay Order
+            rz_client = get_razorpay_client()
+            rz_order_id = None
+            
+            if IS_REAL_MODE and not rz_client:
+                raise Exception("Razorpay client is not configured. Real Mode is enabled.")
+                
+            if rz_client:
+                try:
+                    amount_paise = int(final_total * 100)
+                    notes = {
+                        "order_number": order_number,
+                        "contact_name": contact_name,
+                        "contact_email": contact_email
+                    }
+                    rz_order = rz_client.order.create(data={
+                        "amount": amount_paise,
+                        "currency": "INR",
+                        "receipt": f"rcpt_{order_number}",
+                        "notes": notes
+                    })
+                    rz_order_id = rz_order.get('id')
+                except Exception as rz_err:
+                    print(f"[RAZORPAY] Order creation error: {str(rz_err)}")
+                    if IS_REAL_MODE:
+                        raise Exception(f"Razorpay order creation failed: {str(rz_err)}")
+
+            if not rz_order_id:
+                if IS_REAL_MODE:
+                    raise Exception("Unable to generate Razorpay Order ID.")
+                rz_order_id = f"MOCK_ORD_{order_number}"
+
+            db.execute(
+                "UPDATE orders SET razorpay_order_id = ? WHERE id = ?",
+                (rz_order_id, order_id)
+            )
+
+            db.commit()
+            
+            return jsonify({
+                "success": True,
+                "order_id": order_id,
+                "order_number": order_number,
+                "razorpay_order_id": rz_order_id,
+                "razorpay_key_id": RAZORPAY_KEY_ID,
+                "amount": int(final_total * 100),
+                "contact_name": contact_name,
+                "contact_email": contact_email,
+                "contact_phone": contact_phone
+            })
+        
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "message": f"An error occurred: {str(e)}"}), 500
+    finally:
+        db.close()
+
+
+@app.route('/checkout/verify', methods=['POST'])
+def checkout_verify():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Unauthorized access."}), 401
+
+    order_id = request.form.get('order_id')
+    razorpay_payment_id = request.form.get('razorpay_payment_id', '').strip()
+    razorpay_order_id = request.form.get('razorpay_order_id', '').strip()
+    razorpay_signature = request.form.get('razorpay_signature', '').strip()
+    is_mock = request.form.get('is_mock', 'false').lower() == 'true'
+
+    if not order_id:
+        return jsonify({"success": False, "message": "Missing order details."}), 400
+
+    db = get_db()
+    order = db.execute("SELECT * FROM orders WHERE id = ? AND user_id = ?", (order_id, session['user_id'])).fetchone()
+    if not order:
+        db.close()
+        return jsonify({"success": False, "message": "Order not found."}), 404
+
+    if order['status'] != 'Pending Payment':
+        db.close()
+        return jsonify({"success": False, "message": "Order already processed."}), 400
+
+    # Signature verification
+    signature_valid = False
+    if is_mock and not IS_REAL_MODE:
+        signature_valid = True
+    else:
+        # Real verification using Razorpay SDK
+        rz_client = get_razorpay_client()
+        if rz_client:
+            try:
+                rz_client.utility.verify_payment_signature({
+                    'razorpay_order_id': razorpay_order_id,
+                    'razorpay_payment_id': razorpay_payment_id,
+                    'razorpay_signature': razorpay_signature
+                })
+                signature_valid = True
+            except Exception as e:
+                print(f"[RAZORPAY] Signature verification failed: {str(e)}")
+
+    if not signature_valid:
+        db.close()
+        return jsonify({"success": False, "message": "Payment verification failed. Invalid signature."}), 400
+
+    try:
+        # Fetch order items to update stock
+        order_items = db.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
+        
+        # Check stock again for safety
+        for item in order_items:
+            product = db.execute("SELECT stocks, name FROM products WHERE id = ?", (item['product_id'],)).fetchone()
+            if not product or product['stocks'] < item['quantity']:
+                db.close()
+                return jsonify({"success": False, "message": f"Insufficient stock for {product['name'] if product else 'product'}."}), 400
+
+        # Decrement product stock levels
+        for item in order_items:
             db.execute(
                 "UPDATE products SET stocks = stocks - ? WHERE id = ?",
                 (item['quantity'], item['product_id'])
             )
 
-        # Increment promo usage
-        if applied_promo:
+        # Update order details and status
+        db.execute(
+            """UPDATE orders 
+               SET status = 'Processing', razorpay_payment_id = ?, razorpay_signature = ? 
+               WHERE id = ?""",
+            (razorpay_payment_id if (not is_mock or IS_REAL_MODE) else 'MOCK_PAY_' + razorpay_order_id, 
+             razorpay_signature if (not is_mock or IS_REAL_MODE) else 'MOCK_SIG', 
+             order_id)
+        )
+
+        # Increment promo code usage if applied
+        if order['promo_code']:
             db.execute(
-                "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = ?",
-                (applied_promo['id'],)
+                "UPDATE promo_codes SET used_count = used_count + 1 WHERE UPPER(code) = ?",
+                (order['promo_code'].upper(),)
             )
 
         db.commit()
-        
-        # Send Order Confirmation / Invoice Email
+
+        # Send confirmation email
         try:
-            user = db.execute("SELECT email, full_name FROM users WHERE id = ?", (session['user_id'],)).fetchone()
-            if user:
-                send_order_confirmation_email(
-                    user['email'], 
-                    user['full_name'], 
-                    order_number, 
-                    final_total, 
-                    f"{shipping_address}, {city}, {state} – {zip_code}", 
-                    order_items_to_create
-                )
+            items_list = []
+            for item in order_items:
+                prod = db.execute("SELECT name FROM products WHERE id = ?", (item['product_id'],)).fetchone()
+                items_list.append({
+                    'product_name': prod['name'] if prod else 'Product',
+                    'quantity': item['quantity'],
+                    'price': item['price']
+                })
+            
+            send_order_confirmation_email(
+                order['contact_email'],
+                order['contact_name'],
+                order['order_number'],
+                order['total_amount'],
+                f"{order['shipping_address']}, {order['city']}, {order['state']} – {order['zip_code']}",
+                items_list
+            )
         except Exception as mail_err:
             print(f"[MAIL ALERT ERROR] Failed to send order confirmation email: {str(mail_err)}")
 
+        # Clear cart session
         session['cart'] = {}
         session.modified = True
 
-        if applied_promo:
-            flash(f"Order {order_number} placed! Promo '{applied_promo['code']}' saved you ₹{final_discount:.2f}. 🎉", "success")
-        else:
-            flash(f"Order {order_number} placed successfully!", "success")
-        return redirect(url_for('my_orders'))
+        db.close()
+        flash(f"Payment successful! Order {order['order_number']} is now being processed. 🎉", "success")
+        return jsonify({"success": True, "redirect_url": url_for('my_orders')})
     except Exception as e:
         db.rollback()
-        flash(f"An error occurred while placing the order: {str(e)}", "error")
-        return redirect(url_for('checkout'))
-    finally:
         db.close()
+        return jsonify({"success": False, "message": f"Error updating order: {str(e)}"}), 500
 
 
 @app.route('/my-orders')
@@ -1034,15 +1419,19 @@ def signup():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
-        return redirect(url_for('home'))
+        next_url = request.args.get('next') or url_for('home')
+        return redirect(next_url)
+
+    next_url = request.args.get('next', '')
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        next_url = request.form.get('next', '') or url_for('home')
 
         if not email or not password:
             flash('Email and password are required.', 'error')
-            return render_template('login.html')
+            return render_template('login.html', next=next_url)
 
         db = get_db()
         user = db.execute(
@@ -1052,21 +1441,48 @@ def login():
         db.close()
 
         if user:
-            session['user_id'] = user['id']
-            session['user_name'] = user['full_name']
-            session['is_admin'] = bool(user['is_admin'])
+            if bool(user['is_admin']):
+                # Generate OTP and store in email_verifications
+                otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
+                
+                db = get_db()
+                db.execute(
+                    "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'admin_login', ?)",
+                    (user['email'], otp, expires_at)
+                )
+                db.commit()
+                db.close()
+                
+                session['otp_email'] = user['email']
+                session['otp_purpose'] = 'admin_login'
+                session['pending_admin_user'] = {
+                    'id': user['id'],
+                    'full_name': user['full_name'],
+                    'email': user['email'],
+                    'next': next_url
+                }
+                
+                if not send_otp_email(user['email'], otp, purpose='admin_login'):
+                    print(f"[ERROR] Failed to send admin login OTP to {user['email']}")
+                
+                flash('A 6-digit verification code has been sent to your email. Please verify to log in as administrator.', 'success')
+                return redirect(url_for('verify_otp'))
+            else:
+                session['user_id'] = user['id']
+                session['user_name'] = user['full_name']
+                session['is_admin'] = False
 
-            
-            # Send login alert email
-            send_login_alert_email(user['email'], user['full_name'])
-            
-            flash(f'Welcome back, {user["full_name"]}!', 'success')
-            return redirect(url_for('home'))
+                # Send login alert email
+                send_login_alert_email(user['email'], user['full_name'])
+
+                flash(f'Welcome back, {user["full_name"]}!', 'success')
+                return redirect(next_url if next_url else url_for('home'))
         else:
             flash('Invalid email or password. Please try again.', 'error')
-            return render_template('login.html')
+            return render_template('login.html', next=next_url)
 
-    return render_template('login.html')
+    return render_template('login.html', next=next_url)
 
 
 @app.route('/logout')
@@ -1187,6 +1603,56 @@ def verify_otp():
             flash('Email verified! Account created successfully. Please log in.', 'success')
             return redirect(url_for('login'))
 
+        elif purpose == 'admin_login':
+            otp_row = db.execute(
+                "SELECT * FROM email_verifications WHERE email = ? AND purpose = 'admin_login' AND used = 0 ORDER BY id DESC LIMIT 1",
+                (email,)
+            ).fetchone()
+            if not otp_row:
+                db.close()
+                flash('No active OTP found. Please log in again.', 'error')
+                return redirect(url_for('login'))
+            try:
+                expires_at = datetime.fromisoformat(otp_row['expires_at'])
+            except Exception:
+                expires_at = datetime.utcnow()
+            if otp_row['otp'] != entered_otp:
+                db.close()
+                flash('Invalid OTP code. Please check and try again.', 'error')
+                return render_template('verify_otp.html', purpose=purpose, email=email)
+            if datetime.utcnow() > expires_at:
+                db.close()
+                flash('This OTP has expired. Please log in again.', 'error')
+                return redirect(url_for('login'))
+            
+            # Mark OTP used
+            db.execute("UPDATE email_verifications SET used = 1 WHERE id = ?", (otp_row['id'],))
+            
+            pending = session.get('pending_admin_user')
+            if not pending:
+                db.close()
+                flash('Session data lost. Please log in again.', 'error')
+                return redirect(url_for('login'))
+            
+            # Log the admin in
+            session['user_id'] = pending['id']
+            session['user_name'] = pending['full_name']
+            session['is_admin'] = True
+            
+            # Send login alert email
+            send_login_alert_email(pending['email'], pending['full_name'])
+            
+            db.commit()
+            db.close()
+            
+            # Clean up session
+            session.pop('otp_email', None)
+            session.pop('otp_purpose', None)
+            session.pop('pending_admin_user', None)
+            
+            flash(f'Welcome back, {pending["full_name"]}!', 'success')
+            return redirect(pending.get('next') or url_for('home'))
+
         else:  # reset flow
             reset_row = db.execute(
                 "SELECT * FROM password_resets WHERE email = ? AND used = 0 ORDER BY id DESC LIMIT 1",
@@ -1276,7 +1742,12 @@ def resend_otp():
 
     if not email:
         flash('Session expired. Please start again.', 'error')
-        return redirect(url_for('signup') if purpose == 'signup' else url_for('forgot_password'))
+        if purpose == 'signup':
+            return redirect(url_for('signup'))
+        elif purpose == 'admin_login':
+            return redirect(url_for('login'))
+        else:
+            return redirect(url_for('forgot_password'))
 
     otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
     expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
@@ -1285,6 +1756,11 @@ def resend_otp():
     if purpose == 'signup':
         db.execute(
             "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'signup', ?)",
+            (email, otp, expires_at)
+        )
+    elif purpose == 'admin_login':
+        db.execute(
+            "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'admin_login', ?)",
             (email, otp, expires_at)
         )
     else:
@@ -2227,5 +2703,4 @@ def api_admin_orders():
 
 
 if __name__ == '__main__':
-    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run(debug=debug_mode, port=5000)
+    app.run(debug=True, port=5000)

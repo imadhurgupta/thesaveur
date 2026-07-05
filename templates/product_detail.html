@@ -1,343 +1,637 @@
 {% extends "base.html" %}
 
-{% block title %}{{ product.name }} – Premium Tea & Spices | The Saveur{% endblock %}
-{% block meta_desc %}Enquire about our premium {{ product.name }} ({{ product.category }}). Sourced fresh from local farms across India.{% endblock %}
+{% block title %}{{ product.name }} – The Saveur{% endblock %}
+{% block meta_desc %}Discover {{ product.name }} ({{ product.category }}) — premium quality sourced fresh from trusted Indian partners.{% endblock %}
 
 {% block extra_head %}
 <style>
-  /* ── Product Detail Layout ──────────────────────────────────── */
-  .detail-container {
-    padding: 140px 24px 80px;
-    max-width: 1200px;
-    margin: 0 auto;
-    background: var(--cream);
-  }
+/* ══════════════════════════════════════════════
+   PRODUCT DETAIL — PREMIUM REDESIGN
+══════════════════════════════════════════════ */
 
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 48px;
-    align-items: start;
-  }
+.pd-page {
+  padding: 130px 24px 80px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
 
-  @media (max-width: 900px) {
-    .detail-grid {
-      grid-template-columns: 1fr;
-      gap: 32px;
-    }
-  }
+/* ── Breadcrumb ── */
+.pd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+.pd-breadcrumb a { color: var(--text-muted); transition: color .2s; }
+.pd-breadcrumb a:hover { color: var(--green-primary); }
+.pd-breadcrumb svg { flex-shrink: 0; }
 
-  /* ── Left Column: Gallery ───────────────────────────────────── */
-  .gallery-wrapper {
-    position: sticky;
-    top: 140px;
-  }
-  @media (max-width: 900px) {
-    .gallery-wrapper {
-      position: static;
-    }
-  }
+/* ══ MAIN GRID ══ */
+.pd-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 56px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .pd-grid { grid-template-columns: 1fr; gap: 36px; }
+  .pd-gallery { position: static !important; }
+}
 
-  .main-image-card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(0,0,0,0.06);
-    overflow: hidden;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 4 / 3;
-    position: relative;
-  }
+/* ══ GALLERY ══ */
+.pd-gallery {
+  position: sticky;
+  top: 120px;
+}
 
-  .main-image-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: opacity 0.25s ease;
-  }
+.pd-main-img {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #f8f6f2;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+.pd-main-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity .3s ease, transform .4s ease;
+}
+.pd-main-img:hover img { transform: scale(1.03); }
 
-  .thumbnails-container {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
+.pd-thumbs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.pd-thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2.5px solid transparent;
+  flex-shrink: 0;
+  transition: all .25s;
+  box-shadow: var(--shadow-sm);
+}
+.pd-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pd-thumb:hover { border-color: var(--green-light); transform: translateY(-2px); }
+.pd-thumb.active { border-color: var(--green-primary); box-shadow: 0 0 0 3px rgba(27,67,50,.15); }
 
-  .thumb-card {
-    width: 80px;
-    height: 80px;
-    border-radius: var(--radius-md);
-    background: var(--white);
-    border: 2px solid transparent;
-    cursor: pointer;
-    overflow: hidden;
-    flex-shrink: 0;
-    transition: var(--transition);
-    box-shadow: var(--shadow-sm);
-  }
+/* ══ RIGHT INFO PANEL ══ */
+.pd-info { display: flex; flex-direction: column; gap: 22px; }
 
-  .thumb-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--green-light);
-  }
+/* Badges row */
+.pd-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pd-badge {
+  padding: 5px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.pd-badge.cat {
+  background: rgba(27,67,50,.08);
+  color: var(--green-primary);
+  border: 1px solid rgba(27,67,50,.15);
+}
+.pd-badge.bestseller {
+  background: #fdf3e0;
+  color: #b7590a;
+  border: 1px solid rgba(183,85,10,.2);
+}
+.pd-badge.sale {
+  background: #fde8e8;
+  color: #c0392b;
+  border: 1px solid rgba(192,57,43,.2);
+}
 
-  .thumb-card.active {
-    border-color: var(--green-primary);
-  }
+/* Title */
+.pd-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  color: var(--green-dark);
+  line-height: 1.2;
+  font-weight: 800;
+}
 
-  .thumb-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+/* Star rating */
+.pd-stars {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pd-stars .stars { display: flex; gap: 2px; }
 
-  /* ── Right Column: Info ─────────────────────────────────────── */
-  .info-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
+/* Price block */
+.pd-price-block {
+  background: linear-gradient(135deg, #f7f5f0, #fefdf9);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px 22px;
+}
+.pd-price-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.pd-price-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pd-price-now {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--green-dark);
+}
+.pd-price-now.sale { color: #c0392b; }
+.pd-price-was {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  font-weight: 500;
+}
+.pd-price-unit { font-size: 0.88rem; color: var(--text-muted); margin-top: 3px; }
+.pd-savings {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(192,57,43,.08);
+  border: 1px solid rgba(192,57,43,.18);
+  color: #c0392b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.pd-stock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+.pd-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.pd-stock-badge.in { background: rgba(46,204,113,.12); color: #1e8449; }
+.pd-stock-badge.low { background: rgba(230,126,34,.12); color: #a04000; }
+.pd-stock-badge.out { background: rgba(192,57,43,.12); color: #922b21; }
+.pd-stock-badge svg { flex-shrink: 0; }
+.pd-stock-count { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
-  .badges-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+/* ── Qty + Action Buttons ── */
+.pd-actions-block {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-  .detail-badge {
-    padding: 6px 14px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    border-radius: var(--radius-pill);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+.pd-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pd-qty-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.pd-qty-control {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid rgba(0,0,0,.12);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafaf9;
+}
+.pd-qty-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--green-primary);
+  font-weight: 700;
+  transition: background .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pd-qty-btn:hover { background: rgba(27,67,50,.07); }
+.pd-qty-btn:disabled { color: #ccc; cursor: not-allowed; }
+.pd-qty-input {
+  width: 44px;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-dark);
+  padding: 0;
+  -moz-appearance: textfield;
+}
+.pd-qty-input::-webkit-inner-spin-button,
+.pd-qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
-  .detail-badge.category {
-    background: rgba(45,80,22,0.1);
-    color: var(--green-primary);
-  }
-  .detail-badge.category.spice {
-    background: rgba(200,134,10,0.1);
-    color: var(--amber);
-  }
-  .detail-badge.category.electronics {
-    background: rgba(52,152,219,0.1);
-    color: #3498db;
-  }
-  .detail-badge.category.fashion {
-    background: rgba(155,89,182,0.1);
-    color: #9b59b6;
-  }
-  .detail-badge.category.home {
-    background: rgba(230,126,34,0.1);
-    color: #e67e22;
-  }
-  .detail-badge.category.food {
-    background: rgba(46,204,113,0.1);
-    color: #2ecc71;
-  }
-  .detail-badge.category.wellness {
-    background: rgba(231,76,60,0.1);
-    color: #e74c3c;
-  }
+/* Action Buttons Row */
+.pd-btn-row {
+  display: flex;
+  gap: 10px;
+}
 
-  .detail-badge.bestseller {
-    background: #fdf3e0;
-    color: #d35400;
-    border: 1px solid rgba(211,84,0,0.2);
-  }
+.pd-btn-atc {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 18px;
+  border: 2px solid var(--green-primary);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--green-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s;
+  font-family: inherit;
+}
+.pd-btn-atc:hover {
+  background: var(--green-primary);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(27,67,50,.25);
+}
+.pd-btn-atc:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
 
-  .product-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.6rem;
-    color: var(--green-dark);
-    line-height: 1.2;
-  }
+.pd-btn-buy {
+  flex: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s;
+  box-shadow: 0 3px 16px rgba(15,41,30,.28);
+  font-family: inherit;
+}
+.pd-btn-buy:hover {
+  box-shadow: 0 6px 24px rgba(15,41,30,.4);
+  transform: translateY(-1px);
+}
+.pd-btn-buy:disabled {
+  background: #ccc;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
 
-  .price-stock-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid rgba(0,0,0,0.08);
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-    padding: 16px 0;
-  }
+.pd-btn-wish {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0,0,0,.12);
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .25s;
+  flex-shrink: 0;
+  align-self: stretch;
+  padding: 0;
+}
+.pd-btn-wish:hover,
+.pd-btn-wish.active {
+  border-color: #e74c3c;
+  background: #fde8e8;
+}
+.pd-btn-wish svg { transition: all .25s; }
+.pd-btn-wish.active svg { fill: #e74c3c; }
 
-  .price-box {
-    display: flex;
-    flex-direction: column;
-  }
+/* ── Description ── */
+.pd-desc-block {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+}
+.pd-desc-block h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  color: var(--green-dark);
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+.pd-desc-block p {
+  font-size: 0.95rem;
+  color: var(--text-mid);
+  line-height: 1.75;
+}
 
-  .price-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
-  }
+/* ── Bulk / Enquiry ── */
+.pd-enquiry {
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0f291e, #1b4332);
+  padding: 24px;
+  color: #fff;
+  text-align: center;
+}
+.pd-enquiry h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+.pd-enquiry p {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,.72);
+  margin-bottom: 16px;
+  line-height: 1.55;
+}
+.pd-enquiry-btns {
+  display: flex;
+  gap: 10px;
+}
+.pd-enquiry-btns a {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all .25s;
+}
+.pd-enquiry-btns .e-wa {
+  background: #25d366;
+  color: #fff;
+}
+.pd-enquiry-btns .e-wa:hover { background: #1ebe59; box-shadow: 0 3px 12px rgba(37,211,102,.4); }
+.pd-enquiry-btns .e-mail {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+}
+.pd-enquiry-btns .e-mail:hover { background: rgba(255,255,255,.18); }
 
-  .price-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--green-dark);
-  }
+/* ══ RELATED PRODUCTS ══ */
+.pd-related {
+  margin-top: 80px;
+  padding-top: 60px;
+  border-top: 1px solid var(--border-color);
+}
+.pd-section-head {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.pd-section-head h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  color: var(--green-dark);
+  margin: 0;
+}
 
-  .price-unit {
-    font-size: 0.95rem;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
+/* ══ REVIEWS ══ */
+.pd-reviews {
+  margin-top: 80px;
+  padding-top: 60px;
+  border-top: 1px solid var(--border-color);
+}
+.pd-reviews-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 40px;
+  margin-bottom: 48px;
+}
+@media (max-width: 860px) {
+  .pd-reviews-grid { grid-template-columns: 1fr; }
+}
 
-  .stock-box {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-  }
+.pd-rating-box,
+.pd-write-box {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+.pd-rating-box h3,
+.pd-write-box h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  color: var(--green-dark);
+  margin-bottom: 16px;
+}
+.pd-big-rating {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--green-dark);
+  line-height: 1;
+}
+.pd-rating-stars { display: flex; gap: 3px; margin: 8px 0; }
+.pd-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.pd-bar-bg {
+  flex: 1;
+  height: 7px;
+  background: #ebebeb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pd-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f1c40f, #e67e22);
+  border-radius: 4px;
+  transition: width .6s ease;
+}
 
-  .stock-badge {
-    padding: 6px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+.pd-star-input { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 4px; }
+.pd-star-input input { display: none; }
+.pd-star-input label { font-size: 1.8rem; color: #ddd; cursor: pointer; transition: color .15s; }
+.pd-star-input input:checked ~ label,
+.pd-star-input label:hover,
+.pd-star-input label:hover ~ label { color: #f1c40f; }
 
-  .stock-badge.in-stock {
-    background: rgba(46,204,113,0.15);
-    color: #27ae60;
-  }
+.pd-form-group { margin-bottom: 16px; }
+.pd-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.pd-form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(0,0,0,.1);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.93rem;
+  color: var(--text-dark);
+  background: #fafaf9;
+  resize: vertical;
+  transition: border-color .2s, box-shadow .2s;
+}
+.pd-form-textarea:focus {
+  outline: none;
+  border-color: var(--green-primary);
+  box-shadow: 0 0 0 3px rgba(27,67,50,.1);
+}
+.pd-submit-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+  color: #fff;
+  font-size: 0.93rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s;
+  font-family: inherit;
+  box-shadow: 0 3px 14px rgba(15,41,30,.22);
+}
+.pd-submit-btn:hover { box-shadow: 0 5px 20px rgba(15,41,30,.38); transform: translateY(-1px); }
 
-  .stock-badge.low-stock {
-    background: rgba(230,126,34,0.15);
-    color: #d35400;
-  }
+.pd-login-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 32px;
+  gap: 12px;
+}
+.pd-login-icon { font-size: 2.4rem; }
 
-  .stock-badge.out-of-stock {
-    background: rgba(231,76,60,0.15);
-    color: #c0392b;
-  }
+.pd-review-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.pd-review-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.pd-reviewer {
+  font-weight: 700;
+  color: var(--green-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pd-verified {
+  background: rgba(46,204,113,.12);
+  color: #1e8449;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.pd-review-date { font-size: 0.8rem; color: var(--text-muted); }
+.pd-review-stars { display: flex; gap: 2px; margin-bottom: 8px; }
+.pd-review-text { font-size: 0.92rem; color: var(--text-mid); line-height: 1.65; }
 
-  .stock-count {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
-
-  .description-box h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    color: var(--green-dark);
-    margin-bottom: 12px;
-  }
-
-  .description-box p {
-    color: var(--text-mid);
-    font-size: 1rem;
-    line-height: 1.7;
-  }
-
-  /* ── Enquiry Form Box ───────────────────────────────────────── */
-  .enquiry-box {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(0,0,0,0.06);
-    padding: 32px;
-    margin-top: 16px;
-  }
-
-  .enquiry-box h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    color: var(--green-dark);
-    margin-bottom: 8px;
-  }
-
-  .enquiry-box p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 24px;
-  }
-
-  .enquiry-form .form-group {
-    margin-bottom: 18px;
-  }
-
-  .enquiry-form label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-    letter-spacing: 0.05em;
-  }
-
-  .enquiry-form input,
-  .enquiry-form textarea {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid rgba(0,0,0,0.12);
-    border-radius: var(--radius-sm);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    color: var(--text-dark);
-    background: rgba(0,0,0,0.01);
-    transition: var(--transition);
-  }
-
-  .enquiry-form input:focus,
-  .enquiry-form textarea:focus {
-    outline: none;
-    border-color: var(--green-primary);
-    box-shadow: 0 0 0 3px rgba(90,158,53,0.15);
-  }
-
-  @media (max-width: 480px) {
-    .product-title {
-      font-size: 2rem;
-    }
-    .price-stock-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
-    }
-    .stock-box {
-      align-items: flex-start;
-    }
-    .detail-qty-form {
-      flex-direction: column !important;
-      align-items: stretch !important;
-    }
-    .detail-qty-wrapper {
-      justify-content: center;
-    }
-  }
+@media (max-width: 480px) {
+  .pd-btn-row { flex-wrap: wrap; }
+  .pd-btn-atc, .pd-btn-buy { min-width: 100%; }
+  .pd-btn-wish { width: 100%; height: 44px; }
+  .pd-enquiry-btns { flex-direction: column; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<main class="detail-container">
-  <div class="detail-grid">
-    
-    <!-- Left Column: Gallery -->
-    <div class="gallery-wrapper reveal-left">
-      <div class="main-image-card">
-        <img id="main-product-img" 
-             src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}" 
+<div class="pd-page">
+
+  <!-- Breadcrumb -->
+  <nav class="pd-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('home') }}">Home</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    <a href="{{ url_for('products') }}">Products</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    <span>{{ product.name }}</span>
+  </nav>
+
+  <!-- ═══ MAIN GRID ═══ -->
+  <div class="pd-grid">
+
+    <!-- LEFT: Gallery -->
+    <div class="pd-gallery reveal-left">
+      <div class="pd-main-img">
+        <img id="pd-hero-img"
+             src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
              alt="{{ product.name }}" />
       </div>
-      
       {% if images|length > 1 %}
-      <div class="thumbnails-container">
+      <div class="pd-thumbs">
         {% for img in images %}
-        <div class="thumb-card {% if loop.first %}active{% endif %}" onclick="switchMainImage(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
+        <div class="pd-thumb {% if loop.first %}active{% endif %}"
+             onclick="switchImg(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
           <img src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}" alt="" />
         </div>
         {% endfor %}
@@ -345,116 +639,326 @@
       {% endif %}
     </div>
 
-    <!-- Right Column: Info & Form -->
-    <div class="info-wrapper reveal-right">
-      <div>
-        <div class="badges-row">
-          <span class="detail-badge category {{ product.category|lower }}">
-            {{ product.category }}
-          </span>
-          {% if product.is_bestseller %}
-          <span class="detail-badge bestseller">⭐ Bestseller</span>
-          {% endif %}
-          {% if product.discount_percent and product.discount_percent > 0 %}
-          <span style="background:#e74c3c; color:white; font-size:0.78rem; font-weight:700; padding:5px 12px; border-radius:var(--radius-pill); letter-spacing:0.03em;">{{ product.discount_percent | int }}% OFF</span>
-          {% endif %}
-        </div>
-        <h1 class="product-title" style="margin-top: 12px;">{{ product.name }}</h1>
+    <!-- RIGHT: Info -->
+    <div class="pd-info reveal-right">
+
+      <!-- Badges -->
+      <div class="pd-badges">
+        <span class="pd-badge cat">{{ product.category }}</span>
+        {% if product.is_bestseller %}
+        <span class="pd-badge bestseller">⭐ Bestseller</span>
+        {% endif %}
+        {% if product.discount_percent and product.discount_percent > 0 %}
+        <span class="pd-badge sale">{{ product.discount_percent|int }}% OFF</span>
+        {% endif %}
       </div>
 
-      <div class="price-stock-row">
-        <div class="price-box">
-          <span class="price-label">Price</span>
-          {% if product.discount_percent and product.discount_percent > 0 %}
-            {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
-            <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-              <span class="price-value" style="color:#e74c3c;">₹{{ sale_price }}</span>
-              <span style="font-size:1.1rem; color:var(--text-muted); text-decoration:line-through; font-weight:500;">₹{{ product.price }}</span>
-            </div>
-            <span class="price-unit">/ {{ product.unit }}</span>
-            <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(231,76,60,0.08); border:1px solid rgba(231,76,60,0.2); color:#e74c3c; font-size:0.78rem; font-weight:700; padding:4px 10px; border-radius:6px; margin-top:6px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              You save ₹{{ (product.price - sale_price) | round(2) }}
-            </div>
-          {% else %}
-            <div>
-              <span class="price-value">₹{{ product.price }}</span>
-              <span class="price-unit">/ {{ product.unit }}</span>
-            </div>
-          {% endif %}
-        </div>
+      <!-- Title -->
+      <h1 class="pd-title">{{ product.name }}</h1>
 
-        <div class="stock-box">
-          {% if product.stocks > 10 %}
-            <span class="stock-badge in-stock">In Stock</span>
-            <span class="stock-count">{{ product.stocks }} units available</span>
-          {% elif product.stocks > 0 %}
-            <span class="stock-badge low-stock">Low Stock</span>
-            <span class="stock-count">Only {{ product.stocks }} units left</span>
-          {% else %}
-            <span class="stock-badge out-of-stock">Out of Stock</span>
-            <span class="stock-count">Enquire for next batch availability</span>
-          {% endif %}
+      <!-- Stars -->
+      {% if total_reviews > 0 %}
+      <div class="pd-stars">
+        <div class="stars">
+          {% for i in range(1,6) %}
+          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f" stroke-width="2" width="16" height="16">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          {% endfor %}
         </div>
+        <span style="font-weight:700; color:var(--text-dark);">{{ avg_rating }}</span>
+        <span style="color:var(--text-muted); font-size:0.85rem;">({{ total_reviews }} review{{ 's' if total_reviews != 1 }})</span>
       </div>
+      {% endif %}
 
-      <!-- Add to Cart Form -->
-      <div style="background:#fff; border-radius:var(--radius-md); border:1px solid rgba(0,0,0,0.06); padding:20px; box-shadow:var(--shadow-sm);">
-        <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="detail-qty-form" style="display:flex; gap:12px; align-items:center; margin:0;">
-          <div class="detail-qty-wrapper" style="flex-shrink:0; display:flex; align-items:center; border:1px solid rgba(0,0,0,0.15); border-radius:4px; padding:6px 12px; background:rgba(0,0,0,0.01);">
-            <label for="detail-qty" style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-right:8px; display:inline-block; margin-bottom:0;">Qty:</label>
-            <input type="number" id="detail-qty" name="quantity" value="1" min="1" max="{% if product.stocks > 0 %}{{ product.stocks }}{% else %}1{% endif %}" style="width:40px; border:none; background:none; font-weight:700; text-align:center; padding:0;" {% if product.stocks <= 0 %}disabled{% endif %} />
+      <!-- Price Block -->
+      <div class="pd-price-block">
+        <div class="pd-price-label">Price</div>
+        {% if product.discount_percent and product.discount_percent > 0 %}
+          {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
+          <div class="pd-price-main">
+            <span class="pd-price-now sale">₹{{ sale_price }}</span>
+            <span class="pd-price-was">₹{{ product.price }}</span>
           </div>
-          <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center; display:flex; align-items:center; gap:8px; padding:12px;" {% if product.stocks <= 0 %}disabled{% endif %}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            {% if product.stocks > 0 %}Add to Cart{% else %}Out of Stock{% endif %}
-          </button>
-        </form>
+          <div class="pd-price-unit">/ {{ product.unit }}</div>
+          <div class="pd-savings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            You save ₹{{ (product.price - sale_price)|round(2) }}
+          </div>
+        {% else %}
+          <div class="pd-price-main">
+            <span class="pd-price-now">₹{{ product.price }}</span>
+          </div>
+          <div class="pd-price-unit">/ {{ product.unit }}</div>
+        {% endif %}
+
+        <!-- Stock -->
+        <div class="pd-stock-row">
+          {% if product.stocks > 10 %}
+            <span class="pd-stock-badge in">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+              In Stock
+            </span>
+            <span class="pd-stock-count">{{ product.stocks }} units available</span>
+          {% elif product.stocks > 0 %}
+            <span class="pd-stock-badge low">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Low Stock
+            </span>
+            <span class="pd-stock-count">Only {{ product.stocks }} left</span>
+          {% else %}
+            <span class="pd-stock-badge out">Out of Stock</span>
+            <span class="pd-stock-count">Enquire for next batch</span>
+          {% endif %}
+        </div>
       </div>
 
-      <div class="description-box">
-        <h2>About this product</h2>
+      <!-- Actions -->
+      <div class="pd-actions-block">
+        <!-- Qty Row -->
+        <div class="pd-qty-row">
+          <span class="pd-qty-label">Quantity</span>
+          <div class="pd-qty-control">
+            <button type="button" class="pd-qty-btn" onclick="changeQty(-1)" {% if product.stocks <= 0 %}disabled{% endif %}>−</button>
+            <input class="pd-qty-input" id="pd-qty" type="number" value="1" min="1" max="{{ product.stocks if product.stocks > 0 else 1 }}" readonly />
+            <button type="button" class="pd-qty-btn" onclick="changeQty(1)" {% if product.stocks <= 0 %}disabled{% endif %}>+</button>
+          </div>
+        </div>
+
+        <!-- Buttons Row -->
+        <div class="pd-btn-row">
+          <!-- Add to Cart -->
+          <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="atc-form" style="flex:1; display:contents;">
+            <input type="hidden" name="quantity" id="atc-qty" value="1">
+            <button type="submit" class="pd-btn-atc" {% if product.stocks <= 0 %}disabled{% endif %}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              Add to Cart
+            </button>
+          </form>
+
+          <!-- Buy Now -->
+          <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="buy-form" style="flex:1.3; display:contents;">
+            <input type="hidden" name="quantity" id="buy-qty" value="1">
+            <input type="hidden" name="buy_now" value="1">
+            <button type="submit" class="pd-btn-buy" {% if product.stocks <= 0 %}disabled{% endif %}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+              Buy Now
+            </button>
+          </form>
+
+          <!-- Wishlist -->
+          <form action="{{ url_for('toggle_wishlist', product_id=product.id) }}" method="POST" style="display:contents;">
+            <button type="submit" class="pd-btn-wish {% if in_wishlist %}active{% endif %}" title="{{ 'Remove from Wishlist' if in_wishlist else 'Add to Wishlist' }}">
+              <svg viewBox="0 0 24 24" fill="{{ '#e74c3c' if in_wishlist else 'none' }}" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="pd-desc-block">
+        <h3>About this product</h3>
         <p>{{ product.description }}</p>
       </div>
 
-      <!-- Enquiry Box replaced with Direct Contact Callout -->
-      <div class="enquiry-box" style="margin-top:24px; padding:24px; border:1px solid rgba(0,0,0,0.06); border-radius:var(--radius-md); background:rgba(0,0,0,0.01); text-align:center;">
-        <h2 style="font-family:'Playfair Display', serif; font-size:1.3rem; color:var(--green-dark); margin-bottom:8px;">Bulk Orders & Queries</h2>
-        <p style="color:var(--text-mid); font-size:0.88rem; line-height:1.5; margin-bottom:16px;">Interested in purchasing "{{ product.name }}" in wholesale or bulk quantities? Get a custom quotation directly.</p>
-        <div style="display:flex; gap:12px;">
-          <a href="https://wa.me/919500529076?text=Hi,%20I%20am%20interested%20in%20purchasing%20{{ product.name|urlencode }}%20in%20bulk." target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="flex:1; justify-content:center; text-decoration:none; display:flex; align-items:center; gap:6px;">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" /></svg> WhatsApp Quote
+      <!-- Bulk Enquiry -->
+      <div class="pd-enquiry">
+        <h3>Bulk Orders &amp; Queries</h3>
+        <p>Interested in {{ product.name }} in wholesale quantities? Get a custom quotation directly.</p>
+        <div class="pd-enquiry-btns">
+          <a href="https://wa.me/919500529076?text=Hi,%20I%20am%20interested%20in%20{{ product.name|urlencode }}%20in%20bulk." target="_blank" rel="noopener" class="e-wa">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            WhatsApp
           </a>
-          <a href="mailto:info@thesaveur.com?subject=Bulk%20Order%20Enquiry%20-%20{{ product.name|urlencode }}" class="btn btn-outline btn-sm" style="flex:1; justify-content:center; text-decoration:none; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="mail" style="width:14px; height:14px;"></i> Email Inquiry
+          <a href="mailto:info@thesaveur.com?subject=Bulk%20Order%20-%20{{ product.name|urlencode }}" class="e-mail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
           </a>
         </div>
       </div>
 
+    </div><!-- /pd-info -->
+  </div><!-- /pd-grid -->
+
+  <!-- ═══ RELATED PRODUCTS ═══ -->
+  {% if related_products %}
+  <div class="pd-related reveal">
+    <div class="pd-section-head">
+      <div class="section-tag">Recommendations</div>
+      <h2>Similar &amp; Related Products</h2>
+    </div>
+    <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+      {% for prod in related_products %}
+      <article class="product-card">
+        <a href="{{ url_for('product_detail', id=prod.id) }}" style="display:block; text-decoration:none; color:inherit;">
+          <div class="product-img-wrap">
+            <img src="{% if '://' in prod.image_filename %}{{ prod.image_filename }}{% else %}{{ url_for('static', filename='images/' + prod.image_filename) }}{% endif %}" alt="{{ prod.name }}" loading="lazy"/>
+            <span class="product-badge {{ prod.category|lower }}">{{ prod.category }}</span>
+            {% if prod.is_bestseller %}<span class="bestseller-tag">⭐ Best Seller</span>{% endif %}
+          </div>
+        </a>
+        <div class="product-body">
+          <h3 class="product-name" style="font-size:1rem; margin-bottom:6px; font-weight:700;">
+            <a href="{{ url_for('product_detail', id=prod.id) }}" style="color:inherit; text-decoration:none;">{{ prod.name }}</a>
+          </h3>
+          <p class="product-desc" style="font-size:.85rem; -webkit-line-clamp:2; -webkit-box-orient:vertical; display:-webkit-box; overflow:hidden;">{{ prod.description }}</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; border-top:1px solid rgba(0,0,0,.06); padding-top:10px;">
+            <div>
+              {% if prod.discount_percent and prod.discount_percent > 0 %}
+                {% set sp = (prod.price * (1 - prod.discount_percent / 100)) | round(2) %}
+                <span style="font-size:1.1rem; font-weight:700; color:#c0392b;">₹{{ sp }}</span>
+                <span style="font-size:.82rem; color:var(--text-muted); text-decoration:line-through; margin-left:4px;">₹{{ prod.price }}</span>
+              {% else %}
+                <span style="font-size:1.1rem; font-weight:700; color:var(--green-dark);">₹{{ prod.price }}</span>
+              {% endif %}
+              <span style="font-size:.78rem; color:var(--text-muted);"> / {{ prod.unit }}</span>
+            </div>
+            {% if prod.stocks > 10 %}<span style="font-size:.78rem; color:#1e8449; font-weight:600;">In Stock</span>
+            {% elif prod.stocks > 0 %}<span style="font-size:.78rem; color:#a04000; font-weight:600;">Low Stock</span>
+            {% else %}<span style="font-size:.78rem; color:#922b21; font-weight:600;">Out of Stock</span>{% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ═══ REVIEWS ═══ -->
+  <section class="pd-reviews reveal" aria-label="Customer Reviews">
+    <div class="pd-section-head">
+      <div class="section-tag">Customer Feedback</div>
+      <h2>Reviews &amp; Ratings</h2>
     </div>
 
-  </div>
-</main>
+    <div class="pd-reviews-grid">
+      <!-- Rating Summary -->
+      <div class="pd-rating-box">
+        <h3>Overall Rating</h3>
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <span class="pd-big-rating">{{ avg_rating }}</span>
+          <span style="color:var(--text-muted); font-weight:600;">/ 5</span>
+        </div>
+        <div class="pd-rating-stars">
+          {% for i in range(1,6) %}
+          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f" stroke-width="2" width="20" height="20">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          {% endfor %}
+        </div>
+        <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Based on {{ total_reviews }} review{{ 's' if total_reviews != 1 }}</p>
+        {% for stars in [5,4,3,2,1] %}
+          {% set cnt = rating_breakdown[stars] %}
+          {% set pct = (cnt / total_reviews * 100) if total_reviews > 0 else 0 %}
+          <div class="pd-bar-row">
+            <span style="width:48px; font-weight:600; color:var(--text-mid);">{{ stars }}★</span>
+            <div class="pd-bar-bg"><div class="pd-bar-fill" style="width:{{ pct }}%;"></div></div>
+            <span style="width:24px; text-align:right; color:var(--text-muted);">{{ cnt }}</span>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Write Review / Login -->
+      {% if session.get('user_id') %}
+      <div class="pd-write-box">
+        <h3>Share Your Experience</h3>
+        <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Have you tried this product? Tell others what you think!</p>
+        <form action="{{ url_for('add_review', id=product.id) }}" method="POST">
+          <p style="font-size:.85rem; color:var(--text-mid); margin-bottom:16px;">Posting as <strong>{{ session.get('user_name') }}</strong> <span class="pd-verified">Verified</span></p>
+          <div class="pd-form-group">
+            <label class="pd-form-label">Your Rating</label>
+            <div class="pd-star-input">
+              <input type="radio" id="s5" name="rating" value="5" required><label for="s5">★</label>
+              <input type="radio" id="s4" name="rating" value="4"><label for="s4">★</label>
+              <input type="radio" id="s3" name="rating" value="3"><label for="s3">★</label>
+              <input type="radio" id="s2" name="rating" value="2"><label for="s2">★</label>
+              <input type="radio" id="s1" name="rating" value="1"><label for="s1">★</label>
+            </div>
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label" for="review-comment">Your Comments</label>
+            <textarea id="review-comment" name="comment" rows="4" placeholder="Write your review…" class="pd-form-textarea" required></textarea>
+          </div>
+          <button type="submit" class="pd-submit-btn">Submit Review</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="pd-write-box pd-login-box">
+        <div class="pd-login-icon">🔒</div>
+        <h3 style="margin:0;">Login to Review</h3>
+        <p style="font-size:.88rem; color:var(--text-muted); margin:0; max-width:280px;">You must be logged in to share your experience with this product.</p>
+        <a href="{{ url_for('login', next=request.path) }}" class="pd-submit-btn" style="text-decoration:none; text-align:center; display:block; margin-top:4px;">
+          Log In
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Reviews List -->
+    <h3 style="font-family:'Playfair Display',serif; font-size:1.35rem; color:var(--green-dark); margin-bottom:20px;">
+      Customer Reviews ({{ total_reviews }})
+    </h3>
+    {% if reviews %}
+      {% for rev in reviews %}
+      <div class="pd-review-card">
+        <div class="pd-review-top">
+          <div>
+            <div class="pd-reviewer">
+              {{ rev.user_name }}
+              <span class="pd-verified">Verified Buyer</span>
+            </div>
+            <div class="pd-review-stars">
+              {% for i in range(1,6) %}
+              <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if rev.rating >= i else 'none' }}" stroke="#f1c40f" stroke-width="2" width="13" height="13">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              {% endfor %}
+            </div>
+          </div>
+          <span class="pd-review-date">{{ rev.created_at.split(' ')[0] if rev.created_at else '' }}</span>
+        </div>
+        <p class="pd-review-text">{{ rev.comment }}</p>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div style="text-align:center; padding:48px; border:1px dashed rgba(0,0,0,.12); border-radius:16px; color:var(--text-muted); background:#fff;">
+      <div style="font-size:2rem; margin-bottom:10px;">⭐</div>
+      <p>No reviews yet. Be the first to share your thoughts!</p>
+    </div>
+    {% endif %}
+  </section>
+
+</div><!-- /pd-page -->
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  function switchMainImage(element, newSrc) {
-    const mainImg = document.getElementById('main-product-img');
-    
-    // Add fade-out transition
-    mainImg.style.opacity = 0;
-    
+  // Thumbnail switcher
+  function switchImg(el, src) {
+    const hero = document.getElementById('pd-hero-img');
+    hero.style.opacity = '0';
     setTimeout(() => {
-      mainImg.src = newSrc;
-      mainImg.style.opacity = 1;
-      
-      // Update active thumbnail borders
-      document.querySelectorAll('.thumb-card').forEach(card => {
-        card.classList.remove('active');
-      });
-      element.classList.add('active');
+      hero.src = src;
+      hero.style.opacity = '1';
+      document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
     }, 250);
+  }
+
+  // Qty stepper
+  function changeQty(delta) {
+    const inp = document.getElementById('pd-qty');
+    const max = parseInt(inp.max) || 99;
+    let val = parseInt(inp.value) + delta;
+    val = Math.max(1, Math.min(max, val));
+    inp.value = val;
+    // Sync hidden qty inputs
+    const atcQ = document.getElementById('atc-qty');
+    const buyQ = document.getElementById('buy-qty');
+    if (atcQ) atcQ.value = val;
+    if (buyQ) buyQ.value = val;
   }
 </script>
 {% endblock %}

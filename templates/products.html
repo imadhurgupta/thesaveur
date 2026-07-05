@@ -3,6 +3,77 @@
 {% block title %}Our Products – Premium Online Store | The Saveur{% endblock %}
 {% block meta_desc %}Browse The Saveur's full range of premium products. Filter by category and enquire for bulk pricing.{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* ── Centred heading for All Products ── */
+  .all-products-title {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .all-products-title .section-tag {
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  .all-products-title h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin: 0 0 8px;
+  }
+  .all-products-title .count-pill {
+    display: inline-block;
+    background: var(--green-light, #e8f5e9);
+    color: var(--green-dark);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 99px;
+    margin-top: 4px;
+  }
+
+  /* ── Category section divider ── */
+  .cat-section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 72px 0 28px;
+  }
+  .cat-section-header .cat-pill {
+    background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 99px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cat-section-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .cat-section-header .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(0,0,0,0.12), transparent);
+  }
+  .cat-section-header .count-sm {
+    white-space: nowrap;
+    font-size: 0.78rem;
+    color: var(--text-muted, #888);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
   <!-- ── Page Hero ─────────────────────────────────────── -->
@@ -14,40 +85,18 @@
     </div>
   </section>
 
-  <!-- ── Filter Bar ────────────────────────────────────── -->
-  <div class="filter-bar" role="navigation" aria-label="Product Filters">
-    <div class="container">
-      <div class="filter-tabs">
-        <a href="{{ url_for('products') }}"
-           class="filter-tab {% if active_filter == 'all' %}active{% endif %}"
-           data-filter="all"
-           id="filter-all">
-          <i data-lucide="layout-grid" style="margin-right: 4px;"></i> All Products
-        </a>
-        {% for cat in global_categories %}
-        <a href="{{ url_for('products', category=cat.name|lower) }}"
-           class="filter-tab {% if active_filter == cat.name|lower %}active{% endif %}"
-           data-filter="{{ cat.name|lower }}"
-           id="filter-{{ cat.name|lower }}">
-          <i data-lucide="{% if 'electr' in cat.name|lower %}laptop{% elif 'fash' in cat.name|lower or 'appar' in cat.name|lower or 'cloth' in cat.name|lower or 'wear' in cat.name|lower %}shirt{% elif 'home' in cat.name|lower or 'liv' in cat.name|lower %}home{% elif 'tea' in cat.name|lower or 'coff' in cat.name|lower or 'bev' in cat.name|lower %}coffee{% elif 'spice' in cat.name|lower %}flame{% elif 'food' in cat.name|lower %}utensils{% elif 'well' in cat.name|lower or 'beauty' in cat.name|lower %}heart{% else %}package{% endif %}" style="margin-right: 4px;"></i> {{ cat.display_name }}
-        </a>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Products Grid ─────────────────────────────────── -->
+  <!-- ── Products Section ──────────────────────────────── -->
   <section class="products-section" aria-label="Product Listing">
     <div class="container">
-      <p class="products-count">
-        Showing <strong>{{ products|length }}</strong>
-        {% for cat in global_categories %}
-          {% if active_filter == cat.name|lower %}
-            {{ cat.display_name|lower }}
-          {% endif %}
-        {% endfor %}
-        product{{ 's' if products|length != 1 else '' }}
-      </p>
+
+      <!-- ═══════════════════════════════════════════
+           SECTION 1 — ALL PRODUCTS (centred heading)
+      ═══════════════════════════════════════════ -->
+      <div class="all-products-title">
+        <div class="section-tag">Full Collection</div>
+        <h2>All Products</h2>
+        <span class="count-pill">{{ products|length }} item{{ 's' if products|length != 1 else '' }}</span>
+      </div>
 
       {% if products %}
       <div class="products-grid">
@@ -60,9 +109,7 @@
                 alt="{{ product.name }}"
                 loading="lazy"
               />
-              <span class="product-badge {{ product.category|lower }}">
-                {{ product.category }}
-              </span>
+              <span class="product-badge {{ product.category|lower }}">{{ product.category }}</span>
               {% if product.is_bestseller %}
               <span class="bestseller-tag">⭐ Best Seller</span>
               {% endif %}
@@ -70,7 +117,9 @@
           </a>
           <div class="product-body">
             <h2 class="product-name" style="font-size:1.1rem; margin-bottom:8px;">
-              <a href="{{ url_for('product_detail', id=product.id) }}" style="color:inherit; text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--green-primary)'" onmouseout="this.style.color='inherit'">{{ product.name }}</a>
+              <a href="{{ url_for('product_detail', id=product.id) }}" style="color:inherit; text-decoration:none; transition:color 0.2s;"
+                 onmouseover="this.style.color='var(--green-primary)'"
+                 onmouseout="this.style.color='inherit'">{{ product.name }}</a>
             </h2>
             <p class="product-desc">{{ product.description }}</p>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid rgba(0,0,0,0.06); padding-top:12px;">
@@ -107,9 +156,76 @@
       <div style="text-align:center; padding:80px 0; color:var(--text-muted);">
         <div style="font-size:3rem; margin-bottom:16px;">🔍</div>
         <h3 style="color:var(--green-dark); margin-bottom:8px;">No products found</h3>
-        <p>Try a different filter or <a href="{{ url_for('products') }}" style="color:var(--green-primary);">view all products</a>.</p>
+        <p>Check back soon — new products are on their way!</p>
       </div>
       {% endif %}
+
+      <!-- ═══════════════════════════════════════════
+           SECTION 2 — CATEGORY-WISE (below all products)
+      ═══════════════════════════════════════════ -->
+      {% for group in categories_with_products %}
+
+        <div class="cat-section-header" id="cat-{{ group.category.name|lower|replace(' ', '-') }}">
+          <span class="cat-pill">{{ group.category.display_name }}</span>
+          <h3>{{ group.category.display_name }}</h3>
+          <div class="divider-line"></div>
+          <span class="count-sm">{{ group.products|length }} product{{ 's' if group.products|length != 1 else '' }}</span>
+        </div>
+
+        <div class="products-grid">
+          {% for product in group.products %}
+          <article class="product-card reveal stagger-{{ (loop.index0 % 3) + 1 }}">
+            <a href="{{ url_for('product_detail', id=product.id) }}" style="display:block; text-decoration:none; color:inherit;">
+              <div class="product-img-wrap">
+                <img
+                  src="{% if '://' in product.image_filename %}{{ product.image_filename }}{% else %}{{ url_for('static', filename='images/' + product.image_filename) }}{% endif %}"
+                  alt="{{ product.name }}"
+                  loading="lazy"
+                />
+                <span class="product-badge {{ product.category|lower }}">{{ product.category }}</span>
+                {% if product.is_bestseller %}
+                <span class="bestseller-tag">⭐ Best Seller</span>
+                {% endif %}
+              </div>
+            </a>
+            <div class="product-body">
+              <h2 class="product-name" style="font-size:1.1rem; margin-bottom:8px;">
+                <a href="{{ url_for('product_detail', id=product.id) }}" style="color:inherit; text-decoration:none; transition:color 0.2s;"
+                   onmouseover="this.style.color='var(--green-primary)'"
+                   onmouseout="this.style.color='inherit'">{{ product.name }}</a>
+              </h2>
+              <p class="product-desc">{{ product.description }}</p>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid rgba(0,0,0,0.06); padding-top:12px;">
+                <div>
+                  {% if product.discount_percent and product.discount_percent > 0 %}
+                    {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <span style="font-size:1.25rem; font-weight:700; color:#e74c3c;">₹{{ sale_price }}</span>
+                      <span style="font-size:0.9rem; color:var(--text-muted); text-decoration:line-through;">₹{{ product.price }}</span>
+                      <span style="background:#e74c3c; color:white; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px;">{{ product.discount_percent | int }}% OFF</span>
+                    </div>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">/ {{ product.unit }}</span>
+                  {% else %}
+                    <span style="font-size:1.25rem; font-weight:700; color:var(--green-dark);">₹{{ product.price }}</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">/ {{ product.unit }}</span>
+                  {% endif %}
+                </div>
+                <div>
+                  {% if product.stocks > 10 %}
+                    <span style="font-size:0.8rem; color:#2ecc71; font-weight:600;">In Stock</span>
+                  {% elif product.stocks > 0 %}
+                    <span style="font-size:0.8rem; color:#e67e22; font-weight:600;">Low Stock</span>
+                  {% else %}
+                    <span style="font-size:0.8rem; color:#e74c3c; font-weight:600; text-transform:uppercase;">Out of Stock</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+
+      {% endfor %}
 
       <!-- Bulk CTA -->
       <div class="reveal bulk-cta-inner" style="margin-top:70px; background:linear-gradient(135deg,var(--green-dark),var(--green-primary)); border-radius:var(--radius-lg); padding:48px 40px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;">
@@ -123,6 +239,7 @@
           📞 Get a Quote
         </a>
       </div>
+
     </div>
   </section>
 

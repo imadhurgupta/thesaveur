@@ -315,8 +315,10 @@
 
     <!-- Login Form -->
     <form class="auth-form" method="POST" action="{{ url_for('login') }}" id="login-form" novalidate>
+      <input type="hidden" name="next" value="{{ next or '' }}" />
 
       <!-- Email -->
+
       <div class="form-group">
         <label for="email">Email Address</label>
         <div class="input-wrapper">
