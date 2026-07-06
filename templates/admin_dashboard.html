@@ -1313,7 +1313,7 @@
     <button class="tab-btn" onclick="switchTab(event, 'categories-tab')">Categories</button>
 
     <button class="tab-btn" onclick="switchTab(event, 'users-tab')">Users</button>
-
+    <button class="tab-btn" onclick="switchTab(event, 'promos-tab')">Promo Codes</button>
   </nav>
 
 
@@ -1390,7 +1390,17 @@
 
               </td>
 
-              <td><strong>&#x20B9;{{ prod.price }}</strong></td>
+              <td>
+
+                <strong>&#x20B9;{{ prod.price }}</strong>
+
+                {% if prod.discount_percent and prod.discount_percent > 0 %}
+
+                  <br><small style="color:#e74c3c; font-weight:600;">({{ prod.discount_percent|int }}% OFF)</small>
+
+                {% endif %}
+
+              </td>
 
               <td>
 
@@ -1431,25 +1441,16 @@
                 <div class="action-btn-group">
 
                   <button class="action-btn edit edit-product-btn"
-
                           data-id="{{ prod.id }}"
-
                           data-name="{{ prod.name|escape }}"
-
                           data-category="{{ prod.category|escape }}"
-
                           data-description="{{ prod.description|escape }}"
-
                           data-images="{{ prod.images_csv|escape }}"
-
                           data-unit="{{ prod.unit|escape }}"
-
                           data-bestseller="{{ prod.is_bestseller }}"
-
                           data-price="{{ prod.price }}"
-
                           data-stocks="{{ prod.stocks }}"
-
+                          data-discount-percent="{{ prod.discount_percent if prod.discount_percent else 0 }}"
                           title="Edit product">
 
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -1856,6 +1857,90 @@
 
   </section>
 
+  <!-- ────── Tab 7: Promo Codes content ────── -->
+  <section id="promos-tab" class="tab-content">
+    <div class="card-container">
+      <div class="section-action-header">
+        <h2>Promo Codes</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('promo-modal')"><i data-lucide="plus"></i> Add New Promo Code</button>
+      </div>
+
+      {% if promo_codes %}
+      <div class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Min Order</th>
+              <th>Max Uses</th>
+              <th>Uses Count</th>
+              <th>Expiry</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for promo in promo_codes %}
+            <tr>
+              <td><strong style="font-size:1.1rem; color:var(--green-primary); letter-spacing: 0.5px;">{{ promo.code }}</strong></td>
+              <td>
+                <strong>
+                  {% if promo.discount_type == 'percent' %}
+                    {{ promo.discount_value }}%
+                  {% else %}
+                    ₹{{ promo.discount_value }}
+                  {% endif %}
+                </strong>
+              </td>
+              <td>₹{{ promo.min_order_amount if promo.min_order_amount else '0.00' }}</td>
+              <td>{{ promo.max_uses if promo.max_uses > 0 else 'Unlimited' }}</td>
+              <td><strong>{{ promo.used_count }}</strong></td>
+              <td>
+                {% if promo.expires_at %}
+                  <span style="font-size:0.85rem;">{{ promo.expires_at.replace('T', ' ') }}</span>
+                {% else %}
+                  <span style="color:var(--text-muted); font-style:italic;">Never Expires</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge {{ 'active' if promo.is_active else 'inactive' }}" style="background: {% if promo.is_active %}rgba(46,204,113,0.1); color:#2ecc71;{% else %}rgba(127,140,141,0.1); color:#7f8c8d;{% endif %}; font-weight:600;">
+                  {{ 'Active' if promo.is_active else 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-btn-group">
+                  <!-- Toggle status -->
+                  <form action="{{ url_for('admin_toggle_promo', id=promo.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="action-btn edit" title="{% if promo.is_active %}Deactivate{% else %}Activate{% endif %}" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px;">
+                      {% if promo.is_active %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      {% else %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+                      {% endif %}
+                    </button>
+                  </form>
+                  <!-- Delete -->
+                  <form action="{{ url_for('admin_toggle_promo', id=promo.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this promo code?');" style="display:inline;">
+                    <button type="submit" name="action" value="delete" formaction="{{ url_for('admin_delete_promo', id=promo.id) }}" class="action-btn delete" title="Delete Promo Code" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        No promo codes found. Click "Add New Promo Code" to get started.
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
 
 
   <!-- ────── Tab 4: Orders content ────── -->
@@ -2070,26 +2155,20 @@
 
 
 
-      <!-- Price & Stocks -->
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-
+      <!-- Price, Discount & Stocks -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
         <div class="form-group">
-
           <label for="prod-price">Price (&#x20B9;) *</label>
-
           <input type="number" id="prod-price" name="price" required step="0.01" min="0" placeholder="e.g. 150.00" />
-
         </div>
-
         <div class="form-group">
-
-          <label for="prod-stocks">Stocks *</label>
-
-          <input type="number" id="prod-stocks" name="stocks" required min="0" placeholder="e.g. 100" />
-
+          <label for="prod-discount-percent">Discount (%)</label>
+          <input type="number" id="prod-discount-percent" name="discount_percent" min="0" max="100" step="0.1" placeholder="e.g. 10" value="0" />
         </div>
-
+        <div class="form-group">
+          <label for="prod-stocks">Stocks *</label>
+          <input type="number" id="prod-stocks" name="stocks" required min="0" placeholder="e.g. 100" />
+        </div>
       </div>
 
 
@@ -2268,6 +2347,64 @@
 
   </div>
 
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: CREATE PROMO CODE
+     ══════════════════════════════════════════════════════ -->
+<div id="promo-modal" class="modal-overlay">
+  <div class="modal-card" style="max-width:500px;">
+    <button type="button" class="modal-close" onclick="closeModal('promo-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+    <h2 class="modal-title">Create Promo Code</h2>
+    
+    <form class="modal-form" action="{{ url_for('admin_add_promo') }}" method="POST">
+      <!-- Code -->
+      <div class="form-group">
+        <label for="promo-code-input">Promo Code *</label>
+        <input type="text" id="promo-code-input" name="code" required placeholder="e.g. SAVE20" style="text-transform:uppercase;" />
+      </div>
+
+      <!-- Type & Value -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label for="promo-discount-type">Discount Type *</label>
+          <select id="promo-discount-type" name="discount_type" required>
+            <option value="percent">Percent (%)</option>
+            <option value="value">Flat Amount (₹)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="promo-discount-value">Discount Value *</label>
+          <input type="number" id="promo-discount-value" name="discount_value" required step="0.01" min="0.01" placeholder="e.g. 20 or 150.00" />
+        </div>
+      </div>
+
+      <!-- Min Order & Max Uses -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label for="promo-min-order">Min Order Amount (₹)</label>
+          <input type="number" id="promo-min-order" name="min_order_amount" step="0.01" min="0" value="0.00" placeholder="e.g. 500" />
+        </div>
+        <div class="form-group">
+          <label for="promo-max-uses">Max Uses (0 for unlimited)</label>
+          <input type="number" id="promo-max-uses" name="max_uses" min="0" value="0" placeholder="e.g. 100" />
+        </div>
+      </div>
+
+      <!-- Expiry Date -->
+      <div class="form-group">
+        <label for="promo-expiry">Expiry Date & Time (Optional)</label>
+        <input type="datetime-local" id="promo-expiry" name="expires_at" />
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('promo-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Create Promo Code</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 
@@ -3263,7 +3400,7 @@
     document.getElementById('prod-unit').value = '100g';
 
     document.getElementById('prod-price').value = '0.00';
-
+    document.getElementById('prod-discount-percent').value = '0';
     document.getElementById('prod-stocks').value = '0';
 
     document.getElementById('prod-remote-images').value = '';
@@ -3294,30 +3431,19 @@
 
   // Open edit product modal
 
-  function openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks) {
-
+  function openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks, discountPercent) {
     document.getElementById('prod-modal-title').textContent = 'Edit Product';
-
     document.getElementById('prod-modal-form').action = "/admin/edit-product/" + id;
-
     
-
     // Fill inputs
-
     document.getElementById('prod-name').value = name;
-
     document.getElementById('prod-category').value = category;
-
     document.getElementById('prod-unit').value = unit;
-
     document.getElementById('prod-price').value = price;
-
+    document.getElementById('prod-discount-percent').value = discountPercent || '0';
     document.getElementById('prod-stocks').value = stocks;
-
     document.getElementById('prod-description').value = description;
-
     document.getElementById('prod-bestseller').checked = isBestseller === 1 || isBestseller === true;
-
     document.getElementById('prod-local-images').value = '';
 
     
@@ -3539,13 +3665,10 @@
         const isBestseller = btn.getAttribute('data-bestseller') === '1' || btn.getAttribute('data-bestseller') === 'true';
 
         const price = btn.getAttribute('data-price');
-
         const stocks = btn.getAttribute('data-stocks');
-
+        const discountPercent = btn.getAttribute('data-discount-percent') || '0';
         
-
-        openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks);
-
+        openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks, discountPercent);
       }
 
     });
@@ -4201,23 +4324,22 @@
         </td>
 
         <td>
-
-          <form action="/admin/update-order-status/${ord.id}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
-
-            <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, ${ord.id})">
-
-              <option value="Processing" ${ord.status === 'Processing' ? 'selected' : ''}>Processing</option>
-
-              <option value="Shipped" ${ord.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-
-              <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-
-              <option value="Cancelled" ${ord.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-
-            </select>
-
-          </form>
-
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <form action="/admin/update-order-status/${ord.id}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
+              <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, ${ord.id})">
+                <option value="Processing" ${ord.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                <option value="Shipped" ${ord.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                <option value="Cancelled" ${ord.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+              </select>
+            </form>
+            <a href="/admin/orders/${ord.id}"
+               title="View Order Details"
+               style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; background:rgba(90,158,53,0.1); color:var(--green-primary); border:1px solid rgba(90,158,53,0.2); text-decoration:none; transition:background 0.2s;"
+               onmouseover="this.style.background='rgba(90,158,53,0.2)'" onmouseout="this.style.background='rgba(90,158,53,0.1)'">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+          </div>
         </td>
 
       `;

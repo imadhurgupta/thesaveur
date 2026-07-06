@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if purpose == 'signup' %}Verify Email – The Saveur{% else %}Verify OTP – The Saveur{% endif %}{% endblock %}
+{% block title %}{% if purpose == 'signup' %}Verify Email – The Saveur{% elif purpose == 'admin_login' %}Admin Verification – The Saveur{% else %}Verify OTP – The Saveur{% endif %}{% endblock %}
 {% block meta_desc %}Enter the 6-digit OTP verification code sent to your email to verify your identity.{% endblock %}
 
 {% block extra_head %}
@@ -201,10 +201,12 @@
     <div class="auth-icon">{% if purpose == 'signup' %}✉️{% else %}🛡️{% endif %}</div>
 
     <!-- Header -->
-    <h1 class="auth-heading">{% if purpose == 'signup' %}Verify Your Email{% else %}Verify OTP{% endif %}</h1>
+    <h1 class="auth-heading">{% if purpose == 'signup' %}Verify Your Email{% elif purpose == 'admin_login' %}Admin Verification{% else %}Verify OTP{% endif %}</h1>
     <p class="auth-subtext">
       {% if purpose == 'signup' %}
         We've sent a 6-digit code to confirm your email address.<br>
+      {% elif purpose == 'admin_login' %}
+        We've sent a 6-digit verification code to confirm your identity.<br>
       {% else %}
         We've sent a 6-digit OTP code to reset your password.<br>
       {% endif %}

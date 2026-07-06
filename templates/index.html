@@ -304,6 +304,11 @@ orders, fast shipping.{% endblock %}
             {% if product.is_bestseller %}
             <span class="bestseller-tag">⭐ Best Seller</span>
             {% endif %}
+            {% if product.discount_percent and product.discount_percent > 0 %}
+            <span class="product-badge sale" style="background:#e74c3c; left:auto; right:12px;">
+              {{ product.discount_percent | int }}% OFF
+            </span>
+            {% endif %}
           </div>
         </a>
         <div class="product-body">
@@ -336,8 +341,15 @@ orders, fast shipping.{% endblock %}
 
           <div class="product-footer">
             <div class="product-price-box">
-              <span class="price-symbol">₹</span>
-              <span class="price-val">{{ product.price }}</span>
+              {% if product.discount_percent and product.discount_percent > 0 %}
+                {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
+                <span style="color:var(--text-muted); text-decoration:line-through; font-size:0.85rem; margin-right:4px;">₹{{ product.price }}</span>
+                <span class="price-symbol" style="color:#e74c3c;">₹</span>
+                <span class="price-val" style="color:#e74c3c; font-weight:700;">{{ sale_price }}</span>
+              {% else %}
+                <span class="price-symbol">₹</span>
+                <span class="price-val">{{ product.price }}</span>
+              {% endif %}
               <span class="price-unit">/ {{ product.unit }}</span>
             </div>
             <div class="stock-status">

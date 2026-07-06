@@ -119,6 +119,8 @@ def init_db():
             product_id INTEGER NOT NULL,
             quantity INTEGER NOT NULL,
             price REAL NOT NULL,
+            original_price REAL DEFAULT 0,
+            discount_percent REAL DEFAULT 0,
             FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
             FOREIGN KEY (product_id) REFERENCES products (id)
         );
@@ -268,6 +270,19 @@ def init_db():
 
     try:
         cursor.execute("ALTER TABLE orders ADD COLUMN razorpay_signature TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Safe migration: original_price and discount_percent on order_items
+    try:
+        cursor.execute("ALTER TABLE order_items ADD COLUMN original_price REAL DEFAULT 0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0")
         conn.commit()
     except sqlite3.OperationalError:
         pass

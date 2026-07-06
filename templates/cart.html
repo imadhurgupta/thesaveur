@@ -249,7 +249,12 @@
 
         <!-- Price -->
         <div class="cart-item-price">
-          ₹{{ item.price }}
+          {% if item.discount_percent and item.discount_percent > 0 %}
+            <span style="color:var(--text-muted); text-decoration:line-through; font-size:0.85rem; margin-right:4px;">₹{{ item.original_price }}</span>
+            <span style="color:#e74c3c; font-weight:600;">₹{{ item.price }}</span>
+          {% else %}
+            ₹{{ item.price }}
+          {% endif %}
         </div>
 
         <!-- Quantity Form -->

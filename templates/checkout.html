@@ -238,8 +238,12 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:36px; padding:14px; font-size:1rem;">
-          Place Order (₹{{ subtotal }})
+        <!-- Hidden inputs for promo code -->
+        <input type="hidden" id="hidden-promo-code" name="promo_code" value="" />
+        <input type="hidden" id="hidden-discount-amount" name="discount_amount" value="0.00" />
+
+        <button type="submit" id="submit-order-btn" class="btn btn-primary" style="width:100%; margin-top:36px; padding:14px; font-size:1rem;">
+          Place Order (₹<span id="submit-btn-total">{{ subtotal }}</span>)
         </button>
       </form>
     </div>
@@ -269,10 +273,24 @@
           <span>Shipping Charge</span>
           <span style="color:#2ecc71; font-weight:600;">FREE</span>
         </div>
+        <div id="promo-discount-row" style="display:none; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:#e74c3c; font-weight:600;">
+          <span>Promo Discount (<span id="applied-promo-label"></span>)</span>
+          <span>-₹<span id="summary-discount">0.00</span></span>
+        </div>
         <div class="summary-row total" style="display:flex; justify-content:space-between; border-top:1px solid rgba(0,0,0,0.08); padding-top:14px; font-size:1.2rem; font-weight:700; color:var(--green-dark);">
           <span>Order Total</span>
-          <span>₹{{ subtotal }}</span>
+          <span>₹<span id="summary-total">{{ subtotal }}</span></span>
         </div>
+      </div>
+
+      <!-- Promo Code Section -->
+      <div style="margin-top:20px; border-top:1px solid rgba(0,0,0,0.06); padding-top:16px;">
+        <label for="promo-code" style="font-size:0.85rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:8px;">Have a Promo Code?</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="promo-code" placeholder="e.g. SAVE50" style="flex:1; padding:8px 12px; border:1px solid rgba(0,0,0,0.12); border-radius:6px; font-size:0.9rem; text-transform:uppercase;" />
+          <button type="button" id="apply-promo-btn" class="btn btn-outline" style="padding:8px 16px; font-size:0.9rem; border-radius:6px; border-color:var(--green-primary); color:var(--green-primary);">Apply</button>
+        </div>
+        <div id="promo-message" style="display:none; font-size:0.85rem; margin-top:6px; font-weight:600;"></div>
       </div>
     </div>
 
@@ -303,6 +321,103 @@
   document.addEventListener('DOMContentLoaded', () => {
     const checkoutForm = document.getElementById('checkout-form');
     if (!checkoutForm) return;
+
+    // Promo Code elements
+    const promoInput = document.getElementById('promo-code');
+    const applyPromoBtn = document.getElementById('apply-promo-btn');
+    const promoMessage = document.getElementById('promo-message');
+    const promoDiscountRow = document.getElementById('promo-discount-row');
+    const appliedPromoLabel = document.getElementById('applied-promo-label');
+    const summaryDiscount = document.getElementById('summary-discount');
+    const summaryTotal = document.getElementById('summary-total');
+    const submitBtnTotal = document.getElementById('submit-btn-total');
+    const hiddenPromoCode = document.getElementById('hidden-promo-code');
+    const hiddenDiscountAmount = document.getElementById('hidden-discount-amount');
+
+    const baseSubtotal = parseFloat("{{ subtotal }}");
+    let isPromoApplied = false;
+
+    if (applyPromoBtn && promoInput) {
+      applyPromoBtn.addEventListener('click', async () => {
+        if (isPromoApplied) {
+          // Remove promo code
+          isPromoApplied = false;
+          hiddenPromoCode.value = '';
+          hiddenDiscountAmount.value = '0.00';
+          
+          promoInput.value = '';
+          promoInput.disabled = false;
+          applyPromoBtn.textContent = 'Apply';
+          applyPromoBtn.style.color = '';
+          applyPromoBtn.style.borderColor = '';
+          
+          promoDiscountRow.style.display = 'none';
+          promoMessage.style.display = 'none';
+          
+          summaryTotal.innerText = baseSubtotal.toFixed(2);
+          if (submitBtnTotal) submitBtnTotal.innerText = baseSubtotal.toFixed(2);
+          showToast('info', 'Promo code removed.');
+          return;
+        }
+
+        const promoCode = promoInput.value.trim().toUpperCase();
+        if (!promoCode) {
+          showToast('error', 'Please enter a promo code.');
+          return;
+        }
+
+        applyPromoBtn.disabled = true;
+        applyPromoBtn.textContent = 'Applying...';
+
+        try {
+          const res = await fetch('/api/validate-promo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code: promoCode, subtotal: baseSubtotal })
+          });
+
+          const data = await res.json();
+          if (data.valid) {
+            isPromoApplied = true;
+            hiddenPromoCode.value = data.code;
+            hiddenDiscountAmount.value = data.discount_amount;
+            
+            promoInput.disabled = true;
+            applyPromoBtn.disabled = false;
+            applyPromoBtn.textContent = 'Remove';
+            applyPromoBtn.style.color = '#e74c3c';
+            applyPromoBtn.style.borderColor = '#e74c3c';
+            
+            promoMessage.style.display = 'block';
+            promoMessage.style.color = '#2ecc71';
+            promoMessage.innerText = data.message;
+            
+            appliedPromoLabel.innerText = data.code;
+            summaryDiscount.innerText = parseFloat(data.discount_amount).toFixed(2);
+            promoDiscountRow.style.display = 'flex';
+            
+            const finalTotal = parseFloat(data.final_total);
+            summaryTotal.innerText = finalTotal.toFixed(2);
+            if (submitBtnTotal) submitBtnTotal.innerText = finalTotal.toFixed(2);
+            showToast('success', 'Promo code applied!');
+          } else {
+            promoMessage.style.display = 'block';
+            promoMessage.style.color = '#e74c3c';
+            promoMessage.innerText = data.message || 'Invalid promo code.';
+            
+            applyPromoBtn.disabled = false;
+            applyPromoBtn.textContent = 'Apply';
+            showToast('error', data.message || 'Invalid promo code.');
+          }
+        } catch (err) {
+          applyPromoBtn.disabled = false;
+          applyPromoBtn.textContent = 'Apply';
+          showToast('error', 'Network error applying promo code.');
+        }
+      });
+    }
 
     const submitBtn = checkoutForm.querySelector('button[type="submit"]');
 

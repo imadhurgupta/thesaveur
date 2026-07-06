@@ -39,13 +39,19 @@
 
 /* ── Reset ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { 
+  scroll-behavior: smooth; 
+  max-width: 100%;
+  overflow-x: hidden;
+}
 body {
   font-family: 'Inter', sans-serif;
   background: var(--cream);
   color: var(--text-dark);
   line-height: 1.6;
+  max-width: 100%;
   overflow-x: hidden;
+  zoom: 80%;
 }
 img { max-width: 100%; display: block; }
 a { text-decoration: none; color: inherit; }
@@ -58,7 +64,7 @@ h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); }
 h3 { font-size: clamp(1.2rem, 2vw, 1.6rem); }
 
 /* ── Utilities ────────────────────────────────────────────── */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.container { max-width: 1440px; margin: 0 auto; padding: 0 24px; }
 .section-tag {
   display: inline-block;
   font-size: 0.75rem;
@@ -560,7 +566,7 @@ button:active:not(:disabled),
   min-height: 420px;
   max-height: 540px;
   margin: 110px auto 32px;
-  max-width: 1200px;
+  max-width: 1440px;
   width: calc(100% - 48px);
   border-radius: 24px;
   overflow: hidden;
@@ -951,8 +957,9 @@ button:active:not(:disabled),
 .section-header { margin-bottom: 56px; }
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 300px));
+  justify-content: center;
+  gap: 16px;
 }
 .product-card {
   background: var(--card-bg);
@@ -1429,14 +1436,15 @@ button:active:not(:disabled),
 
 /* ── Large Desktop (1280px+) ─────────────────────────────── */
 @media (min-width: 1280px) {
-  .container { max-width: 1240px; }
+  .container { max-width: 1720px; }
+  .hero { max-width: 1720px; }
 }
 
 /* ── Laptop / Small Desktop (max 1024px) ─────────────────── */
 @media (max-width: 1024px) {
   /* Grids */
   .why-grid            { grid-template-columns: repeat(2, 1fr); gap: 20px; }
-  .products-grid       { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .products-grid       { grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .footer-grid         { grid-template-columns: 1fr 1fr; gap: 28px; }
   .enquiry-inner       { grid-template-columns: 1fr; gap: 40px; }
   .about-inner         { grid-template-columns: 1fr; gap: 40px; }
@@ -1504,7 +1512,7 @@ button:active:not(:disabled),
 
   /* Grids */
   .why-grid            { grid-template-columns: 1fr; gap: 16px; margin-top: 32px; }
-  .products-grid       { grid-template-columns: 1fr; gap: 16px; }
+  .products-grid       { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .values-grid         { grid-template-columns: 1fr; gap: 16px; }
   .mission-grid        { gap: 16px; }
 
@@ -1512,6 +1520,9 @@ button:active:not(:disabled),
   .why-card            { padding: 28px 20px; }
   .why-icon            { width: 58px; height: 58px; font-size: 1.6rem; }
   .product-card        { border-radius: var(--radius-md); }
+  .product-body        { padding: 12px 14px; }
+  .product-name        { font-size: 0.95rem; margin-bottom: 6px; }
+  .product-desc        { font-size: 0.78rem; margin-bottom: 12px; }
   .product-img-wrap    { aspect-ratio: 3/2; }
 
   /* Enquiry section */
