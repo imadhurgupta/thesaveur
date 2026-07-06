@@ -3875,6 +3875,7 @@ def admin_add_product():
     is_bestseller = 1 if request.form.get('is_bestseller') else 0
     discount_percent = float(request.form.get('discount_percent', 0.0) or 0.0)
     shipping_charge = float(request.form.get('shipping_charge', 0.0) or 0.0)
+    gst_rate = float(request.form.get('gst_rate', 0.0) or 0.0)
 
     if not name or not category:
         flash('Product name and category are required.', 'error')
@@ -3910,8 +3911,8 @@ def admin_add_product():
 
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO products (name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge)
+        "INSERT INTO products (name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate)
     )
     product_id = cursor.lastrowid
 
@@ -3966,6 +3967,7 @@ def admin_edit_product(id):
     is_bestseller = 1 if request.form.get('is_bestseller') else 0
     discount_percent = float(request.form.get('discount_percent', 0.0) or 0.0)
     shipping_charge = float(request.form.get('shipping_charge', 0.0) or 0.0)
+    gst_rate = float(request.form.get('gst_rate', 0.0) or 0.0)
 
     if not name or not category:
         flash('Product name and category are required.', 'error')
@@ -4001,8 +4003,8 @@ def admin_edit_product(id):
 
     db = get_db()
     db.execute(
-        "UPDATE products SET name = ?, category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ? WHERE id = ?",
-        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, id)
+        "UPDATE products SET name = ?, category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
+        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
     )
 
 
@@ -4471,7 +4473,9 @@ def admin_invoice(id):
 
                p.name AS product_name,
 
-               p.unit AS unit
+               p.unit AS unit,
+
+               p.gst_rate AS gst_rate
 
         FROM order_items oi
 
@@ -4561,7 +4565,9 @@ def customer_invoice(id):
 
                p.name AS product_name,
 
-               p.unit AS unit
+               p.unit AS unit,
+
+               p.gst_rate AS gst_rate
 
         FROM order_items oi
 

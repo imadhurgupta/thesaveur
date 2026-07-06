@@ -45,7 +45,8 @@ def init_db():
             stocks INTEGER DEFAULT 0,
             is_bestseller INTEGER DEFAULT 0,
             unit TEXT DEFAULT '100g',
-            shipping_charge REAL DEFAULT 0.0
+            shipping_charge REAL DEFAULT 0.0,
+            gst_rate REAL DEFAULT 0.0
         );
 
         CREATE TABLE IF NOT EXISTS product_images (
@@ -220,6 +221,14 @@ def init_db():
     try:
         cursor.execute("ALTER TABLE products ADD COLUMN discount_percent REAL DEFAULT 0")
         conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Safe migration for gst_rate on products
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN gst_rate REAL DEFAULT 0.0")
+        conn.commit()
+        print("[MIGRATION] Added column 'gst_rate' to 'products' table.")
     except sqlite3.OperationalError:
         pass
 

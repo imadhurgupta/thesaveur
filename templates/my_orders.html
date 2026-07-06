@@ -210,6 +210,7 @@
         <div>
           <span class="order-total-label">Total Amount</span>
           <div class="order-total-value">₹{{ order.total_amount }}</div>
+          <small style="color:var(--text-muted); font-size:0.75rem;">(Includes ₹{{ "%.2f"|format(order.shipping_charge) if order.shipping_charge else "0.00" }} shipping)</small>
         </div>
         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
           <div class="order-shipping-summary">

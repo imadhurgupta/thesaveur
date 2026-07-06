@@ -476,7 +476,8 @@
           <div class="inv-brand-address">
             Premium Quality Products<br>
             info@thesaveur.com · thesaveur.com<br>
-            GSTIN: 29XXXXX1234X1ZX
+            fssai Lic No: 12226999000440<br>
+            GSTIN: 08DKEPK9374L1ZF
           </div>
         </div>
       </div>
@@ -520,12 +521,12 @@
     <div class="inv-addresses">
       <div class="inv-address-block">
         <div class="inv-address-title">Sold By</div>
-        <div class="inv-address-name">The Saveur</div>
+        <div class="inv-address-name">HM Enterprises</div>
         <div class="inv-address-detail">
-          Premium Online Store<br>
-          Tamil Nadu, India<br>
-          Email: info@thesaveur.com<br>
-          GSTIN: 29XXXXX1234X1ZX
+          5th Floor, Flat No. 608, KH No. 29/1, Vill Girdharipura<br>
+          Jaipur, Rajasthan, India 302021<br>
+          fssai License Number: 12226999000440<br>
+          GSTIN: 08DKEPK9374L1ZF
         </div>
       </div>
       <div class="inv-address-block">
@@ -553,17 +554,22 @@
             <th style="text-align:center;">Unit</th>
             <th style="text-align:center;">Qty</th>
             <th style="text-align:right;">Unit Price</th>
+            <th style="text-align:center;">GST %</th>
             <th style="text-align:right;">Amount</th>
           </tr>
         </thead>
         <tbody>
           {% set subtotal = namespace(val=0) %}
           {% set item_discounts = namespace(val=0) %}
+          {% set total_gst = namespace(val=0) %}
           {% for item in items %}
           {% set orig_pr = item.original_price if (item.original_price and item.original_price > 0) else item.price %}
           {% set line_total = item.quantity * item.price %}
           {% set subtotal.val = subtotal.val + (item.quantity * orig_pr) %}
           {% set item_discounts.val = item_discounts.val + (item.quantity * (orig_pr - item.price)) %}
+          {% set item_gst_rate = item.gst_rate if (item.gst_rate is not none) else 0.0 %}
+          {% set item_tax_amt = line_total - (line_total / (1 + (item_gst_rate / 100))) %}
+          {% set total_gst.val = total_gst.val + item_tax_amt %}
           <tr>
             <td style="color:var(--text-muted); font-size:0.82rem;">{{ loop.index }}</td>
             <td>
@@ -579,6 +585,9 @@
                 <span style="text-decoration:line-through; color:#95a5a6; font-size:0.82rem; margin-right:4px;">₹{{ '%.2f' % orig_pr }}</span>
               {% endif %}
               <span>₹{{ '%.2f' % item.price }}</span>
+            </td>
+            <td style="text-align:center; font-weight:600; color:var(--text-muted);">
+              {{ '%.1f' % item_gst_rate }}%
             </td>
             <td style="text-align:right; font-weight:700; color:var(--green-dark);">₹{{ '%.2f' % line_total }}</td>
           </tr>
@@ -614,10 +623,28 @@
           <span class="val" style="color:#27ae60;">FREE</span>
           {% endif %}
         </div>
-        <div class="inv-total-row">
-          <span>GST / Taxes</span>
-          <span class="val">Included</span>
-        </div>
+        {% if total_gst.val > 0 %}
+          {% if order.state.strip().lower() == 'rajasthan' %}
+            <div class="inv-total-row">
+              <span>CGST (Included)</span>
+              <span class="val">₹{{ '%.2f' % (total_gst.val / 2) }}</span>
+            </div>
+            <div class="inv-total-row">
+              <span>SGST (Included)</span>
+              <span class="val">₹{{ '%.2f' % (total_gst.val / 2) }}</span>
+            </div>
+          {% else %}
+            <div class="inv-total-row">
+              <span>IGST (Included)</span>
+              <span class="val">₹{{ '%.2f' % total_gst.val }}</span>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="inv-total-row">
+            <span>GST / Taxes</span>
+            <span class="val">Included (0%)</span>
+          </div>
+        {% endif %}
         <div class="inv-total-row grand">
           <span>Total Amount</span>
           <span class="val">₹{{ '%.2f' % order.total_amount }}</span>
@@ -632,7 +659,8 @@
         All products are subject to availability. Once shipped, orders cannot be modified.
         For any queries regarding this invoice, please contact us at
         <a href="mailto:info@thesaveur.com" style="color:var(--green-primary);">info@thesaveur.com</a>
-        or WhatsApp <a href="https://wa.me/919500529076" style="color:#25d366;">+91 95005 29076</a>.<br><br>
+        or WhatsApp <a href="https://wa.me/919500529076" style="color:#25d366;">+91 95005 29076</a>.<br>
+        <strong>Sold By:</strong> HM Enterprises | fssai Lic No: 12226999000440 | GSTIN: 08DKEPK9374L1ZF<br>
         This is a computer-generated invoice and does not require a physical signature.
       </div>
 
@@ -649,9 +677,9 @@
         <div class="stamp-label">Authorised Signatory</div>
         <div class="inv-footer-brand">
           <div class="dot-logo">🍃</div>
-          <span>The Saveur</span>
+          <span>HM Enterprises</span>
         </div>
-        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px;">For The Saveur</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px;">For HM Enterprises</div>
       </div>
     </div>
 

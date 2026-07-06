@@ -238,7 +238,7 @@
         <h3>Order Information</h3>
         <p>
           <strong>Payment Method:</strong> {{ order.payment_method }}<br>
-          <strong>Total Amount:</strong> ₹{{ order.total_amount }}<br>
+          <strong>Total Amount:</strong> ₹{{ order.total_amount }} <small style="color:var(--text-muted); font-size:0.75rem;">(Includes ₹{{ "%.2f"|format(order.shipping_charge) if order.shipping_charge else "0.00" }} shipping)</small><br>
           <strong>Status:</strong> 
           <span style="font-weight:700; color:{% if status=='Processing' %}#3498db{% elif status=='Shipped' %}#e67e22{% elif status=='Delivered' %}#2ecc71{% else %}#e74c3c{% endif %};">
             {{ status }}
