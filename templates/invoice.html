@@ -608,7 +608,11 @@
         {% endif %}
         <div class="inv-total-row">
           <span>Shipping &amp; Handling</span>
+          {% if order.shipping_charge and order.shipping_charge > 0 %}
+          <span class="val">₹{{ '%.2f' % order.shipping_charge }}</span>
+          {% else %}
           <span class="val" style="color:#27ae60;">FREE</span>
+          {% endif %}
         </div>
         <div class="inv-total-row">
           <span>GST / Taxes</span>

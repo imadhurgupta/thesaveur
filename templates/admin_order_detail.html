@@ -651,7 +651,11 @@
           {% endif %}
           <div class="od-price-row">
             <span>Shipping &amp; Logistics</span>
+            {% if order.shipping_charge and order.shipping_charge > 0 %}
+            <span style="font-weight:600;">₹{{ "%.2f"|format(order.shipping_charge) }}</span>
+            {% else %}
             <span style="color:#059669; font-weight:600;">Free / Comp</span>
+            {% endif %}
           </div>
           <div class="od-price-row">
             <span>Taxes &amp; Duties (GST)</span>

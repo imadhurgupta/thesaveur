@@ -538,7 +538,11 @@
     {% endif %}
     <div class="summary-row">
       <span class="s-label">Shipping</span>
+      {% if order.shipping_charge and order.shipping_charge > 0 %}
+      <span class="s-value">₹{{ "%.2f"|format(order.shipping_charge) }}</span>
+      {% else %}
       <span class="s-value" style="color:#4ade80;">Free</span>
+      {% endif %}
     </div>
     <div class="summary-total">
       <span class="t-label">Total</span>

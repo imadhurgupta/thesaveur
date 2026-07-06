@@ -13,15 +13,10 @@
   /* ────── Dashboard Layout ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
   .dashboard-container {
-
-    padding: 140px 24px 80px;
-
-    max-width: 1200px;
-
+    padding: 140px 40px 80px;
+    max-width: 1600px;
     margin: 0 auto;
-
     background: var(--cream);
-
   }
 
 
@@ -1314,6 +1309,7 @@
 
     <button class="tab-btn" onclick="switchTab(event, 'users-tab')">Users</button>
     <button class="tab-btn" onclick="switchTab(event, 'promos-tab')">Promo Codes</button>
+    <button class="tab-btn" onclick="switchTab(event, 'shipping-tab')">Shipping</button>
   </nav>
 
 
@@ -1451,6 +1447,7 @@
                           data-price="{{ prod.price }}"
                           data-stocks="{{ prod.stocks }}"
                           data-discount-percent="{{ prod.discount_percent if prod.discount_percent else 0 }}"
+                          data-shipping-charge="{{ prod.shipping_charge if prod.shipping_charge else 0.0 }}"
                           title="Edit product">
 
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -1939,8 +1936,57 @@
       </div>
       {% endif %}
     </div>
-  </section>
+  <!-- ────── Tab 8: Shipping content ────── -->
+  <section id="shipping-tab" class="tab-content">
+    <div class="card-container">
+      <div class="section-action-header">
+        <h2>Location-Wise Shipping Rates</h2>
+        <button class="btn btn-primary btn-sm" onclick="openShippingModal()"><i data-lucide="plus"></i> Add Shipping Rate</button>
+      </div>
 
+      {% if shipping_rates %}
+      <div class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>State / Location</th>
+              <th>Base Shipping Charge (&#x20B9;)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rate in shipping_rates %}
+            <tr>
+              <td><strong>{{ rate.state }}</strong></td>
+              <td><strong>&#x20B9;{{ "%.2f"|format(rate.charge) }}</strong></td>
+              <td>
+                <div class="action-btn-group">
+                  <button class="action-btn edit" 
+                          onclick="openEditShippingModal('{{ rate.id }}', '{{ rate.state|escape }}', '{{ rate.charge }}')"
+                          title="Edit shipping rate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  {% if rate.state.upper() != 'DEFAULT' %}
+                  <form action="/admin/shipping/delete/{{ rate.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this shipping rate?');" style="display:inline;">
+                    <button type="submit" class="action-btn delete" title="Delete shipping rate">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        No shipping rates configured.
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
 
   <!-- ────── Tab 4: Orders content ────── -->
@@ -2007,7 +2053,10 @@
 
               </td>
 
-              <td><strong>&#x20B9;{{ ord.total_amount }}</strong></td>
+              <td>
+                <strong>&#x20B9;{{ ord.total_amount }}</strong><br>
+                <small style="color:var(--text-muted); font-size:0.75rem;">(Includes ₹{{ "%.2f"|format(ord.shipping_charge) if ord.shipping_charge else "0.00" }} shipping)</small>
+              </td>
 
               <td style="max-width:200px; font-size:0.85rem; line-height:1.4;">
 
@@ -2155,8 +2204,8 @@
 
 
 
-      <!-- Price, Discount & Stocks -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+      <!-- Price, Discount, Stocks & Shipping -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px;">
         <div class="form-group">
           <label for="prod-price">Price (&#x20B9;) *</label>
           <input type="number" id="prod-price" name="price" required step="0.01" min="0" placeholder="e.g. 150.00" />
@@ -2168,6 +2217,10 @@
         <div class="form-group">
           <label for="prod-stocks">Stocks *</label>
           <input type="number" id="prod-stocks" name="stocks" required min="0" placeholder="e.g. 100" />
+        </div>
+        <div class="form-group">
+          <label for="prod-shipping-charge">Shipping Fee (&#x20B9;)</label>
+          <input type="number" id="prod-shipping-charge" name="shipping_charge" min="0" step="0.01" placeholder="e.g. 15.00" value="0.0" />
         </div>
       </div>
 
@@ -3402,6 +3455,7 @@
     document.getElementById('prod-price').value = '0.00';
     document.getElementById('prod-discount-percent').value = '0';
     document.getElementById('prod-stocks').value = '0';
+    document.getElementById('prod-shipping-charge').value = '0.00';
 
     document.getElementById('prod-remote-images').value = '';
 
@@ -3431,7 +3485,7 @@
 
   // Open edit product modal
 
-  function openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks, discountPercent) {
+  function openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks, discountPercent, shippingCharge) {
     document.getElementById('prod-modal-title').textContent = 'Edit Product';
     document.getElementById('prod-modal-form').action = "/admin/edit-product/" + id;
     
@@ -3442,6 +3496,7 @@
     document.getElementById('prod-price').value = price;
     document.getElementById('prod-discount-percent').value = discountPercent || '0';
     document.getElementById('prod-stocks').value = stocks;
+    document.getElementById('prod-shipping-charge').value = shippingCharge || '0.00';
     document.getElementById('prod-description').value = description;
     document.getElementById('prod-bestseller').checked = isBestseller === 1 || isBestseller === true;
     document.getElementById('prod-local-images').value = '';
@@ -3667,8 +3722,9 @@
         const price = btn.getAttribute('data-price');
         const stocks = btn.getAttribute('data-stocks');
         const discountPercent = btn.getAttribute('data-discount-percent') || '0';
+        const shippingCharge = btn.getAttribute('data-shipping-charge') || '0.00';
         
-        openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks, discountPercent);
+        openEditModal(id, name, category, description, imagesCsv, unit, isBestseller, price, stocks, discountPercent, shippingCharge);
       }
 
     });
@@ -4303,7 +4359,10 @@
 
         </td>
 
-        <td><strong>&#x20B9;${ord.total_amount}</strong></td>
+        <td>
+          <strong>&#x20B9;${ord.total_amount}</strong><br>
+          <small style="color:var(--text-muted); font-size:0.75rem;">(Includes ₹${parseFloat(ord.shipping_charge || 0).toFixed(2)} shipping)</small>
+        </td>
 
         <td style="max-width:200px; font-size:0.85rem; line-height:1.4;">
 
@@ -4351,6 +4410,28 @@
   }
 
 
+  function openShippingModal() {
+    document.getElementById('shipping-modal-title').textContent = 'Add Shipping Rate';
+    document.getElementById('shipping-modal-form').action = "/admin/shipping/add";
+    document.getElementById('ship-state').value = '';
+    document.getElementById('ship-state').readOnly = false;
+    document.getElementById('ship-charge').value = '0.00';
+    openModal('shipping-modal');
+  }
+
+  function openEditShippingModal(id, state, charge) {
+    document.getElementById('shipping-modal-title').textContent = 'Edit Shipping Rate';
+    document.getElementById('shipping-modal-form').action = "/admin/shipping/edit/" + id;
+    document.getElementById('ship-state').value = state;
+    if (state.toUpperCase() === 'DEFAULT') {
+      document.getElementById('ship-state').readOnly = true;
+    } else {
+      document.getElementById('ship-state').readOnly = false;
+    }
+    document.getElementById('ship-charge').value = charge;
+    openModal('shipping-modal');
+  }
+
 
   // Close modals when clicking outside card area
 
@@ -4369,6 +4450,36 @@
   });
 
 </script>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: ADD/EDIT SHIPPING RATE
+     ══════════════════════════════════════════════════════ -->
+<div id="shipping-modal" class="modal-overlay">
+  <div class="modal-card" style="max-width:450px;">
+    <button type="button" class="modal-close" onclick="closeModal('shipping-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+    <h2 class="modal-title" id="shipping-modal-title">Add Shipping Rate</h2>
+    
+    <form class="modal-form" id="shipping-modal-form" method="POST" action="">
+      <!-- State Name -->
+      <div class="form-group">
+        <label for="ship-state">State / Location *</label>
+        <input type="text" id="ship-state" name="state" required placeholder="e.g. Delhi, Maharashtra" />
+      </div>
+      
+      <!-- Base Charge -->
+      <div class="form-group">
+        <label for="ship-charge">Base Shipping Fee (&#x20B9;) *</label>
+        <input type="number" id="ship-charge" name="charge" required min="0" step="0.01" placeholder="e.g. 50.00" />
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:28px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('shipping-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Rate</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 {% endblock %}
 

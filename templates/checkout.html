@@ -238,9 +238,10 @@
           </div>
         </div>
 
-        <!-- Hidden inputs for promo code -->
+        <!-- Hidden inputs for promo code and shipping -->
         <input type="hidden" id="hidden-promo-code" name="promo_code" value="" />
         <input type="hidden" id="hidden-discount-amount" name="discount_amount" value="0.00" />
+        <input type="hidden" id="hidden-shipping-charge" name="shipping_charge" value="0.00" />
 
         <button type="submit" id="submit-order-btn" class="btn btn-primary" style="width:100%; margin-top:36px; padding:14px; font-size:1rem;">
           Place Order (₹<span id="submit-btn-total">{{ subtotal }}</span>)
@@ -271,7 +272,7 @@
         </div>
         <div class="summary-row" style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:var(--text-muted);">
           <span>Shipping Charge</span>
-          <span style="color:#2ecc71; font-weight:600;">FREE</span>
+          <span id="summary-shipping" style="color:#2ecc71; font-weight:600;">FREE</span>
         </div>
         <div id="promo-discount-row" style="display:none; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:#e74c3c; font-weight:600;">
           <span>Promo Discount (<span id="applied-promo-label"></span>)</span>
@@ -336,12 +337,74 @@
 
     const baseSubtotal = parseFloat("{{ subtotal }}");
     let isPromoApplied = false;
+    let appliedDiscount = 0.00;
+    let currentShippingCharge = 0.00;
+
+    // Dom elements for shipping
+    const stateInput = document.getElementById('state');
+    const summaryShipping = document.getElementById('summary-shipping');
+    const hiddenShippingCharge = document.getElementById('hidden-shipping-charge');
+
+    function updateTotals() {
+      const finalTotal = Math.max(0, baseSubtotal - appliedDiscount + currentShippingCharge);
+      summaryTotal.innerText = finalTotal.toFixed(2);
+      if (submitBtnTotal) submitBtnTotal.innerText = finalTotal.toFixed(2);
+    }
+
+    async function recalculateShipping() {
+      const stateVal = stateInput ? stateInput.value.trim() : '';
+      if (!stateVal) {
+        currentShippingCharge = 0.00;
+        if (summaryShipping) {
+          summaryShipping.innerText = 'FREE';
+          summaryShipping.style.color = '#2ecc71';
+        }
+        if (hiddenShippingCharge) hiddenShippingCharge.value = '0.00';
+        updateTotals();
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/calculate-shipping', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ state: stateVal })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentShippingCharge = parseFloat(data.total_shipping);
+          if (summaryShipping) {
+            if (currentShippingCharge > 0) {
+              summaryShipping.innerText = '₹' + currentShippingCharge.toFixed(2);
+              summaryShipping.style.color = 'var(--text-dark)';
+            } else {
+              summaryShipping.innerText = 'FREE';
+              summaryShipping.style.color = '#2ecc71';
+            }
+          }
+          if (hiddenShippingCharge) hiddenShippingCharge.value = currentShippingCharge.toFixed(2);
+          updateTotals();
+        }
+      } catch (err) {
+        console.error('Error calculating shipping:', err);
+      }
+    }
+
+    if (stateInput) {
+      stateInput.addEventListener('change', recalculateShipping);
+      stateInput.addEventListener('blur', recalculateShipping);
+      // Trigger initial calculation
+      recalculateShipping();
+    }
 
     if (applyPromoBtn && promoInput) {
       applyPromoBtn.addEventListener('click', async () => {
         if (isPromoApplied) {
           // Remove promo code
           isPromoApplied = false;
+          appliedDiscount = 0.00;
           hiddenPromoCode.value = '';
           hiddenDiscountAmount.value = '0.00';
           
@@ -354,8 +417,7 @@
           promoDiscountRow.style.display = 'none';
           promoMessage.style.display = 'none';
           
-          summaryTotal.innerText = baseSubtotal.toFixed(2);
-          if (submitBtnTotal) submitBtnTotal.innerText = baseSubtotal.toFixed(2);
+          updateTotals();
           showToast('info', 'Promo code removed.');
           return;
         }
@@ -381,6 +443,7 @@
           const data = await res.json();
           if (data.valid) {
             isPromoApplied = true;
+            appliedDiscount = parseFloat(data.discount_amount);
             hiddenPromoCode.value = data.code;
             hiddenDiscountAmount.value = data.discount_amount;
             
@@ -395,12 +458,10 @@
             promoMessage.innerText = data.message;
             
             appliedPromoLabel.innerText = data.code;
-            summaryDiscount.innerText = parseFloat(data.discount_amount).toFixed(2);
+            summaryDiscount.innerText = appliedDiscount.toFixed(2);
             promoDiscountRow.style.display = 'flex';
             
-            const finalTotal = parseFloat(data.final_total);
-            summaryTotal.innerText = finalTotal.toFixed(2);
-            if (submitBtnTotal) submitBtnTotal.innerText = finalTotal.toFixed(2);
+            updateTotals();
             showToast('success', 'Promo code applied!');
           } else {
             promoMessage.style.display = 'block';

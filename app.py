@@ -42,8 +42,8 @@ from email.header import Header
 
 
 app = Flask(__name__)
-
 app.secret_key = os.environ.get('SECRET_KEY', 'am_trader_dev_secret_key_2024')
+app.config['SESSION_COOKIE_NAME'] = 'thesaveur_session'
 
 
 
@@ -1348,6 +1348,121 @@ def toggle_wishlist(product_id):
 
 
 
+@app.route('/api/calculate-shipping', methods=['POST'])
+def calculate_shipping():
+    """AJAX endpoint: calculate shipping charges based on location (state) and cart products."""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please log in first.'}), 401
+    
+    data = request.get_json() or {}
+    state_input = data.get('state', '').strip()
+    
+    if not state_input:
+        return jsonify({'success': False, 'message': 'State is required.'}), 400
+        
+    db = get_db()
+    
+    # 1. Location-Wise base charge
+    state_row = db.execute(
+        "SELECT charge FROM location_shipping_charges WHERE UPPER(state) = ?",
+        (state_input.upper(),)
+    ).fetchone()
+    
+    if state_row:
+        location_charge = float(state_row['charge'])
+    else:
+        # Fall back to Default rate
+        default_row = db.execute(
+            "SELECT charge FROM location_shipping_charges WHERE UPPER(state) = 'DEFAULT'"
+        ).fetchone()
+        location_charge = float(default_row['charge']) if default_row else 60.0
+        
+    # 2. Product-Wise additional charge
+    cart = session.get('cart', {})
+    product_charge = 0.0
+    
+    if cart:
+        product_ids = [int(pid) for pid in cart.keys() if pid.isdigit()]
+        if product_ids:
+            placeholders = ','.join('?' for _ in product_ids)
+            products_rows = db.execute(
+                f"SELECT id, shipping_charge FROM products WHERE id IN ({placeholders})",
+                product_ids
+            ).fetchall()
+            
+            prod_charge_map = {row['id']: float(row['shipping_charge'] or 0.0) for row in products_rows}
+            for pid, qty in cart.items():
+                if pid.isdigit() and int(pid) in prod_charge_map:
+                    product_charge += prod_charge_map[int(pid)] * int(qty)
+                    
+    db.close()
+    
+    total_shipping = location_charge + product_charge
+    return jsonify({
+        'success': True,
+        'location_charge': location_charge,
+        'product_charge': product_charge,
+        'total_shipping': total_shipping
+    })
+
+@app.route('/admin/shipping/add', methods=['POST'])
+@admin_required
+def admin_add_shipping():
+    state = request.form.get('state', '').strip()
+    charge = float(request.form.get('charge', 0.0) or 0.0)
+    
+    if not state:
+        flash('State name is required.', 'error')
+        return redirect(url_for('admin_dashboard') + '#shipping-tab')
+        
+    db = get_db()
+    try:
+        db.execute("INSERT INTO location_shipping_charges (state, charge) VALUES (?, ?)", (state, charge))
+        db.commit()
+        flash(f'Shipping rate for {state} added successfully.', 'success')
+    except sqlite3.IntegrityError:
+        flash(f'Shipping rate for {state} already exists.', 'error')
+    finally:
+        db.close()
+        
+    return redirect(url_for('admin_dashboard') + '#shipping-tab')
+
+@app.route('/admin/shipping/edit/<int:id>', methods=['POST'])
+@admin_required
+def admin_edit_shipping(id):
+    state = request.form.get('state', '').strip()
+    charge = float(request.form.get('charge', 0.0) or 0.0)
+    
+    if not state:
+        flash('State name is required.', 'error')
+        return redirect(url_for('admin_dashboard') + '#shipping-tab')
+        
+    db = get_db()
+    try:
+        db.execute(
+            "UPDATE location_shipping_charges SET state = ?, charge = ? WHERE id = ?",
+            (state, charge, id)
+        )
+        db.commit()
+        flash('Shipping rate updated successfully.', 'success')
+    except sqlite3.IntegrityError:
+        flash(f'Shipping rate for {state} already exists.', 'error')
+    finally:
+        db.close()
+        
+    return redirect(url_for('admin_dashboard') + '#shipping-tab')
+
+@app.route('/admin/shipping/delete/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete_shipping(id):
+    db = get_db()
+    db.execute("DELETE FROM location_shipping_charges WHERE id = ?", (id,))
+    db.commit()
+    db.close()
+    flash('Shipping rate deleted successfully.', 'success')
+    return redirect(url_for('admin_dashboard') + '#shipping-tab')
+
+
 # ─────── Checkout & Ordering ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
@@ -1840,13 +1955,30 @@ def checkout_submit():
 
 
 
-        final_total = round(total_amount - final_discount, 2)
+        # Secure server-side calculation of shipping charges
+        state_row = db.execute(
+            "SELECT charge FROM location_shipping_charges WHERE UPPER(state) = ?",
+            (state.upper(),)
+        ).fetchone()
+        
+        if state_row:
+            location_charge = float(state_row['charge'])
+        else:
+            default_row = db.execute(
+                "SELECT charge FROM location_shipping_charges WHERE UPPER(state) = 'DEFAULT'"
+            ).fetchone()
+            location_charge = float(default_row['charge']) if default_row else 60.0
 
-
+        product_shipping_total = 0.0
+        for prod_id, qty in cart.items():
+            product_sh = db.execute("SELECT shipping_charge FROM products WHERE id = ?", (int(prod_id),)).fetchone()
+            if product_sh:
+                product_shipping_total += float(product_sh['shipping_charge'] or 0.0) * int(qty)
+                
+        final_shipping_charge = location_charge + product_shipping_total
+        final_total = round(total_amount - final_discount + final_shipping_charge, 2)
 
         order_number = generate_order_number()
-
-
 
         if payment_method == 'COD':
 
@@ -1860,15 +1992,15 @@ def checkout_submit():
 
                     payment_method, status, discount_amount, promo_code, order_number,
 
-                    contact_name, contact_email, contact_phone, razorpay_order_id)
+                    contact_name, contact_email, contact_phone, razorpay_order_id, shipping_charge)
 
-                   VALUES (?, ?, ?, ?, ?, ?, 'COD', 'Processing', ?, ?, ?, ?, ?, ?, 'COD')""",
+                   VALUES (?, ?, ?, ?, ?, ?, 'COD', 'Processing', ?, ?, ?, ?, ?, ?, 'COD', ?)""",
 
                 (session['user_id'], final_total, shipping_address, city, state, zip_code,
 
                  final_discount, applied_promo['code'] if applied_promo else '',
 
-                 order_number, contact_name, contact_email, contact_phone)
+                 order_number, contact_name, contact_email, contact_phone, final_shipping_charge)
 
             )
 
@@ -1957,23 +2089,14 @@ def checkout_submit():
             # Online Payment: Create in Pending Payment state and generate Razorpay Order
 
             cursor = db.execute(
-
                 """INSERT INTO orders
-
                    (user_id, total_amount, shipping_address, city, state, zip_code,
-
                     payment_method, status, discount_amount, promo_code, order_number,
-
-                    contact_name, contact_email, contact_phone, razorpay_order_id)
-
-                   VALUES (?, ?, ?, ?, ?, ?, 'Online', 'Pending Payment', ?, ?, ?, ?, ?, ?, '')""",
-
+                    contact_name, contact_email, contact_phone, razorpay_order_id, shipping_charge)
+                   VALUES (?, ?, ?, ?, ?, ?, 'Online', 'Pending Payment', ?, ?, ?, ?, ?, ?, '', ?)""",
                 (session['user_id'], final_total, shipping_address, city, state, zip_code,
-
                  final_discount, applied_promo['code'] if applied_promo else '',
-
-                 order_number, contact_name, contact_email, contact_phone)
-
+                 order_number, contact_name, contact_email, contact_phone, final_shipping_charge)
             )
 
             order_id = cursor.lastrowid
@@ -2543,27 +2666,20 @@ def signup():
 
 
         # Generate OTP and store pending signup in email_verifications
-
         otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-
         expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
-
         db.execute(
-
             "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'signup', ?)",
-
             (email, otp, expires_at)
-
         )
-
         db.commit()
-
         db.close()
 
-
+        # Save signup OTP to session for stateless Vercel compatibility
+        session['signup_otp'] = otp
+        session['signup_otp_expires_at'] = expires_at
 
         # Store pending user data in session (not created yet)
-
         session['otp_email'] = email
 
         session['otp_purpose'] = 'signup'
@@ -2676,8 +2792,11 @@ def login():
 
                 
 
-                session['otp_email'] = user['email']
+                # Save admin login OTP to session for stateless Vercel compatibility
+                session['admin_login_otp'] = otp
+                session['admin_login_otp_expires_at'] = expires_at
 
+                session['otp_email'] = user['email']
                 session['otp_purpose'] = 'admin_login'
 
                 session['pending_admin_user'] = {
@@ -2705,11 +2824,9 @@ def login():
                 return redirect(url_for('verify_otp'))
 
             else:
-
+                session.permanent = True
                 session['user_id'] = user['id']
-
                 session['user_name'] = user['full_name']
-
                 session['is_admin'] = False
 
 
@@ -2814,8 +2931,11 @@ def forgot_password():
 
 
 
-        session['otp_email'] = email
+        # Save reset OTP to session for stateless Vercel compatibility
+        session['reset_otp'] = otp
+        session['reset_otp_expires_at'] = expires_at
 
+        session['otp_email'] = email
         session['otp_purpose'] = 'reset'
 
         session['reset_email'] = email  # keep for backward compat with reset_password route
@@ -2891,50 +3011,51 @@ def verify_otp():
 
 
         if purpose == 'signup':
+            # Check session fallback first for serverless Vercel compatibility
+            session_otp = session.get('signup_otp')
+            session_expiry_str = session.get('signup_otp_expires_at')
+            verified = False
+            
+            if session_otp and session_expiry_str:
+                try:
+                    exp = datetime.fromisoformat(session_expiry_str)
+                    if session_otp == entered_otp and datetime.utcnow() <= exp:
+                        verified = True
+                except Exception:
+                    pass
+            
+            if not verified:
+                otp_row = db.execute(
+                    "SELECT * FROM email_verifications WHERE email = ? AND purpose = 'signup' AND used = 0 ORDER BY id DESC LIMIT 1",
+                    (email,)
+                ).fetchone()
 
-            otp_row = db.execute(
+                if not otp_row:
+                    db.close()
+                    flash('No active OTP found. Please sign up again.', 'error')
+                    return redirect(url_for('signup'))
 
-                "SELECT * FROM email_verifications WHERE email = ? AND purpose = 'signup' AND used = 0 ORDER BY id DESC LIMIT 1",
+                try:
+                    expires_at = datetime.fromisoformat(otp_row['expires_at'])
+                except Exception:
+                    expires_at = datetime.utcnow()
 
-                (email,)
+                if otp_row['otp'] != entered_otp:
+                    db.close()
+                    flash('Invalid OTP code. Please check and try again.', 'error')
+                    return render_template('verify_otp.html', purpose=purpose, email=email)
 
-            ).fetchone()
+                if datetime.utcnow() > expires_at:
+                    db.close()
+                    flash('This OTP has expired. Please sign up again.', 'error')
+                    return redirect(url_for('signup'))
 
-            if not otp_row:
-
-                db.close()
-
-                flash('No active OTP found. Please sign up again.', 'error')
-
-                return redirect(url_for('signup'))
-
-            try:
-
-                expires_at = datetime.fromisoformat(otp_row['expires_at'])
-
-            except Exception:
-
-                expires_at = datetime.utcnow()
-
-            if otp_row['otp'] != entered_otp:
-
-                db.close()
-
-                flash('Invalid OTP code. Please check and try again.', 'error')
-
-                return render_template('verify_otp.html', purpose=purpose, email=email)
-
-            if datetime.utcnow() > expires_at:
-
-                db.close()
-
-                flash('This OTP has expired. Please sign up again.', 'error')
-
-                return redirect(url_for('signup'))
-
-            # Mark OTP used
-
-            db.execute("UPDATE email_verifications SET used = 1 WHERE id = ?", (otp_row['id'],))
+                # Mark OTP used
+                db.execute("UPDATE email_verifications SET used = 1 WHERE id = ?", (otp_row['id'],))
+            
+            # Clear OTP from session
+            session.pop('signup_otp', None)
+            session.pop('signup_otp_expires_at', None)
 
             # Create the user account now
 
@@ -2975,52 +3096,51 @@ def verify_otp():
 
 
         elif purpose == 'admin_login':
-
-            otp_row = db.execute(
-
-                "SELECT * FROM email_verifications WHERE email = ? AND purpose = 'admin_login' AND used = 0 ORDER BY id DESC LIMIT 1",
-
-                (email,)
-
-            ).fetchone()
-
-            if not otp_row:
-
-                db.close()
-
-                flash('No active OTP found. Please log in again.', 'error')
-
-                return redirect(url_for('login'))
-
-            try:
-
-                expires_at = datetime.fromisoformat(otp_row['expires_at'])
-
-            except Exception:
-
-                expires_at = datetime.utcnow()
-
-            if otp_row['otp'] != entered_otp:
-
-                db.close()
-
-                flash('Invalid OTP code. Please check and try again.', 'error')
-
-                return render_template('verify_otp.html', purpose=purpose, email=email)
-
-            if datetime.utcnow() > expires_at:
-
-                db.close()
-
-                flash('This OTP has expired. Please log in again.', 'error')
-
-                return redirect(url_for('login'))
-
+            # Check session fallback first for serverless Vercel compatibility
+            session_otp = session.get('admin_login_otp')
+            session_expiry_str = session.get('admin_login_otp_expires_at')
+            verified = False
             
+            if session_otp and session_expiry_str:
+                try:
+                    exp = datetime.fromisoformat(session_expiry_str)
+                    if session_otp == entered_otp and datetime.utcnow() <= exp:
+                        verified = True
+                except Exception:
+                    pass
+                    
+            if not verified:
+                otp_row = db.execute(
+                    "SELECT * FROM email_verifications WHERE email = ? AND purpose = 'admin_login' AND used = 0 ORDER BY id DESC LIMIT 1",
+                    (email,)
+                ).fetchone()
 
-            # Mark OTP used
+                if not otp_row:
+                    db.close()
+                    flash('No active OTP found. Please log in again.', 'error')
+                    return redirect(url_for('login'))
 
-            db.execute("UPDATE email_verifications SET used = 1 WHERE id = ?", (otp_row['id'],))
+                try:
+                    expires_at = datetime.fromisoformat(otp_row['expires_at'])
+                except Exception:
+                    expires_at = datetime.utcnow()
+
+                if otp_row['otp'] != entered_otp:
+                    db.close()
+                    flash('Invalid OTP code. Please check and try again.', 'error')
+                    return render_template('verify_otp.html', purpose=purpose, email=email)
+
+                if datetime.utcnow() > expires_at:
+                    db.close()
+                    flash('This OTP has expired. Please log in again.', 'error')
+                    return redirect(url_for('login'))
+
+                # Mark OTP used
+                db.execute("UPDATE email_verifications SET used = 1 WHERE id = ?", (otp_row['id'],))
+            
+            # Clear OTP from session
+            session.pop('admin_login_otp', None)
+            session.pop('admin_login_otp_expires_at', None)
 
             
 
@@ -3037,11 +3157,9 @@ def verify_otp():
             
 
             # Log the admin in
-
+            session.permanent = True
             session['user_id'] = pending['id']
-
             session['user_name'] = pending['full_name']
-
             session['is_admin'] = True
 
             
@@ -3075,57 +3193,56 @@ def verify_otp():
 
 
         else:  # reset flow
+            # Check session fallback first for serverless Vercel compatibility
+            session_otp = session.get('reset_otp')
+            session_expiry_str = session.get('reset_otp_expires_at')
+            verified = False
+            
+            if session_otp and session_expiry_str:
+                try:
+                    exp = datetime.fromisoformat(session_expiry_str)
+                    if session_otp == entered_otp and datetime.utcnow() <= exp:
+                        verified = True
+                except Exception:
+                    pass
+                    
+            if not verified:
+                reset_row = db.execute(
+                    "SELECT * FROM password_resets WHERE email = ? AND used = 0 ORDER BY id DESC LIMIT 1",
+                    (email,)
+                ).fetchone()
 
-            reset_row = db.execute(
+                if not reset_row:
+                    db.close()
+                    flash('No active OTP found. Please request a new one.', 'error')
+                    return redirect(url_for('forgot_password'))
 
-                "SELECT * FROM password_resets WHERE email = ? AND used = 0 ORDER BY id DESC LIMIT 1",
+                try:
+                    expires_at = datetime.fromisoformat(reset_row['expires_at'])
+                except Exception:
+                    expires_at = datetime.utcnow()
 
-                (email,)
+                if reset_row['otp'] != entered_otp:
+                    db.close()
+                    flash('Invalid OTP code. Please check and try again.', 'error')
+                    return render_template('verify_otp.html', purpose=purpose, email=email)
 
-            ).fetchone()
+                if datetime.utcnow() > expires_at:
+                    db.close()
+                    flash('This OTP has expired. Please request a new one.', 'error')
+                    return redirect(url_for('forgot_password'))
 
-            if not reset_row:
-
-                db.close()
-
-                flash('No active OTP found. Please request a new one.', 'error')
-
-                return redirect(url_for('forgot_password'))
-
-            try:
-
-                expires_at = datetime.fromisoformat(reset_row['expires_at'])
-
-            except Exception:
-
-                expires_at = datetime.utcnow()
-
-            if reset_row['otp'] != entered_otp:
-
-                db.close()
-
-                flash('Invalid OTP code. Please check and try again.', 'error')
-
-                return render_template('verify_otp.html', purpose=purpose, email=email)
-
-            if datetime.utcnow() > expires_at:
-
-                db.close()
-
-                flash('This OTP has expired. Please request a new one.', 'error')
-
-                return redirect(url_for('forgot_password'))
-
-            db.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_row['id'],))
-
-            db.commit()
-
+                db.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_row['id'],))
+                db.commit()
+            
             db.close()
+            
+            # Clear OTP from session
+            session.pop('reset_otp', None)
+            session.pop('reset_otp_expires_at', None)
 
             session['otp_verified'] = True
-
             flash('OTP verified successfully. Please choose a new password.', 'success')
-
             return redirect(url_for('reset_password'))
 
 
@@ -3275,34 +3392,26 @@ def resend_otp():
     db = get_db()
 
     if purpose == 'signup':
-
         db.execute(
-
             "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'signup', ?)",
-
             (email, otp, expires_at)
-
         )
-
+        session['signup_otp'] = otp
+        session['signup_otp_expires_at'] = expires_at
     elif purpose == 'admin_login':
-
         db.execute(
-
             "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'admin_login', ?)",
-
             (email, otp, expires_at)
-
         )
-
+        session['admin_login_otp'] = otp
+        session['admin_login_otp_expires_at'] = expires_at
     else:
-
         db.execute(
-
             "INSERT INTO password_resets (email, otp, expires_at) VALUES (?, ?, ?)",
-
             (email, otp, expires_at)
-
         )
+        session['reset_otp'] = otp
+        session['reset_otp_expires_at'] = expires_at
 
     db.commit()
 
@@ -3567,6 +3676,10 @@ def handle_google_user_login(email, name):
         db.commit()
         db.close()
         
+        # Save admin login OTP to session for stateless Vercel compatibility
+        session['admin_login_otp'] = otp
+        session['admin_login_otp_expires_at'] = expires_at
+
         session['otp_email'] = user['email']
         session['otp_purpose'] = 'admin_login'
         session['pending_admin_user'] = {
@@ -3583,6 +3696,7 @@ def handle_google_user_login(email, name):
         return redirect(url_for('verify_otp'))
         
     # Log regular user in
+    session.permanent = True
     session['user_id'] = user['id']
     session['user_name'] = user['full_name']
     session['is_admin'] = False
@@ -3712,49 +3826,28 @@ def admin_dashboard():
         
 
     carousel_slides = db.execute("SELECT * FROM carousel_slides ORDER BY slide_order ASC").fetchall()
-
     categories = db.execute("SELECT * FROM categories ORDER BY display_order ASC").fetchall()
-
     promo_codes = db.execute("SELECT * FROM promo_codes ORDER BY created_at DESC").fetchall()
-
-
-
-    
+    shipping_rates = db.execute("SELECT * FROM location_shipping_charges ORDER BY CASE WHEN UPPER(state) = 'DEFAULT' THEN 1 ELSE 0 END, state ASC").fetchall()
 
     db.close()
 
-
-
     return render_template(
-
         'admin_dashboard.html',
-
         total_products=total_products,
-
         total_enquiries=total_enquiries,
-
         total_users=total_users,
-
         pending_enquiries=pending_enquiries,
-
         total_stocks=total_stocks,
-
         products=products_list,
-
         enquiries=enquiries_list,
-
         users=users_list,
-
         orders=orders_list,
-
         carousel_slides=carousel_slides,
-
         categories=categories,
-
         promo_codes=promo_codes,
-
+        shipping_rates=shipping_rates,
         google_client_id=os.environ.get("GOOGLE_CLIENT_ID", "")
-
     )
 
 
@@ -3781,6 +3874,7 @@ def admin_add_product():
 
     is_bestseller = 1 if request.form.get('is_bestseller') else 0
     discount_percent = float(request.form.get('discount_percent', 0.0) or 0.0)
+    shipping_charge = float(request.form.get('shipping_charge', 0.0) or 0.0)
 
     if not name or not category:
         flash('Product name and category are required.', 'error')
@@ -3816,8 +3910,8 @@ def admin_add_product():
 
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO products (name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent)
+        "INSERT INTO products (name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge)
     )
     product_id = cursor.lastrowid
 
@@ -3871,6 +3965,7 @@ def admin_edit_product(id):
 
     is_bestseller = 1 if request.form.get('is_bestseller') else 0
     discount_percent = float(request.form.get('discount_percent', 0.0) or 0.0)
+    shipping_charge = float(request.form.get('shipping_charge', 0.0) or 0.0)
 
     if not name or not category:
         flash('Product name and category are required.', 'error')
@@ -3906,8 +4001,8 @@ def admin_edit_product(id):
 
     db = get_db()
     db.execute(
-        "UPDATE products SET name = ?, category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ? WHERE id = ?",
-        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, id)
+        "UPDATE products SET name = ?, category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ? WHERE id = ?",
+        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, id)
     )
 
 

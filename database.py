@@ -44,7 +44,8 @@ def init_db():
             price REAL DEFAULT 0.0,
             stocks INTEGER DEFAULT 0,
             is_bestseller INTEGER DEFAULT 0,
-            unit TEXT DEFAULT '100g'
+            unit TEXT DEFAULT '100g',
+            shipping_charge REAL DEFAULT 0.0
         );
 
         CREATE TABLE IF NOT EXISTS product_images (
@@ -169,6 +170,12 @@ def init_db():
             display_order INTEGER DEFAULT 0
         );
 
+        CREATE TABLE IF NOT EXISTS location_shipping_charges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            state TEXT NOT NULL UNIQUE,
+            charge REAL NOT NULL DEFAULT 0.0
+        );
+
     ''')
     conn.commit()
 
@@ -283,6 +290,20 @@ def init_db():
 
     try:
         cursor.execute("ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Safe migration: shipping_charge on products
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN shipping_charge REAL DEFAULT 0.0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Safe migration: shipping_charge on orders
+    try:
+        cursor.execute("ALTER TABLE orders ADD COLUMN shipping_charge REAL DEFAULT 0.0")
         conn.commit()
     except sqlite3.OperationalError:
         pass
@@ -413,9 +434,31 @@ def init_db():
         conn.commit()
         print("[OK] Seeded default reviews.")
 
+    # Seed location shipping charges if table is empty
+    cursor.execute("SELECT COUNT(*) FROM location_shipping_charges")
+    loc_charge_count = cursor.fetchone()[0]
+    if loc_charge_count == 0:
+        loc_charges = [
+            ('Delhi', 40.0),
+            ('New Delhi', 40.0),
+            ('Maharashtra', 80.0),
+            ('Karnataka', 90.0),
+            ('Assam', 100.0),
+            ('West Bengal', 70.0),
+            ('Tamil Nadu', 90.0),
+            ('Haryana', 50.0),
+            ('Uttar Pradesh', 50.0),
+            ('Default', 60.0)
+        ]
+        cursor.executemany(
+            "INSERT INTO location_shipping_charges (state, charge) VALUES (?, ?)",
+            loc_charges
+        )
+        conn.commit()
+        print(f"[OK] Seeded {len(loc_charges)} location shipping rates.")
+
     conn.close()
     print("[OK] Database initialized successfully.")
 
 if __name__ == '__main__':
     init_db()
-
