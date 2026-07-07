@@ -37,10 +37,13 @@ class PostgresCursorWrapper:
             self.cur.execute(sql, params)
         except Exception as e:
             import sqlite3
-            # Check if this is a psycopg2/Postgres integrity error
             e_name = type(e).__name__
+            # Check if this is a psycopg2/Postgres integrity error
             if 'IntegrityError' in e_name or 'UniqueViolation' in e_name:
                 raise sqlite3.IntegrityError(str(e)) from e
+            # Map other DB/schema operational/programming errors to sqlite3.OperationalError
+            if any(term in e_name for term in ['Duplicate', 'OperationalError', 'ProgrammingError', 'Undefined', 'ActiveSqlTransaction', 'DatabaseError']):
+                raise sqlite3.OperationalError(str(e)) from e
             raise e
         
         if is_insert:
@@ -58,7 +61,7 @@ class PostgresCursorWrapper:
             stmt = stmt.strip()
             if stmt:
                 translated = translate_to_postgres(stmt)
-                self.cur.execute(translated)
+                self.execute(translated)
 
     def fetchone(self):
         return self.cur.fetchone()
