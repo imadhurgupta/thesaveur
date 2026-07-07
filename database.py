@@ -36,6 +36,10 @@ class PostgresCursorWrapper:
         try:
             self.cur.execute(sql, params)
         except Exception as e:
+            try:
+                self.cur.connection.rollback()
+            except Exception:
+                pass
             import sqlite3
             e_name = type(e).__name__
             # Check if this is a psycopg2/Postgres integrity error
