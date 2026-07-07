@@ -1019,16 +1019,40 @@ def add_review(id):
 
     db = get_db()
 
+    # Handle review image upload (Max 5 MB)
+    image_filename = None
+    if 'review_image' in request.files:
+        file = request.files['review_image']
+        if file and file.filename:
+            if not allowed_file(file.filename):
+                flash("Invalid image format. Allowed formats: png, jpg, jpeg, gif, webp.", "error")
+                return redirect(url_for('product_detail', id=id))
+            
+            # File size validation (Max 5 MB)
+            file.seek(0, os.SEEK_END)
+            size = file.tell()
+            file.seek(0)  # Reset file pointer
+            
+            if size > 5 * 1024 * 1024:
+                flash("Image size exceeds the maximum limit of 5 MB.", "error")
+                return redirect(url_for('product_detail', id=id))
+                
+            filename = secure_filename(file.filename)
+            base, extension = os.path.splitext(filename)
+            counter = 1
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            while os.path.exists(filepath):
+                filename = f"{base}_{counter}{extension}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                counter += 1
+            file.save(filepath)
+            image_filename = filename
+
     db.execute(
-
-        "INSERT INTO reviews (product_id, user_name, rating, comment) VALUES (?, ?, ?, ?)",
-
-        (id, user_name, rating_int, comment)
-
+        "INSERT INTO reviews (product_id, user_name, rating, comment, image_filename) VALUES (?, ?, ?, ?, ?)",
+        (id, user_name, rating_int, comment, image_filename)
     )
-
     db.commit()
-
     db.close()
 
     

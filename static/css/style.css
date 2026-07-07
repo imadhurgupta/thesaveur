@@ -189,7 +189,7 @@ button:active:not(:disabled),
   transform: translateX(-50%);
   z-index: 1000;
   width: calc(100% - 48px);
-  max-width: 1100px;
+  max-width: 1400px;
   transition: var(--transition);
 }
 
@@ -197,7 +197,7 @@ button:active:not(:disabled),
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 28px;
+  padding: 20px 48px;
   background: rgba(30, 58, 15, 0.88);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -235,7 +235,7 @@ button:active:not(:disabled),
 }
 .nav-logo-text {
   font-family: 'Cinzel', 'Playfair Display', serif;
-  font-size: 1.35rem;
+  font-size: 1.85rem;
   font-weight: 900;
   color: var(--amber-light);
   line-height: 1.1;
@@ -256,8 +256,8 @@ button:active:not(:disabled),
 }
 
 .brand-logo-img {
-  height: 48px;
-  width: 48px;
+  height: 64px;
+  width: 64px;
   border-radius: 50%;
   object-fit: cover;
   border: 1.5px solid var(--amber-light);
@@ -281,11 +281,15 @@ button:active:not(:disabled),
 }
 .nav-links a {
   color: var(--amber-pale);
-  font-size: 0.9rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  padding: 7px 16px;
+  padding: 12px 24px;
   border-radius: var(--radius-pill);
   transition: var(--transition);
+}
+.nav-links a svg {
+  width: 20px !important;
+  height: 20px !important;
 }
 .nav-links a:hover,
 .nav-links a.active {
@@ -295,7 +299,7 @@ button:active:not(:disabled),
 .nav-cta {
   background: linear-gradient(135deg, var(--amber), var(--amber-light)) !important;
   color: var(--white) !important;
-  padding: 8px 20px !important;
+  padding: 13px 30px !important;
   box-shadow: 0 2px 12px rgba(200,134,10,0.4);
 }
 .nav-cta:hover {
@@ -330,9 +334,9 @@ button:active:not(:disabled),
 .nav-hamburger {
   display: none;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   background: none;
   border: none;
   outline: none;
@@ -345,8 +349,8 @@ button:active:not(:disabled),
 }
 .nav-hamburger span {
   display: block;
-  width: 22px;
-  height: 2px;
+  width: 26px;
+  height: 2.5px;
   background: var(--white);
   border-radius: 2px;
   transition: var(--transition);
@@ -376,7 +380,7 @@ button:active:not(:disabled),
 }
 .nav-mobile a {
   color: rgba(255,255,255,0.85);
-  font-size: 1rem;
+  font-size: 1.08rem;
   padding: 10px 0;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   transition: var(--transition);
@@ -580,7 +584,7 @@ button:active:not(:disabled),
   height: 65vh;
   min-height: 420px;
   max-height: 540px;
-  margin: 110px auto 32px;
+  margin: 150px auto 32px;
   max-width: 1440px;
   width: calc(100% - 48px);
   border-radius: 24px;
@@ -1226,7 +1230,7 @@ button:active:not(:disabled),
    PRODUCTS PAGE
    ============================================================ */
 .page-hero {
-  padding: 160px 0 80px;
+  padding: 180px 0 80px;
   background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
   text-align: center;
 }
@@ -1238,7 +1242,7 @@ button:active:not(:disabled),
   background: var(--cream-dark);
   border-bottom: 1px solid rgba(0,0,0,0.07);
   position: sticky;
-  top: 80px;
+  top: 138px;
   z-index: 100;
 }
 .filter-tabs {
@@ -1672,16 +1676,24 @@ button:active:not(:disabled),
   background: none;
   border: none;
   font-family: inherit;
-  font-size: inherit;
+  font-size: 1.25rem;
   color: var(--amber-pale);
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  padding: 8px 16px;
+  padding: 12px 24px;
   border-radius: var(--radius-pill);
   transition: var(--transition);
+}
+.nav-dropdown-toggle svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+.nav-dropdown-toggle .arrow-icon {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .nav-dropdown-toggle:hover {
@@ -1723,7 +1735,7 @@ button:active:not(:disabled),
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--text-dark) !important;
   border-radius: var(--radius-sm);
   text-decoration: none !important;

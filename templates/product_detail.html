@@ -534,6 +534,36 @@
   border-color: var(--green-primary);
   box-shadow: 0 0 0 3px rgba(27,67,50,.1);
 }
+.pd-form-file {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid rgba(0,0,0,.1);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  background: #fafaf9;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.pd-form-file:focus {
+  outline: none;
+  border-color: var(--green-primary);
+}
+.pd-review-img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 8px;
+  margin-top: 12px;
+  display: block;
+  border: 1px solid rgba(0,0,0,.08);
+  cursor: zoom-in;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pd-review-img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
 .pd-submit-btn {
   width: 100%;
   padding: 13px;
@@ -865,7 +895,7 @@
       <div class="pd-write-box">
         <h3>Share Your Experience</h3>
         <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Have you tried this product? Tell others what you think!</p>
-        <form action="{{ url_for('add_review', id=product.id) }}" method="POST">
+        <form action="{{ url_for('add_review', id=product.id) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateReviewForm()">
           <p style="font-size:.85rem; color:var(--text-mid); margin-bottom:16px;">Posting as <strong>{{ session.get('user_name') }}</strong> <span class="pd-verified">Verified</span></p>
           <div class="pd-form-group">
             <label class="pd-form-label">Your Rating</label>
@@ -880,6 +910,11 @@
           <div class="pd-form-group">
             <label class="pd-form-label" for="review-comment">Your Comments</label>
             <textarea id="review-comment" name="comment" rows="4" placeholder="Write your review…" class="pd-form-textarea" required></textarea>
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label" for="review-image">Add Photo (Optional, Max 5 MB)</label>
+            <input type="file" id="review-image" name="review_image" accept="image/*" class="pd-form-file" onchange="checkReviewImageSize(this)" />
+            <span id="review-image-error" style="color:#e74c3c; font-size:0.75rem; display:none; margin-top:4px; font-weight:600;">Image size exceeds the maximum limit of 5 MB.</span>
           </div>
           <button type="submit" class="pd-submit-btn">Submit Review</button>
         </form>
@@ -920,6 +955,11 @@
           <span class="pd-review-date">{{ rev.created_at.split(' ')[0] if rev.created_at else '' }}</span>
         </div>
         <p class="pd-review-text">{{ rev.comment }}</p>
+        {% if rev.image_filename %}
+        <a href="{{ url_for('static', filename='images/' + rev.image_filename) }}" target="_blank" title="View full size image">
+          <img src="{{ url_for('static', filename='images/' + rev.image_filename) }}" alt="Review Photo" class="pd-review-img" />
+        </a>
+        {% endif %}
       </div>
       {% endfor %}
     {% else %}
@@ -959,6 +999,27 @@
     const buyQ = document.getElementById('buy-qty');
     if (atcQ) atcQ.value = val;
     if (buyQ) buyQ.value = val;
+  }
+
+  function checkReviewImageSize(input) {
+    const file = input.files[0];
+    const errSpan = document.getElementById('review-image-error');
+    if (file && file.size > 5 * 1024 * 1024) {
+      errSpan.style.display = 'block';
+      input.value = '';
+    } else {
+      errSpan.style.display = 'none';
+    }
+  }
+
+  function validateReviewForm() {
+    const input = document.getElementById('review-image');
+    const file = input.files[0];
+    if (file && file.size > 5 * 1024 * 1024) {
+      alert('Image size exceeds the maximum limit of 5 MB.');
+      return false;
+    }
+    return true;
   }
 </script>
 {% endblock %}

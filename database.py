@@ -62,6 +62,7 @@ def init_db():
             user_name TEXT NOT NULL,
             rating INTEGER NOT NULL,
             comment TEXT,
+            image_filename TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
         );
@@ -201,6 +202,14 @@ def init_db():
     try:
         cursor.execute("ALTER TABLE enquiries ADD COLUMN status TEXT DEFAULT 'Pending'")
         conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    # Safe migration for image_filename on reviews
+    try:
+        cursor.execute("ALTER TABLE reviews ADD COLUMN image_filename TEXT")
+        conn.commit()
+        print("[MIGRATION] Added column 'image_filename' to 'reviews' table.")
     except sqlite3.OperationalError:
         pass
 
