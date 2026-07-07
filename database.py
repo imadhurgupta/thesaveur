@@ -461,66 +461,75 @@ def init_db():
         _safe_alter(cursor, conn, stmt)
 
     # ---- SEED: products ----
-    if _row_count(cursor, 'products') == 0:
-        products = [
-            ('Assam Black Tea', 'Tea', 'Black Tea',
-             'Rich, full-bodied Assam black tea with a bold malty flavor. Sourced directly from single-estate tea gardens.',
-             'Tea.jpg', 180.0, 50, 1, '250g'),
-            ('Organic Green Tea', 'Tea', 'Green Tea',
-             'Fresh, anti-oxidant rich green tea leaves with a clean, delicate finish.',
-             'Green-Tea.jpg', 220.0, 40, 0, '200g'),
-            ('Garam Masala', 'Spices', 'Blend Spices',
-             'A highly aromatic blend of premium roasted spices including cardamom, cinnamon, cloves, and nutmeg.',
-             'Garam-Masala.jpg', 150.0, 80, 1, '100g'),
-            ('Pure Turmeric Powder', 'Spices', 'Ground Spices',
-             'High-curcumin golden turmeric powder ground from sun-dried roots.',
-             'Turmeric-Powder.jpg', 110.0, 120, 0, '200g'),
-            ('Black Pepper Powder', 'Spices', 'Ground Spices',
-             'Bold, pungent ground black pepper sourced from Malabar.',
-             'Black-Papper.jpg', 130.0, 60, 0, '100g'),
-            ('Red Chilli Powder', 'Spices', 'Ground Spices',
-             'Vibrant, medium-hot ground red chillies for rich color and heat.',
-             'Red-Chilli-Powder.jpg', 120.0, 90, 1, '150g'),
-            ('Aamchur Powder', 'Spices', 'Ground Spices',
-             'Tangy dry mango powder perfect for adding a sour punch to dishes.',
-             'Aamchur-Powder.jpg', 95.0, 70, 0, '100g'),
-            ('Premium Cotton T-Shirt', 'Cloths', 'Apparel',
-             'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.',
-             'fashion.png', 599.0, 150, 1, '1 Unit'),
-            ('Canvas Tote Bag', 'Cloths', 'Accessories',
-             'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.',
-             'fashion.png', 349.0, 110, 0, '1 Unit'),
-        ]
-        for p in products:
-            prod_id = generate_product_id()
+    products = [
+        ('PROD-TEA-ASSAM', 'Assam Black Tea', 'Tea', 'Black Tea',
+         'Rich, full-bodied Assam black tea with a bold malty flavor. Sourced directly from single-estate tea gardens.',
+         'Tea.jpg', 180.0, 50, 1, '250g'),
+        ('PROD-TEA-GREEN', 'Organic Green Tea', 'Tea', 'Green Tea',
+         'Fresh, anti-oxidant rich green tea leaves with a clean, delicate finish.',
+         'Green-Tea.jpg', 220.0, 40, 0, '200g'),
+        ('PROD-SPICE-GARAM', 'Garam Masala', 'Spices', 'Blend Spices',
+         'A highly aromatic blend of premium roasted spices including cardamom, cinnamon, cloves, and nutmeg.',
+         'Garam-Masala.jpg', 150.0, 80, 1, '100g'),
+        ('PROD-SPICE-TURMERIC', 'Pure Turmeric Powder', 'Spices', 'Ground Spices',
+         'High-curcumin golden turmeric powder ground from sun-dried roots.',
+         'Turmeric-Powder.jpg', 110.0, 120, 0, '200g'),
+        ('PROD-SPICE-PEPPER', 'Black Pepper Powder', 'Spices', 'Ground Spices',
+         'Bold, pungent ground black pepper sourced from Malabar.',
+         'Black-Papper.jpg', 130.0, 60, 0, '100g'),
+        ('PROD-SPICE-CHILLI', 'Red Chilli Powder', 'Spices', 'Ground Spices',
+         'Vibrant, medium-hot ground red chillies for rich color and heat.',
+         'Red-Chilli-Powder.jpg', 120.0, 90, 1, '150g'),
+        ('PROD-SPICE-AAMCHUR', 'Aamchur Powder', 'Spices', 'Ground Spices',
+         'Tangy dry mango powder perfect for adding a sour punch to dishes.',
+         'Aamchur-Powder.jpg', 95.0, 70, 0, '100g'),
+        ('PROD-CLOTH-TSHIRT', 'Premium Cotton T-Shirt', 'Cloths', 'Apparel',
+         'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.',
+         'fashion.png', 599.0, 150, 1, '1 Unit'),
+        ('PROD-CLOTH-TOTE', 'Canvas Tote Bag', 'Cloths', 'Accessories',
+         'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.',
+         'fashion.png', 349.0, 110, 0, '1 Unit'),
+    ]
+    seeded_count = 0
+    for p in products:
+        cursor.execute("SELECT 1 FROM products WHERE id = ?", (p[0],))
+        if not cursor.fetchone():
             cursor.execute(
                 "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, is_bestseller, unit) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (prod_id,) + p
+                p
             )
-            conn.commit()
-        print(f"[OK] Seeded {len(products)} products.")
+            seeded_count += 1
+    if seeded_count > 0:
+        conn.commit()
+        print(f"[OK] Seeded {seeded_count} products.")
 
     # ---- SEED: product_images ----
-    if _row_count(cursor, 'product_images') == 0:
-        all_prods = cursor.execute("SELECT id, image_filename FROM products").fetchall()
-        for p in all_prods:
-            pid = _pid(p)
-            try:
-                img = p['image_filename']
-            except (KeyError, TypeError):
-                img = p[1]
+    all_prods = cursor.execute("SELECT id, image_filename FROM products").fetchall()
+    images_seeded = False
+    for p in all_prods:
+        pid = _pid(p)
+        try:
+            img = p['image_filename']
+        except (KeyError, TypeError):
+            img = p[1]
+        
+        cursor.execute("SELECT 1 FROM product_images WHERE product_id = ?", (pid,))
+        if not cursor.fetchone():
             cursor.execute(
                 "INSERT INTO product_images (product_id, image_filename) VALUES (?, ?)", (pid, img)
             )
             cursor.execute(
                 "INSERT INTO product_images (product_id, image_filename) VALUES (?, ?)", (pid, img)
             )
+            images_seeded = True
+    if images_seeded:
         conn.commit()
         print("[OK] Seeded default product images.")
 
     # ---- SEED: admin user ----
-    if _row_count(cursor, 'users WHERE is_admin = 1') == 0:
+    cursor.execute("SELECT 1 FROM users WHERE id = ?", ('USR-ADMIN',))
+    if not cursor.fetchone():
         admin_pass_hash = hashlib.sha256('admin123'.encode('utf-8')).hexdigest()
         cursor.execute(
             "INSERT INTO users (id, full_name, email, password_hash, is_admin) VALUES (?, ?, ?, ?, 1)",
@@ -530,100 +539,123 @@ def init_db():
         print("[OK] Seeded default admin account (admin@thesaveur.com / admin123).")
 
     # ---- SEED: carousel slides ----
-    if _row_count(cursor, 'carousel_slides') == 0:
-        slides_data = [
-            ('hero_tea_garden.png', 'leaf', 'Direct from Source',
-             'Premium Handpicked\nOrganic Tea',
-             'Sourced from single-estate organic gardens in Assam and Darjeeling. 100% natural, whole-leaf teas.',
-             'Shop Teas', '/products?category=tea', 0),
-            ('Garam-Masala.jpg', 'sparkles', 'Aromatic & Pure',
-             'Rich & Authentic\nIndian Spices',
-             'Pure, high-essential-oil spices ground to perfection. No artificial colors or additives.',
-             'Explore Spices', '/products?category=spices', 1),
-            ('fashion.png', 'shirt', '100% Cotton',
-             'Premium Organic\nApparel & Cloths',
-             'Sleek, everyday wear crafted from breathable, sustainably sourced organic cotton.',
-             'Shop Apparel', '/products?category=cloths', 2),
-        ]
-        cursor.executemany(
-            "INSERT INTO carousel_slides (image_filename, badge_icon, badge_text, title, description, button_text, button_link, slide_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            slides_data
-        )
+    slides_data = [
+        ('hero_tea_garden.png', 'leaf', 'Direct from Source',
+         'Premium Handpicked\nOrganic Tea',
+         'Sourced from single-estate organic gardens in Assam and Darjeeling. 100% natural, whole-leaf teas.',
+         'Shop Teas', '/products?category=tea', 0),
+        ('Garam-Masala.jpg', 'sparkles', 'Aromatic & Pure',
+         'Rich & Authentic\nIndian Spices',
+         'Pure, high-essential-oil spices ground to perfection. No artificial colors or additives.',
+         'Explore Spices', '/products?category=spices', 1),
+        ('fashion.png', 'shirt', '100% Cotton',
+         'Premium Organic\nApparel & Cloths',
+         'Sleek, everyday wear crafted from breathable, sustainably sourced organic cotton.',
+         'Shop Apparel', '/products?category=cloths', 2),
+    ]
+    slides_seeded = False
+    for slide in slides_data:
+        cursor.execute("SELECT 1 FROM carousel_slides WHERE title = ?", (slide[3],))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO carousel_slides (image_filename, badge_icon, badge_text, title, description, button_text, button_link, slide_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                slide
+            )
+            slides_seeded = True
+    if slides_seeded:
         conn.commit()
         print("[OK] Seeded default carousel slides.")
 
     # ---- SEED: categories ----
-    if _row_count(cursor, 'categories') == 0:
-        categories_data = [
-            ('Tea', 'Premium Tea', 'Finest handpicked teas from single-estate gardens.', 'Tea.jpg', 0),
-            ('Spices', 'Authentic Spices', 'Pure, aromatic ground and whole spices.', 'Garam-Masala.jpg', 1),
-            ('Cloths', 'Apparel & Cloths', 'Premium wear made from organic cotton.', 'fashion.png', 2),
-        ]
-        cursor.executemany(
-            "INSERT INTO categories (name, display_name, description, image_filename, display_order) VALUES (?, ?, ?, ?, ?)",
-            categories_data
-        )
+    categories_data = [
+        ('Tea', 'Premium Tea', 'Finest handpicked teas from single-estate gardens.', 'Tea.jpg', 0),
+        ('Spices', 'Authentic Spices', 'Pure, aromatic ground and whole spices.', 'Garam-Masala.jpg', 1),
+        ('Cloths', 'Apparel & Cloths', 'Premium wear made from organic cotton.', 'fashion.png', 2),
+    ]
+    categories_seeded = False
+    for cat in categories_data:
+        cursor.execute("SELECT 1 FROM categories WHERE name = ?", (cat[0],))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO categories (name, display_name, description, image_filename, display_order) VALUES (?, ?, ?, ?, ?)",
+                cat
+            )
+            categories_seeded = True
+    if categories_seeded:
         conn.commit()
         print("[OK] Seeded default categories.")
 
     # ---- SEED: subcategories ----
-    if _row_count(cursor, 'subcategories') == 0:
-        subcategories_data = [
-            ('Tea', 'Green Tea', 'Green Tea', 'Fresh, organic green tea leaves.', 0),
-            ('Tea', 'Black Tea', 'Black Tea', 'Bold, premium estate black teas.', 1),
-            ('Spices', 'Blend Spices', 'Blend Spices', 'Perfect mixes of ground spices.', 0),
-            ('Spices', 'Ground Spices', 'Ground Spices', 'Single-ingredient ground spices.', 1),
-            ('Cloths', 'Apparel', 'Apparel', 'Premium organic cotton clothing.', 0),
-            ('Cloths', 'Accessories', 'Accessories', 'Sustainably sourced cloth accessories.', 1),
-        ]
-        cursor.executemany(
-            "INSERT INTO subcategories (category_name, name, display_name, description, display_order) VALUES (?, ?, ?, ?, ?)",
-            subcategories_data
-        )
+    subcategories_data = [
+        ('Tea', 'Green Tea', 'Green Tea', 'Fresh, organic green tea leaves.', 0),
+        ('Tea', 'Black Tea', 'Black Tea', 'Bold, premium estate black teas.', 1),
+        ('Spices', 'Blend Spices', 'Blend Spices', 'Perfect mixes of ground spices.', 0),
+        ('Spices', 'Ground Spices', 'Ground Spices', 'Single-ingredient ground spices.', 1),
+        ('Cloths', 'Apparel', 'Apparel', 'Premium organic cotton clothing.', 0),
+        ('Cloths', 'Accessories', 'Accessories', 'Sustainably sourced cloth accessories.', 1),
+    ]
+    subcategories_seeded = False
+    for subcat in subcategories_data:
+        cursor.execute("SELECT 1 FROM subcategories WHERE category_name = ? AND name = ?", (subcat[0], subcat[1]))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO subcategories (category_name, name, display_name, description, display_order) VALUES (?, ?, ?, ?, ?)",
+                subcat
+            )
+            subcategories_seeded = True
+    if subcategories_seeded:
         conn.commit()
         print("[OK] Seeded default subcategories.")
 
     # ---- SEED: reviews (using real TEXT product IDs) ----
-    if _row_count(cursor, 'reviews') == 0:
-        all_prods = cursor.execute("SELECT id FROM products ORDER BY name ASC").fetchall()
-        if len(all_prods) >= 7:
-            reviews_data = [
-                (_pid(all_prods[0]), 'Aarav Sharma', 5,
-                 'Absolutely loved the malty flavor of this Assam tea. Tastes exactly like traditional estate tea! Perfect morning brew.'),
-                (_pid(all_prods[0]), 'Priya Patel', 4,
-                 'Great quality whole leaves. Very aromatic and soothing. Highly recommended for tea lovers.'),
-                (_pid(all_prods[2]), 'Rohan Das', 5,
-                 'Extremely fresh and strong aroma. This Garam Masala is a game changer for my cooking!'),
-                (_pid(all_prods[2]), 'Anjali Gupta', 5,
-                 'The perfect spice blend for my curries. Premium warmth and richness. Will definitely buy again.'),
-                (_pid(all_prods[3]), 'Vikram Malhotra', 4,
-                 'Very vibrant yellow color. High curcumin content and extremely pure.'),
-                (_pid(all_prods[3]), 'Meera Sen', 5,
-                 'Excellent purity. Tastes authentic and earthy. Perfect for cooking and making golden milk!'),
-                (_pid(all_prods[5]), 'Suresh Kumar', 5,
-                 'Very hot and vibrant red color. Excellent quality chilli powder.'),
-            ]
-            cursor.executemany(
+    reviews_data = [
+        ('PROD-TEA-ASSAM', 'Aarav Sharma', 5,
+         'Absolutely loved the malty flavor of this Assam tea. Tastes exactly like traditional estate tea! Perfect morning brew.'),
+        ('PROD-TEA-ASSAM', 'Priya Patel', 4,
+         'Great quality whole leaves. Very aromatic and soothing. Highly recommended for tea lovers.'),
+        ('PROD-SPICE-GARAM', 'Rohan Das', 5,
+         'Extremely fresh and strong aroma. This Garam Masala is a game changer for my cooking!'),
+        ('PROD-SPICE-GARAM', 'Anjali Gupta', 5,
+         'The perfect spice blend for my curries. Premium warmth and richness. Will definitely buy again.'),
+        ('PROD-SPICE-TURMERIC', 'Vikram Malhotra', 4,
+         'Very vibrant yellow color. High curcumin content and extremely pure.'),
+        ('PROD-SPICE-TURMERIC', 'Meera Sen', 5,
+         'Excellent purity. Tastes authentic and earthy. Perfect for cooking and making golden milk!'),
+        ('PROD-SPICE-CHILLI', 'Suresh Kumar', 5,
+         'Very hot and vibrant red color. Excellent quality chilli powder.'),
+    ]
+    reviews_seeded = False
+    for rev in reviews_data:
+        cursor.execute("SELECT 1 FROM reviews WHERE product_id = ? AND user_name = ?", (rev[0], rev[1]))
+        if not cursor.fetchone():
+            cursor.execute(
                 "INSERT INTO reviews (product_id, user_name, rating, comment) VALUES (?, ?, ?, ?)",
-                reviews_data
+                rev
             )
-            conn.commit()
-            print("[OK] Seeded default reviews.")
+            reviews_seeded = True
+    if reviews_seeded:
+        conn.commit()
+        print("[OK] Seeded default reviews.")
 
     # ---- SEED: location shipping ----
-    if _row_count(cursor, 'location_shipping_charges') == 0:
-        loc_charges = [
-            ('Delhi', 40.0), ('New Delhi', 40.0), ('Maharashtra', 80.0),
-            ('Karnataka', 90.0), ('Assam', 100.0), ('West Bengal', 70.0),
-            ('Tamil Nadu', 90.0), ('Haryana', 50.0), ('Uttar Pradesh', 50.0),
-            ('Default', 60.0),
-        ]
-        cursor.executemany(
-            "INSERT INTO location_shipping_charges (state, charge) VALUES (?, ?)",
-            loc_charges
-        )
+    loc_charges = [
+        ('Delhi', 40.0), ('New Delhi', 40.0), ('Maharashtra', 80.0),
+        ('Karnataka', 90.0), ('Assam', 100.0), ('West Bengal', 70.0),
+        ('Tamil Nadu', 90.0), ('Haryana', 50.0), ('Uttar Pradesh', 50.0),
+        ('Default', 60.0),
+    ]
+    loc_seeded = False
+    for loc in loc_charges:
+        cursor.execute("SELECT 1 FROM location_shipping_charges WHERE state = ?", (loc[0],))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO location_shipping_charges (state, charge) VALUES (?, ?)",
+                loc
+            )
+            loc_seeded = True
+    if loc_seeded:
         conn.commit()
-        print(f"[OK] Seeded {len(loc_charges)} location shipping rates.")
+        print(f"[OK] Seeded default location shipping rates.")
 
     conn.close()
     print("[OK] Database initialized successfully.")
