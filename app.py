@@ -671,19 +671,17 @@ def home():
 
                COUNT(r.id) AS review_count,
 
-               ROUND(AVG(r.rating), 1) AS avg_rating
+               ROUND(CAST(AVG(r.rating) AS NUMERIC), 1) AS avg_rating
 
         FROM products p
 
-        LEFT JOIN reviews r ON r.product_id = p.id
+        INNER JOIN reviews r ON r.product_id = p.id
 
-        WHERE r.id IS NOT NULL
+        GROUP BY p.id, p.name, p.category, p.image_filename
 
-        GROUP BY p.id
+        HAVING COUNT(r.id) > 0
 
-        HAVING review_count > 0
-
-        ORDER BY avg_rating DESC, review_count DESC
+        ORDER BY ROUND(CAST(AVG(r.rating) AS NUMERIC), 1) DESC, COUNT(r.id) DESC
 
         LIMIT 8
 
@@ -697,7 +695,7 @@ def home():
 
         SELECT COUNT(*) AS total_reviews,
 
-               ROUND(AVG(rating), 1) AS overall_rating
+               ROUND(CAST(AVG(rating) AS NUMERIC), 1) AS overall_rating
 
         FROM reviews
 
