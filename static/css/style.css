@@ -618,6 +618,13 @@ button:active:not(:disabled),
   margin-bottom: 8px;
 }
 .footer-contact-item span:first-child { color: var(--amber); font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+.footer-contact-item a {
+  color: inherit;
+  transition: var(--transition);
+}
+.footer-contact-item a:hover {
+  color: var(--amber);
+}
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,0.1);
   padding: 20px 0;
@@ -2746,4 +2753,13 @@ i[data-lucide],
     padding: 3px 8px !important;
     font-size: 0.65rem !important;
   }
+}
+
+.contact-email-link {
+  color: inherit;
+  transition: var(--transition);
+}
+.contact-email-link:hover {
+  color: var(--green-primary);
+  text-decoration: underline;
 }
