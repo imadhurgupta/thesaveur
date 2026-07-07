@@ -59,6 +59,7 @@ def init_db():
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
+            sub_category TEXT,
             description TEXT,
             image_filename TEXT,
             price REAL DEFAULT 0.0,
@@ -190,6 +191,16 @@ def init_db():
             description TEXT,
             image_filename TEXT,
             display_order INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS subcategories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_name TEXT NOT NULL,
+            name TEXT NOT NULL UNIQUE,
+            display_name TEXT NOT NULL,
+            description TEXT,
+            display_order INTEGER DEFAULT 0,
+            FOREIGN KEY (category_name) REFERENCES categories (name) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS location_shipping_charges (
@@ -352,15 +363,15 @@ def init_db():
     count = cursor.fetchone()[0]
     if count == 0:
         products = [
-            ('Assam Black Tea', 'Tea', 'Rich, full-bodied Assam black tea with a bold malty flavor. Sourced directly from single-estate tea gardens.', 'Tea.jpg', 180.0, 50, 1, '250g'),
-            ('Organic Green Tea', 'Tea', 'Fresh, anti-oxidant rich green tea leaves with a clean, delicate finish.', 'Green-Tea.jpg', 220.0, 40, 0, '200g'),
-            ('Garam Masala', 'Spices', 'A highly aromatic blend of premium roasted spices including cardamom, cinnamon, cloves, and nutmeg.', 'Garam-Masala.jpg', 150.0, 80, 1, '100g'),
-            ('Pure Turmeric Powder', 'Spices', 'High-curcumin golden turmeric powder ground from sun-dried roots.', 'Turmeric-Powder.jpg', 110.0, 120, 0, '200g'),
-            ('Black Pepper Powder', 'Spices', 'Bold, pungent ground black pepper sourced from Malabar.', 'Black-Papper.jpg', 130.0, 60, 0, '100g'),
-            ('Red Chilli Powder', 'Spices', 'Vibrant, medium-hot ground red chillies for rich color and heat.', 'Red-Chilli-Powder.jpg', 120.0, 90, 1, '150g'),
-            ('Aamchur Powder', 'Spices', 'Tangy dry mango powder perfect for adding a sour punch to dishes.', 'Aamchur-Powder.jpg', 95.0, 70, 0, '100g'),
-            ('Premium Cotton T-Shirt', 'Cloths', 'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.', 'fashion.png', 599.0, 150, 1, '1 Unit'),
-            ('Canvas Tote Bag', 'Cloths', 'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.', 'fashion.png', 349.0, 110, 0, '1 Unit')
+            ('Assam Black Tea', 'Tea', 'Black Tea', 'Rich, full-bodied Assam black tea with a bold malty flavor. Sourced directly from single-estate tea gardens.', 'Tea.jpg', 180.0, 50, 1, '250g'),
+            ('Organic Green Tea', 'Tea', 'Green Tea', 'Fresh, anti-oxidant rich green tea leaves with a clean, delicate finish.', 'Green-Tea.jpg', 220.0, 40, 0, '200g'),
+            ('Garam Masala', 'Spices', 'Blend Spices', 'A highly aromatic blend of premium roasted spices including cardamom, cinnamon, cloves, and nutmeg.', 'Garam-Masala.jpg', 150.0, 80, 1, '100g'),
+            ('Pure Turmeric Powder', 'Spices', 'Ground Spices', 'High-curcumin golden turmeric powder ground from sun-dried roots.', 'Turmeric-Powder.jpg', 110.0, 120, 0, '200g'),
+            ('Black Pepper Powder', 'Spices', 'Ground Spices', 'Bold, pungent ground black pepper sourced from Malabar.', 'Black-Papper.jpg', 130.0, 60, 0, '100g'),
+            ('Red Chilli Powder', 'Spices', 'Ground Spices', 'Vibrant, medium-hot ground red chillies for rich color and heat.', 'Red-Chilli-Powder.jpg', 120.0, 90, 1, '150g'),
+            ('Aamchur Powder', 'Spices', 'Ground Spices', 'Tangy dry mango powder perfect for adding a sour punch to dishes.', 'Aamchur-Powder.jpg', 95.0, 70, 0, '100g'),
+            ('Premium Cotton T-Shirt', 'Cloths', 'Apparel', 'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.', 'fashion.png', 599.0, 150, 1, '1 Unit'),
+            ('Canvas Tote Bag', 'Cloths', 'Accessories', 'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.', 'fashion.png', 349.0, 110, 0, '1 Unit')
         ]
         seeded_products = []
         for idx, p in enumerate(products):
@@ -368,7 +379,7 @@ def init_db():
             seeded_products.append((prod_id,) + p)
             
         cursor.executemany(
-            "INSERT INTO products (id, name, category, description, image_filename, price, stocks, is_bestseller, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, is_bestseller, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             seeded_products
         )
         conn.commit()
@@ -456,6 +467,25 @@ def init_db():
         )
         conn.commit()
         print("[OK] Seeded default categories.")
+
+    # Seed subcategories if empty
+    cursor.execute("SELECT COUNT(*) FROM subcategories")
+    subcat_count = cursor.fetchone()[0]
+    if subcat_count == 0:
+        subcategories_data = [
+            ('Tea', 'Green Tea', 'Green Tea', 'Fresh, organic green tea leaves.', 0),
+            ('Tea', 'Black Tea', 'Black Tea', 'Bold, premium estate black teas.', 1),
+            ('Spices', 'Blend Spices', 'Blend Spices', 'Perfect mixes of ground spices.', 0),
+            ('Spices', 'Ground Spices', 'Ground Spices', 'Single-ingredient ground spices.', 1),
+            ('Cloths', 'Apparel', 'Apparel', 'Premium organic cotton clothing.', 0),
+            ('Cloths', 'Accessories', 'Accessories', 'Sustainably sourced cloth accessories.', 1)
+        ]
+        cursor.executemany(
+            "INSERT INTO subcategories (category_name, name, display_name, description, display_order) VALUES (?, ?, ?, ?, ?)",
+            subcategories_data
+        )
+        conn.commit()
+        print("[OK] Seeded default subcategories.")
 
     # Seed default reviews if table is empty
     cursor.execute("SELECT COUNT(*) FROM reviews")

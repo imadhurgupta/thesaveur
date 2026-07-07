@@ -3845,6 +3845,7 @@ def admin_dashboard():
 
     carousel_slides = db.execute("SELECT * FROM carousel_slides ORDER BY slide_order ASC").fetchall()
     categories = db.execute("SELECT * FROM categories ORDER BY display_order ASC").fetchall()
+    subcategories = db.execute("SELECT s.*, c.display_name as parent_category_name FROM subcategories s JOIN categories c ON s.category_name = c.name ORDER BY s.category_name, s.display_order").fetchall()
     promo_codes = db.execute("SELECT * FROM promo_codes ORDER BY created_at DESC").fetchall()
     shipping_rates = db.execute("SELECT * FROM location_shipping_charges ORDER BY CASE WHEN UPPER(state) = 'DEFAULT' THEN 1 ELSE 0 END, state ASC").fetchall()
 
@@ -3863,6 +3864,7 @@ def admin_dashboard():
         orders=orders_list,
         carousel_slides=carousel_slides,
         categories=categories,
+        subcategories=subcategories,
         promo_codes=promo_codes,
         shipping_rates=shipping_rates,
         google_client_id=os.environ.get("GOOGLE_CLIENT_ID", "")
@@ -3881,6 +3883,8 @@ def admin_add_product():
     name = request.form.get('name', '').strip()
 
     category = request.form.get('category', '').strip()
+
+    sub_category = request.form.get('sub_category', '').strip()
 
     description = request.form.get('description', '').strip()
 
@@ -3932,8 +3936,8 @@ def admin_add_product():
 
     db = get_db()
     db.execute(
-        "INSERT INTO products (id, name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (product_id, name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate)
+        "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (product_id, name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate)
     )
 
 
@@ -3975,6 +3979,8 @@ def admin_edit_product(id):
     name = request.form.get('name', '').strip()
 
     category = request.form.get('category', '').strip()
+
+    sub_category = request.form.get('sub_category', '').strip()
 
     description = request.form.get('description', '').strip()
 
@@ -4023,8 +4029,8 @@ def admin_edit_product(id):
 
     db = get_db()
     db.execute(
-        "UPDATE products SET name = ?, category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
-        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
+        "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
+        (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
     )
 
 
@@ -5120,6 +5126,46 @@ def admin_delete_category(id):
     return redirect(url_for('admin_dashboard'))
 
 
+@app.route('/admin/add-subcategory', methods=['POST'])
+@admin_required
+def admin_add_subcategory():
+    category_name = request.form.get('category_name', '').strip()
+    name = request.form.get('name', '').strip()
+    display_name = request.form.get('display_name', '').strip()
+    description = request.form.get('description', '').strip()
+    display_order = int(request.form.get('display_order', 0) or 0)
+
+    if not category_name or not name or not display_name:
+        flash('Parent category, subcategory name, and display name are required.', 'error')
+        return redirect(url_for('admin_dashboard') + '#categories-tab')
+
+    db = get_db()
+    try:
+        db.execute(
+            "INSERT INTO subcategories (category_name, name, display_name, description, display_order) VALUES (?, ?, ?, ?, ?)",
+            (category_name, name, display_name, description, display_order)
+        )
+        db.commit()
+        flash(f'Subcategory "{display_name}" added successfully.', 'success')
+    except sqlite3.IntegrityError:
+        flash(f'Subcategory name "{name}" already exists.', 'error')
+    finally:
+        db.close()
+
+    return redirect(url_for('admin_dashboard') + '#categories-tab')
+
+
+@app.route('/admin/delete-subcategory/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete_subcategory(id):
+    db = get_db()
+    db.execute("DELETE FROM subcategories WHERE id = ?", (id,))
+    db.commit()
+    db.close()
+    flash('Subcategory deleted successfully.', 'success')
+    return redirect(url_for('admin_dashboard') + '#categories-tab')
+
+
 
 
 
@@ -5135,13 +5181,15 @@ def inject_global_data():
 
         categories = db.execute("SELECT * FROM categories ORDER BY display_order ASC").fetchall()
 
+        subcategories = db.execute("SELECT * FROM subcategories ORDER BY category_name, display_order ASC").fetchall()
+
         db.close()
 
-        return {'global_categories': categories}
+        return {'global_categories': categories, 'global_subcategories': subcategories}
 
     except Exception:
 
-        return {'global_categories': []}
+        return {'global_categories': [], 'global_subcategories': []}
 
 
 
