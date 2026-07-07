@@ -16,7 +16,20 @@
     padding: 140px 40px 80px;
     max-width: 1600px;
     margin: 0 auto;
-    background: var(--cream);
+  }
+
+  /* Message Inbox Styles */
+  .msg-card {
+    background: #fafaf9;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .msg-card:hover {
+    background: #f4f1eb;
+  }
+  .msg-card.active {
+    background: #e8f5e9 !important;
+    border-color: rgba(45,106,79,0.2) !important;
+    box-shadow: 0 4px 12px rgba(45,106,79,0.06);
   }
 
 
@@ -1300,7 +1313,7 @@
   <nav class="dashboard-tabs" aria-label="Dashboard navigation tabs">
 
     <button class="tab-btn active" onclick="switchTab(event, 'orders-tab')">Orders</button>
-
+    <button class="tab-btn" onclick="switchTab(event, 'proposals-tab')">Proposals & Enquiries</button>
     <button class="tab-btn" onclick="switchTab(event, 'products-tab')">Products</button>
 
     <button class="tab-btn" onclick="switchTab(event, 'carousel-tab')">Carousel</button>
@@ -1994,12 +2007,126 @@
         No shipping rates configured.
       </div>
       {% endif %}
+  </section>
+
+  <!-- ────── Tab 9: Proposals & Enquiries content ────── -->
+  <section id="proposals-tab" class="tab-content">
+    <div class="card-container" style="padding: 0; display: flex; height: 600px; overflow: hidden; border-radius: 20px;">
+      
+      <!-- Left side: Message List -->
+      <div class="msg-inbox-list" style="width: 350px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: #fff;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--cream);">
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--green-dark); margin: 0;">Inbox ({{ enquiries|length }})</h2>
+        </div>
+        <div class="msg-cards-container" style="flex: 1; overflow-y: auto; padding: 8px;">
+          {% if enquiries %}
+            {% for enq in enquiries %}
+              {% set is_deal = 'PROPOSED DEAL' in enq.message %}
+              <div class="msg-card {% if loop.first %}active{% endif %}" 
+                   onclick="selectMessage(this)"
+                   data-id="{{ enq.id }}"
+                   data-name="{{ enq.name|escape }}"
+                   data-email="{{ enq.email|escape }}"
+                   data-phone="{{ enq.phone|escape }}"
+                   data-interest="{{ enq.product_interest|escape }}"
+                   data-date="{{ enq.created_at }}"
+                   data-message="{{ enq.message|escape }}"
+                   data-status="{{ enq.status }}"
+                   style="padding: 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 0.88rem; color: var(--text-dark);">{{ enq.name }}</strong>
+                  <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">{{ enq.created_at.split(' ')[0] if enq.created_at else '' }}</span>
+                    {% if enq.status == 'Accepted' %}
+                      <span style="font-size: 0.65rem; font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">Accepted</span>
+                    {% elif enq.status == 'Declined' %}
+                      <span style="font-size: 0.65rem; font-weight: 700; color: #c62828; background: #ffebee; padding: 2px 6px; border-radius: 4px;">Declined</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: {% if is_deal %}#b7590a{% else %}var(--green-primary){% endif %}; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                  {% if is_deal %}
+                    <span>💵 Deal Offer:</span>
+                  {% else %}
+                    <span>✉️ Query:</span>
+                  {% endif %}
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ enq.product_interest }}</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0;">
+                  {{ enq.message }}
+                </p>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.88rem;">
+              No messages or proposals received.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right side: Message Preview Detail -->
+      <div class="msg-inbox-detail" style="flex: 1; background: #fafaf9; display: flex; flex-direction: column; overflow-y: auto;">
+        {% if enquiries %}
+          <div id="msg-detail-view" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; flex: 1;">
+            
+            <!-- Message Header -->
+            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 id="msg-detail-name" style="font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; color: var(--green-dark); margin-bottom: 8px;"></h3>
+                <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-mid); align-items: center; flex-wrap: wrap;">
+                  <span>Email: <a id="msg-detail-email" href="" style="color: var(--green-light); font-weight: 600;"></a></span>
+                  <span>Phone: <a id="msg-detail-phone" href="" style="color: var(--green-light); font-weight: 600;"></a></span>
+                  <span id="msg-detail-status" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 8px; text-transform: uppercase; margin-left: 8px;"></span>
+                </div>
+              </div>
+              <span id="msg-detail-date" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;"></span>
+            </div>
+
+            <!-- Product Interest Tag -->
+            <div>
+              <span class="mo-label">Subject / Product Interest</span>
+              <div id="msg-detail-interest" style="font-size: 0.95rem; font-weight: 700; color: var(--green-primary); margin-top: 4px;"></div>
+            </div>
+
+            <!-- Full Message Body -->
+            <div style="flex: 1;">
+              <span class="mo-label">Proposal Message Body</span>
+              <div id="msg-detail-body" style="font-size: 0.92rem; line-height: 1.65; color: var(--text-dark); background: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-top: 6px; white-space: pre-wrap;"></div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div style="display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px; flex-wrap: wrap;">
+              <a id="msg-action-email" href="" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700;">Reply via Email</a>
+              <a id="msg-action-wa" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #25d366; color: #fff; border-color: #25d366;">WhatsApp Chat</a>
+              
+              <!-- Accept / Decline Offer Buttons (dynamically toggled for deals) -->
+              <form id="msg-action-accept-form" action="" method="POST" style="display: none;">
+                <button type="submit" class="btn" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #2e7d32; border-color: #2e7d32; color: #fff; cursor: pointer; border: none;">Accept Offer</button>
+              </form>
+              <form id="msg-action-decline-form" action="" method="POST" style="display: none;">
+                <button type="submit" class="btn" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #d32f2f; border-color: #d32f2f; color: #fff; cursor: pointer; border: none;">Decline Offer</button>
+              </form>
+
+              <form id="msg-action-delete-form" action="" method="POST" onsubmit="return confirm('Are you sure you want to delete this enquiry/proposal?');" style="margin-left: auto;">
+                <button type="submit" class="btn btn-danger" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #c0392b; border-color: #c0392b; color: #fff;">Delete Message</button>
+              </form>
+            </div>
+
+          </div>
+        {% else %}
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 48px; text-align: center; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 16px;">📥</div>
+            <h3>No Messages Selected</h3>
+            <p style="font-size: 0.88rem; max-width: 320px; margin-top: 8px;">Inbox is empty. Any queries or custom deal proposals from customers will appear here.</p>
+          </div>
+        {% endif %}
+      </div>
+
     </div>
   </section>
 
-
   <!-- ────── Tab 4: Orders content ────── -->
-
   <section id="orders-tab" class="tab-content active">
 
     <div class="card-container">
@@ -2911,6 +3038,112 @@
 
   }
 
+  // Select inbox message
+  function selectMessage(element) {
+    // Toggle active class on list card
+    document.querySelectorAll('.msg-card').forEach(card => {
+      card.classList.remove('active');
+    });
+    element.classList.add('active');
+
+    // Load data attributes
+    const name = element.getAttribute('data-name');
+    const email = element.getAttribute('data-email');
+    const phone = element.getAttribute('data-phone');
+    const interest = element.getAttribute('data-interest');
+    const date = element.getAttribute('data-date');
+    const message = element.getAttribute('data-message');
+    const id = element.getAttribute('data-id');
+    const status = element.getAttribute('data-status') || 'Pending';
+
+    // Update detail elements
+    const detailName = document.getElementById('msg-detail-name');
+    if (detailName) detailName.innerText = name;
+    
+    const emailLink = document.getElementById('msg-detail-email');
+    if (emailLink) {
+      emailLink.innerText = email;
+      emailLink.href = 'mailto:' + email;
+    }
+    
+    const phoneLink = document.getElementById('msg-detail-phone');
+    if (phoneLink) {
+      phoneLink.innerText = phone || 'N/A';
+      phoneLink.href = phone ? 'tel:' + phone : '#';
+    }
+
+    const detailDate = document.getElementById('msg-detail-date');
+    if (detailDate) detailDate.innerText = date;
+
+    const detailInterest = document.getElementById('msg-detail-interest');
+    if (detailInterest) detailInterest.innerText = interest;
+
+    const detailBody = document.getElementById('msg-detail-body');
+    if (detailBody) detailBody.innerText = message;
+
+    // Update status badge
+    const statusSpan = document.getElementById('msg-detail-status');
+    if (statusSpan) {
+      statusSpan.innerText = status;
+      if (status === 'Accepted') {
+        statusSpan.style.background = '#e8f5e9';
+        statusSpan.style.color = '#2e7d32';
+      } else if (status === 'Declined') {
+        statusSpan.style.background = '#ffebee';
+        statusSpan.style.color = '#c62828';
+      } else {
+        statusSpan.style.background = '#fff3e0';
+        statusSpan.style.color = '#ef6c00';
+      }
+    }
+
+    // Update action buttons
+    const actionEmail = document.getElementById('msg-action-email');
+    if (actionEmail) {
+      actionEmail.href = 'mailto:' + email + '?subject=Regarding your proposal for ' + encodeURIComponent(interest);
+    }
+    
+    const waCleanPhone = (phone || '').replace(/[^\d]/g, '');
+    const waLink = document.getElementById('msg-action-wa');
+    if (waLink) {
+      if (waCleanPhone) {
+        waLink.style.display = 'inline-flex';
+        waLink.href = 'https://wa.me/' + waCleanPhone + '?text=' + encodeURIComponent('Hi ' + name + ', regarding your offer/enquiry for ' + interest + '...');
+      } else {
+        waLink.style.display = 'none';
+      }
+    }
+
+    // Toggle and update Accept / Decline forms
+    const isDeal = message.indexOf('PROPOSED DEAL') !== -1;
+    const acceptForm = document.getElementById('msg-action-accept-form');
+    const declineForm = document.getElementById('msg-action-decline-form');
+    if (acceptForm && declineForm) {
+      if (isDeal && status === 'Pending') {
+        acceptForm.style.display = 'block';
+        declineForm.style.display = 'block';
+        acceptForm.action = '/admin/enquiry/update-status/' + id + '/Accepted';
+        declineForm.action = '/admin/enquiry/update-status/' + id + '/Declined';
+      } else {
+        acceptForm.style.display = 'none';
+        declineForm.style.display = 'none';
+      }
+    }
+
+    // Update delete form action
+    const deleteForm = document.getElementById('msg-action-delete-form');
+    if (deleteForm) {
+      deleteForm.action = '/admin/delete-enquiry/' + id;
+    }
+  }
+
+  // Initialize first message selection on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const firstMsg = document.querySelector('.msg-card');
+    if (firstMsg) {
+      selectMessage(firstMsg);
+    }
+  });
 
 
   // Modals management

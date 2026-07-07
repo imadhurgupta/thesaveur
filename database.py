@@ -13,6 +13,10 @@ def generate_user_id():
     chars = string.ascii_uppercase + string.digits
     return "USR-" + "".join(random.choice(chars) for _ in range(8))
 
+def generate_product_id():
+    chars = string.ascii_uppercase + string.digits
+    return "PROD-" + "".join(random.choice(chars) for _ in range(8))
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -22,6 +26,22 @@ def get_db():
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
+
+    # Check if products table exists and has INTEGER id type; if so, migrate
+    try:
+        cursor.execute("PRAGMA table_info(products)")
+        columns = cursor.fetchall()
+        if columns:
+            id_col = next((c for c in columns if c[1] == 'id'), None)
+            if id_col and 'INTEGER' in id_col[2].upper():
+                print("[MIGRATION] 'products' table is using INTEGER IDs. Dropping product-related tables for alphanumeric migration...")
+                cursor.execute("DROP TABLE IF EXISTS reviews")
+                cursor.execute("DROP TABLE IF EXISTS product_images")
+                cursor.execute("DROP TABLE IF EXISTS order_items")
+                cursor.execute("DROP TABLE IF EXISTS products")
+                conn.commit()
+    except sqlite3.OperationalError:
+        pass
 
     # Check if orders table has user_id column; if not, drop it and recreate it
     try:
@@ -36,7 +56,7 @@ def init_db():
 
     cursor.executescript('''
         CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
             description TEXT,
@@ -51,14 +71,14 @@ def init_db():
 
         CREATE TABLE IF NOT EXISTS product_images (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER NOT NULL,
+            product_id TEXT NOT NULL,
             image_filename TEXT NOT NULL,
             FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER NOT NULL,
+            product_id TEXT NOT NULL,
             user_name TEXT NOT NULL,
             rating INTEGER NOT NULL,
             comment TEXT,
@@ -119,7 +139,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL,
+            product_id TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             price REAL NOT NULL,
             original_price REAL DEFAULT 0,
@@ -342,12 +362,17 @@ def init_db():
             ('Premium Cotton T-Shirt', 'Cloths', 'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.', 'fashion.png', 599.0, 150, 1, '1 Unit'),
             ('Canvas Tote Bag', 'Cloths', 'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.', 'fashion.png', 349.0, 110, 0, '1 Unit')
         ]
+        seeded_products = []
+        for idx, p in enumerate(products):
+            prod_id = generate_product_id()
+            seeded_products.append((prod_id,) + p)
+            
         cursor.executemany(
-            "INSERT INTO products (name, category, description, image_filename, price, stocks, is_bestseller, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            products
+            "INSERT INTO products (id, name, category, description, image_filename, price, stocks, is_bestseller, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            seeded_products
         )
         conn.commit()
-        print(f"[OK] Seeded {len(products)} products.")
+        print(f"[OK] Seeded {len(products)} products with alphanumeric IDs.")
 
     # Seed product images if product_images is empty
     cursor.execute("SELECT COUNT(*) FROM product_images")

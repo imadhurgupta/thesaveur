@@ -1,637 +1,1049 @@
 {% extends "base.html" %}
 
 {% block title %}{{ product.name }} – The Saveur{% endblock %}
-{% block meta_desc %}Discover {{ product.name }} ({{ product.category }}) — premium quality sourced fresh from trusted Indian partners.{% endblock %}
-
+{% block meta_desc %}Discover {{ product.name }} ({{ product.category }}) — premium quality sourced fresh from trusted
+Indian partners.{% endblock %}
 {% block extra_head %}
 <style>
-/* ══════════════════════════════════════════════
-   PRODUCT DETAIL — PREMIUM REDESIGN
-══════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════
+   PRODUCT DETAIL — EBAY INSPIRED PREMIUM REDESIGN
+   ══════════════════════════════════════════════ */
 
-.pd-page {
-  padding: 130px 24px 80px;
-  max-width: 1240px;
-  margin: 0 auto;
-}
+  .pd-page {
+    padding: 140px 24px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 
-/* ── Breadcrumb ── */
-.pd-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 32px;
-}
-.pd-breadcrumb a { color: var(--text-muted); transition: color .2s; }
-.pd-breadcrumb a:hover { color: var(--green-primary); }
-.pd-breadcrumb svg { flex-shrink: 0; }
+  /* Breadcrumb */
+  .pd-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
 
-/* ══ MAIN GRID ══ */
-.pd-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 56px;
-  align-items: start;
-}
-@media (max-width: 960px) {
-  .pd-grid { grid-template-columns: 1fr; gap: 36px; }
-  .pd-gallery { position: static !important; }
-}
+  .pd-breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color .2s;
+  }
 
-/* ══ GALLERY ══ */
-.pd-gallery {
-  position: sticky;
-  top: 120px;
-}
+  .pd-breadcrumb a:hover {
+    color: var(--green-primary);
+  }
 
-.pd-main-img {
-  border-radius: 20px;
-  overflow: hidden;
-  background: #f8f6f2;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
-  aspect-ratio: 4/3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  position: relative;
-}
-.pd-main-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity .3s ease, transform .4s ease;
-}
-.pd-main-img:hover img { transform: scale(1.03); }
+  /* Main Grid Layout */
+  .pd-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
 
-.pd-thumbs {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.pd-thumb {
-  width: 76px;
-  height: 76px;
-  border-radius: 12px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 2.5px solid transparent;
-  flex-shrink: 0;
-  transition: all .25s;
-  box-shadow: var(--shadow-sm);
-}
-.pd-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.pd-thumb:hover { border-color: var(--green-light); transform: translateY(-2px); }
-.pd-thumb.active { border-color: var(--green-primary); box-shadow: 0 0 0 3px rgba(27,67,50,.15); }
+  @media (max-width: 900px) {
+    .pd-grid {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+  }
 
-/* ══ RIGHT INFO PANEL ══ */
-.pd-info { display: flex; flex-direction: column; gap: 22px; }
+  /* Gallery Section (Left side) */
+  .pd-gallery {
+    position: sticky;
+    top: 130px;
+  }
 
-/* Badges row */
-.pd-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.pd-badge {
-  padding: 5px 14px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border-radius: var(--radius-pill);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-.pd-badge.cat {
-  background: rgba(27,67,50,.08);
-  color: var(--green-primary);
-  border: 1px solid rgba(27,67,50,.15);
-}
-.pd-badge.bestseller {
-  background: #fdf3e0;
-  color: #b7590a;
-  border: 1px solid rgba(183,85,10,.2);
-}
-.pd-badge.sale {
-  background: #fde8e8;
-  color: #c0392b;
-  border: 1px solid rgba(192,57,43,.2);
-}
+  .pd-main-img {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fdfdfc;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+  }
 
-/* Title */
-.pd-title {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  color: var(--green-dark);
-  line-height: 1.2;
-  font-weight: 800;
-}
+  .pd-main-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
 
-/* Star rating */
-.pd-stars {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.pd-stars .stars { display: flex; gap: 2px; }
+  .pd-main-img:hover img {
+    transform: scale(1.02);
+  }
 
-/* Price block */
-.pd-price-block {
-  background: linear-gradient(135deg, #f7f5f0, #fefdf9);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px 22px;
-}
-.pd-price-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-.pd-price-main {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.pd-price-now {
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--green-dark);
-}
-.pd-price-now.sale { color: #c0392b; }
-.pd-price-was {
-  font-size: 1.1rem;
-  color: var(--text-muted);
-  text-decoration: line-through;
-  font-weight: 500;
-}
-.pd-price-unit { font-size: 0.88rem; color: var(--text-muted); margin-top: 3px; }
-.pd-savings {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(192,57,43,.08);
-  border: 1px solid rgba(192,57,43,.18);
-  color: #c0392b;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-  margin-top: 8px;
-}
-.pd-stock-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color);
-}
-.pd-stock-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-.pd-stock-badge.in { background: rgba(46,204,113,.12); color: #1e8449; }
-.pd-stock-badge.low { background: rgba(230,126,34,.12); color: #a04000; }
-.pd-stock-badge.out { background: rgba(192,57,43,.12); color: #922b21; }
-.pd-stock-badge svg { flex-shrink: 0; }
-.pd-stock-count { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+  .pd-thumbs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
 
-/* ── Qty + Action Buttons ── */
-.pd-actions-block {
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+  .pd-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
 
-.pd-qty-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.pd-qty-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-.pd-qty-control {
-  display: flex;
-  align-items: center;
-  border: 1.5px solid rgba(0,0,0,.12);
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fafaf9;
-}
-.pd-qty-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: var(--green-primary);
-  font-weight: 700;
-  transition: background .2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pd-qty-btn:hover { background: rgba(27,67,50,.07); }
-.pd-qty-btn:disabled { color: #ccc; cursor: not-allowed; }
-.pd-qty-input {
-  width: 44px;
-  border: none;
-  background: transparent;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text-dark);
-  padding: 0;
-  -moz-appearance: textfield;
-}
-.pd-qty-input::-webkit-inner-spin-button,
-.pd-qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .pd-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
-/* Action Buttons Row */
-.pd-btn-row {
-  display: flex;
-  gap: 10px;
-}
+  .pd-thumb.active {
+    border-color: var(--green-light);
+    box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
+  }
 
-.pd-btn-atc {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 13px 18px;
-  border: 2px solid var(--green-primary);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--green-primary);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .25s;
-  font-family: inherit;
-}
-.pd-btn-atc:hover {
-  background: var(--green-primary);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(27,67,50,.25);
-}
-.pd-btn-atc:disabled {
-  opacity: .4;
-  cursor: not-allowed;
-}
+  /* Badges row */
+  .pd-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 4px;
+  }
 
-.pd-btn-buy {
-  flex: 1.3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 13px 18px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .25s;
-  box-shadow: 0 3px 16px rgba(15,41,30,.28);
-  font-family: inherit;
-}
-.pd-btn-buy:hover {
-  box-shadow: 0 6px 24px rgba(15,41,30,.4);
-  transform: translateY(-1px);
-}
-.pd-btn-buy:disabled {
-  background: #ccc;
-  box-shadow: none;
-  cursor: not-allowed;
-  transform: none;
-}
+  .pd-badge {
+    padding: 5px 14px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border: 1px solid transparent;
+  }
 
-.pd-btn-wish {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  border: 1.5px solid rgba(0,0,0,.12);
-  background: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .25s;
-  flex-shrink: 0;
-  align-self: stretch;
-  padding: 0;
-}
-.pd-btn-wish:hover,
-.pd-btn-wish.active {
-  border-color: #e74c3c;
-  background: #fde8e8;
-}
-.pd-btn-wish svg { transition: all .25s; }
-.pd-btn-wish.active svg { fill: #e74c3c; }
+  .pd-badge.cat {
+    background: rgba(45, 106, 79, 0.08);
+    color: #2d6a4f;
+    border-color: rgba(45, 106, 79, 0.15);
+  }
 
-/* ── Description ── */
-.pd-desc-block {
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 24px;
-}
-.pd-desc-block h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.15rem;
-  color: var(--green-dark);
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-.pd-desc-block p {
-  font-size: 0.95rem;
-  color: var(--text-mid);
-  line-height: 1.75;
-}
+  .pd-badge.bestseller {
+    background: #fdf3e0;
+    color: #b7590a;
+    border-color: rgba(183, 85, 10, .2);
+  }
 
-/* ── Bulk / Enquiry ── */
-.pd-enquiry {
-  border-radius: 16px;
-  background: linear-gradient(135deg, #0f291e, #1b4332);
-  padding: 24px;
-  color: #fff;
-  text-align: center;
-}
-.pd-enquiry h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.15rem;
-  margin-bottom: 8px;
-  color: #fff;
-}
-.pd-enquiry p {
-  font-size: 0.85rem;
-  color: rgba(255,255,255,.72);
-  margin-bottom: 16px;
-  line-height: 1.55;
-}
-.pd-enquiry-btns {
-  display: flex;
-  gap: 10px;
-}
-.pd-enquiry-btns a {
-  flex: 1;
-  padding: 11px 14px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all .25s;
-}
-.pd-enquiry-btns .e-wa {
-  background: #25d366;
-  color: #fff;
-}
-.pd-enquiry-btns .e-wa:hover { background: #1ebe59; box-shadow: 0 3px 12px rgba(37,211,102,.4); }
-.pd-enquiry-btns .e-mail {
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.2);
-  color: #fff;
-}
-.pd-enquiry-btns .e-mail:hover { background: rgba(255,255,255,.18); }
+  .pd-badge.sale {
+    background: #fde8e8;
+    color: #c0392b;
+    border-color: rgba(192, 57, 43, .2);
+  }
 
-/* ══ RELATED PRODUCTS ══ */
-.pd-related {
-  margin-top: 80px;
-  padding-top: 60px;
-  border-top: 1px solid var(--border-color);
-}
-.pd-section-head {
-  text-align: center;
-  margin-bottom: 40px;
-}
-.pd-section-head h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  color: var(--green-dark);
-  margin: 0;
-}
+  /* Info Panel (Right side) */
+  .pd-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 
-/* ══ REVIEWS ══ */
-.pd-reviews {
-  margin-top: 80px;
-  padding-top: 60px;
-  border-top: 1px solid var(--border-color);
-}
-.pd-reviews-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  gap: 40px;
-  margin-bottom: 48px;
-}
-@media (max-width: 860px) {
-  .pd-reviews-grid { grid-template-columns: 1fr; }
-}
+  /* Title */
+  .pd-title {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 2.2rem;
+    font-weight: 400;
+    color: var(--green-dark);
+    line-height: 1.2;
+  }
 
-.pd-rating-box,
-.pd-write-box {
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: var(--shadow-sm);
-}
-.pd-rating-box h3,
-.pd-write-box h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.2rem;
-  color: var(--green-dark);
-  margin-bottom: 16px;
-}
-.pd-big-rating {
-  font-size: 3.5rem;
-  font-weight: 800;
-  color: var(--green-dark);
-  line-height: 1;
-}
-.pd-rating-stars { display: flex; gap: 3px; margin: 8px 0; }
-.pd-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-.pd-bar-bg {
-  flex: 1;
-  height: 7px;
-  background: #ebebeb;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.pd-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #f1c40f, #e67e22);
-  border-radius: 4px;
-  transition: width .6s ease;
-}
+  /* Seller Badge Card */
+  .pd-seller-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  }
 
-.pd-star-input { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 4px; }
-.pd-star-input input { display: none; }
-.pd-star-input label { font-size: 1.8rem; color: #ddd; cursor: pointer; transition: color .15s; }
-.pd-star-input input:checked ~ label,
-.pd-star-input label:hover,
-.pd-star-input label:hover ~ label { color: #f1c40f; }
+  .pd-seller-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
-.pd-form-group { margin-bottom: 16px; }
-.pd-form-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-.pd-form-textarea {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid rgba(0,0,0,.1);
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.93rem;
-  color: var(--text-dark);
-  background: #fafaf9;
-  resize: vertical;
-  transition: border-color .2s, box-shadow .2s;
-}
-.pd-form-textarea:focus {
-  outline: none;
-  border-color: var(--green-primary);
-  box-shadow: 0 0 0 3px rgba(27,67,50,.1);
-}
-.pd-form-file {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid rgba(0,0,0,.1);
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--text-dark);
-  background: #fafaf9;
-  cursor: pointer;
-  transition: border-color .2s;
-}
-.pd-form-file:focus {
-  outline: none;
-  border-color: var(--green-primary);
-}
-.pd-review-img {
-  max-width: 150px;
-  max-height: 150px;
-  border-radius: 8px;
-  margin-top: 12px;
-  display: block;
-  border: 1px solid rgba(0,0,0,.08);
-  cursor: zoom-in;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.pd-review-img:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.pd-submit-btn {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
-  color: #fff;
-  font-size: 0.93rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .25s;
-  font-family: inherit;
-  box-shadow: 0 3px 14px rgba(15,41,30,.22);
-}
-.pd-submit-btn:hover { box-shadow: 0 5px 20px rgba(15,41,30,.38); transform: translateY(-1px); }
+  .pd-seller-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--green-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
 
-.pd-login-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 48px 32px;
-  gap: 12px;
-}
-.pd-login-icon { font-size: 2.4rem; }
+  .pd-seller-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
 
-.pd-review-card {
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 22px 24px;
-  margin-bottom: 14px;
-  box-shadow: var(--shadow-sm);
-}
-.pd-review-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-.pd-reviewer {
-  font-weight: 700;
-  color: var(--green-dark);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.pd-verified {
-  background: rgba(46,204,113,.12);
-  color: #1e8449;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-.pd-review-date { font-size: 0.8rem; color: var(--text-muted); }
-.pd-review-stars { display: flex; gap: 2px; margin-bottom: 8px; }
-.pd-review-text { font-size: 0.92rem; color: var(--text-mid); line-height: 1.65; }
+  .pd-seller-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
 
-@media (max-width: 480px) {
-  .pd-btn-row { flex-wrap: wrap; }
-  .pd-btn-atc, .pd-btn-buy { min-width: 100%; }
-  .pd-btn-wish { width: 100%; height: 44px; }
-  .pd-enquiry-btns { flex-direction: column; }
-}
+  .pd-seller-meta a {
+    color: var(--green-light);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .pd-seller-meta a:hover {
+    text-decoration: underline;
+  }
+
+  .pd-seller-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-seller-msg {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--text-mid);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-seller-msg:hover {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.25);
+  }
+
+  /* Price Section */
+  .pd-price-sec {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .pd-price-wrapper {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pd-price-val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--green-dark);
+  }
+
+  .pd-price-or-offer {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .pd-was-price {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    text-decoration: line-through;
+    margin-top: 4px;
+  }
+
+  .pd-save-pill {
+    display: inline-block;
+    background: rgba(192, 57, 43, 0.08);
+    color: #c0392b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+  }
+
+  /* Item Specs Table Grid */
+  .pd-specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 0.88rem;
+  }
+
+  .pd-spec-item {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+    padding-bottom: 8px;
+  }
+
+  .pd-spec-label {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .pd-spec-value {
+    color: var(--text-dark);
+    font-weight: 600;
+  }
+
+  /* Breathe Easy Row */
+  .pd-breathe-easy {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(64, 145, 108, 0.06);
+    border: 1px solid rgba(64, 145, 108, 0.12);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: #2d6a4f;
+    font-weight: 500;
+  }
+
+  /* CTAs Buttons Block */
+  .pd-ctas-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .pd-btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 24px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    text-decoration: none;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pd-btn-primary:hover {
+    background: var(--green-dark);
+    box-shadow: 0 4px 15px rgba(27, 67, 50, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .pd-btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .pd-btn-secondary {
+    width: 100%;
+    background: #e8f5e9;
+    color: var(--green-primary);
+    border: 1.5px solid var(--green-primary);
+    padding: 13px;
+    border-radius: 24px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    text-decoration: none;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .pd-btn-secondary:hover {
+    background: #d4eed8;
+  }
+
+  .pd-btn-secondary:disabled {
+    background: #f5f5f5;
+    color: #aaa;
+    border-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  .pd-btn-tertiary {
+    width: 100%;
+    background: #fff;
+    color: var(--green-light);
+    border: 1px solid var(--green-light);
+    padding: 12px;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  .pd-btn-tertiary:hover {
+    background: rgba(64, 145, 108, 0.05);
+    border-color: var(--green-primary);
+    color: var(--green-primary);
+  }
+
+  .pd-btn-watchlist {
+    width: 100%;
+    background: #fff;
+    color: var(--amber);
+    border: 1px solid rgba(197, 160, 89, 0.4);
+    padding: 12px;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  .pd-btn-watchlist:hover {
+    background: rgba(197, 160, 89, 0.04);
+    border-color: var(--amber);
+  }
+
+  .pd-btn-watchlist.active {
+    background: var(--amber-pale);
+    border-color: var(--amber);
+    color: var(--green-dark);
+  }
+
+  /* Stars / Reviews row */
+  .pd-stars-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: -10px;
+    margin-bottom: 2px;
+  }
+
+  .pd-stars-list {
+    display: flex;
+    gap: 2px;
+  }
+
+  .pd-rating-num {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    line-height: 1;
+  }
+
+  .pd-reviews-link {
+    font-size: 0.82rem;
+    color: var(--green-light);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .pd-reviews-link:hover {
+    color: var(--green-primary);
+    text-decoration: underline;
+  }
+
+  /* Description block */
+  .pd-desc-block {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  /* Bulk enquiry section */
+  .pd-enquiry {
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+    padding: 24px;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(27, 67, 50, 0.15);
+  }
+
+  .pd-enquiry h3 {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+    color: #fff;
+    font-weight: 400;
+  }
+
+  .pd-enquiry p {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 16px;
+    line-height: 1.55;
+  }
+
+  .pd-enquiry-btns {
+    display: flex;
+    gap: 12px;
+  }
+
+  .pd-enquiry-btns a {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .25s;
+  }
+
+  .pd-enquiry-btns .e-wa {
+    background: #25d366;
+    color: #fff;
+  }
+
+  .pd-enquiry-btns .e-wa:hover {
+    background: #1ebe59;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+  }
+
+  .pd-enquiry-btns .e-mail {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+
+  .pd-enquiry-btns .e-mail:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Quantity selector */
+  .pd-qty-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.88rem;
+    color: var(--text-mid);
+  }
+
+  .pd-qty-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .pd-qty-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--green-primary);
+    font-weight: 700;
+    transition: background .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pd-qty-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .pd-qty-btn:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+  }
+
+  .pd-qty-input {
+    width: 38px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    padding: 0;
+  }
+
+  /* Related section */
+  .pd-related {
+    margin-top: 80px;
+    padding-top: 60px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .pd-section-head {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .pd-section-head h2 {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 2.2rem;
+    color: var(--green-dark);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  /* Reviews section */
+  .pd-reviews {
+    margin-top: 80px;
+    padding-top: 60px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .pd-reviews-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 40px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 860px) {
+    .pd-reviews-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pd-rating-box,
+  .pd-write-box {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pd-rating-box h3,
+  .pd-write-box h3 {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: 1.25rem;
+    color: var(--green-dark);
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+
+  .pd-big-rating {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--green-dark);
+    line-height: 1;
+  }
+
+  .pd-rating-stars {
+    display: flex;
+    gap: 3px;
+    margin: 8px 0;
+  }
+
+  .pd-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .pd-bar-bg {
+    flex: 1;
+    height: 7px;
+    background: #ebebeb;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .pd-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
+    border-radius: 4px;
+    transition: width .6s ease;
+  }
+
+  .pd-star-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .pd-star-input input {
+    display: none;
+  }
+
+  .pd-star-input label {
+    font-size: 1.8rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color .15s;
+  }
+
+  .pd-star-input input:checked~label,
+  .pd-star-input label:hover,
+  .pd-star-input label:hover~label {
+    color: #f1c40f;
+  }
+
+  .pd-form-group {
+    margin-bottom: 16px;
+  }
+
+  .pd-form-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .pd-form-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid rgba(0, 0, 0, .1);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.93rem;
+    color: var(--text-dark);
+    background: #fafaf9;
+    resize: vertical;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .pd-form-textarea:focus {
+    outline: none;
+    border-color: var(--green-primary);
+    box-shadow: 0 0 0 3px rgba(27, 67, 50, .1);
+  }
+
+  .pd-form-file {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid rgba(0, 0, 0, .1);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    background: #fafaf9;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+
+  .pd-form-file:focus {
+    outline: none;
+    border-color: var(--green-primary);
+  }
+
+  .pd-review-img {
+    max-width: 150px;
+    max-height: 150px;
+    border-radius: 8px;
+    margin-top: 12px;
+    display: block;
+    border: 1px solid rgba(0, 0, 0, .08);
+    cursor: zoom-in;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .pd-review-img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .pd-submit-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+    color: #fff;
+    font-size: 0.93rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .25s;
+    font-family: inherit;
+    box-shadow: 0 3px 14px rgba(15, 41, 30, .22);
+  }
+
+  .pd-submit-btn:hover {
+    box-shadow: 0 5px 20px rgba(15, 41, 30, .38);
+    transform: translateY(-1px);
+  }
+
+  .pd-login-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 32px;
+    gap: 12px;
+  }
+
+  .pd-login-icon {
+    font-size: 2.4rem;
+  }
+
+  .pd-review-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pd-review-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .pd-reviewer {
+    font-weight: 700;
+    color: var(--green-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pd-verified {
+    background: rgba(46, 204, 113, .12);
+    color: #1e8449;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .pd-review-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .pd-review-stars {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+
+  .pd-review-text {
+    font-size: 0.92rem;
+    color: var(--text-mid);
+    line-height: 1.65;
+  }
+
+  @media (max-width: 480px) {
+    .pd-btn-row {
+      flex-wrap: wrap;
+    }
+
+    .pd-btn-atc,
+    .pd-btn-buy {
+      min-width: 100%;
+    }
+
+    .pd-btn-wish {
+      width: 100%;
+      height: 44px;
+    }
+
+    .pd-enquiry-btns {
+      flex-direction: column;
+    }
+  }
+
+  /* ── Make Offer Modal ── */
+  .mo-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 31, 21, 0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .mo-modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mo-modal-content {
+    background: #fdfbf9;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    padding: 32px;
+    box-shadow: 0 20px 50px rgba(10, 31, 21, 0.15);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .mo-modal-overlay.open .mo-modal-content {
+    transform: scale(1);
+  }
+  .mo-modal-header {
+    margin-bottom: 20px;
+  }
+  .mo-modal-header h3 {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.6rem;
+    color: var(--green-dark);
+    margin-bottom: 6px;
+    font-weight: 400;
+  }
+  .mo-modal-header p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .mo-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .mo-input-group {
+    margin-bottom: 16px;
+  }
+  .mo-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .mo-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: #fafaf9;
+    color: var(--text-dark);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .mo-input:focus {
+    outline: none;
+    border-color: var(--green-primary);
+    box-shadow: 0 0 0 3px rgba(27,67,50,0.08);
+  }
+  .mo-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: #fafaf9;
+    color: var(--text-dark);
+    resize: none;
+    height: 70px;
+    transition: border-color 0.2s;
+  }
+  .mo-textarea:focus {
+    outline: none;
+    border-color: var(--green-primary);
+  }
+  .mo-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .mo-btn-submit {
+    flex: 1.3;
+    background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mo-btn-submit:hover {
+    box-shadow: 0 4px 15px rgba(27,67,50,0.2);
+  }
+  .mo-btn-cancel {
+    flex: 1;
+    background: #fff;
+    color: var(--text-mid);
+    border: 1px solid rgba(0,0,0,0.15);
+    padding: 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .mo-btn-cancel:hover {
+    background: rgba(0,0,0,0.02);
+  }
 </style>
 {% endblock %}
 
@@ -641,9 +1053,13 @@
   <!-- Breadcrumb -->
   <nav class="pd-breadcrumb" aria-label="Breadcrumb">
     <a href="{{ url_for('home') }}">Home</a>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
     <a href="{{ url_for('products') }}">Products</a>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
     <span>{{ product.name }}</span>
   </nav>
 
@@ -654,15 +1070,17 @@
     <div class="pd-gallery reveal-left">
       <div class="pd-main-img">
         <img id="pd-hero-img"
-             src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
-             alt="{{ product.name }}" />
+          src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
+          alt="{{ product.name }}" />
       </div>
       {% if images|length > 1 %}
       <div class="pd-thumbs">
         {% for img in images %}
         <div class="pd-thumb {% if loop.first %}active{% endif %}"
-             onclick="switchImg(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
-          <img src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}" alt="" />
+          onclick="switchImg(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
+          <img
+            src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}"
+            alt="" />
         </div>
         {% endfor %}
       </div>
@@ -684,126 +1102,198 @@
       </div>
 
       <!-- Title -->
-      <h1 class="pd-title">{{ product.name }}</h1>
+      <h1 class="pd-title" style="margin-bottom: 8px;">{{ product.name }}</h1>
 
-      <!-- Stars -->
-      {% if total_reviews > 0 %}
-      <div class="pd-stars">
-        <div class="stars">
+      <!-- Stars / Reviews Row -->
+      <div class="pd-stars-row">
+        <div class="pd-stars-list">
           {% for i in range(1,6) %}
-          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f" stroke-width="2" width="16" height="16">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f"
+            stroke-width="2.2" width="14" height="14">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
           {% endfor %}
         </div>
-        <span style="font-weight:700; color:var(--text-dark);">{{ avg_rating }}</span>
-        <span style="color:var(--text-muted); font-size:0.85rem;">({{ total_reviews }} review{{ 's' if total_reviews != 1 }})</span>
-      </div>
-      {% endif %}
-
-      <!-- Price Block -->
-      <div class="pd-price-block">
-        <div class="pd-price-label">Price</div>
-        {% if product.discount_percent and product.discount_percent > 0 %}
-          {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
-          <div class="pd-price-main">
-            <span class="pd-price-now sale">₹{{ sale_price }}</span>
-            <span class="pd-price-was">₹{{ product.price }}</span>
-          </div>
-          <div class="pd-price-unit">/ {{ product.unit }}</div>
-          <div class="pd-savings">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            You save ₹{{ (product.price - sale_price)|round(2) }}
-          </div>
+        {% if total_reviews > 0 %}
+        <span class="pd-rating-num">{{ avg_rating }}</span>
+        <a href="#customer-reviews-section" class="pd-reviews-link"
+          onclick="document.getElementById('customer-reviews-section').scrollIntoView({behavior: 'smooth'}); return false;">
+          ({{ total_reviews }} review{{ 's' if total_reviews != 1 }})
+        </a>
         {% else %}
-          <div class="pd-price-main">
-            <span class="pd-price-now">₹{{ product.price }}</span>
-          </div>
-          <div class="pd-price-unit">/ {{ product.unit }}</div>
+        <a href="#customer-reviews-section" class="pd-reviews-link"
+          onclick="document.getElementById('customer-reviews-section').scrollIntoView({behavior: 'smooth'}); return false;">
+          Be the first to review
+        </a>
         {% endif %}
+      </div>
 
-        <!-- Stock -->
-        <div class="pd-stock-row">
-          {% if product.stocks > 10 %}
-            <span class="pd-stock-badge in">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
-              In Stock
-            </span>
-            <span class="pd-stock-count">{{ product.stocks }} units available</span>
-          {% elif product.stocks > 0 %}
-            <span class="pd-stock-badge low">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Low Stock
-            </span>
-            <span class="pd-stock-count">Only {{ product.stocks }} left</span>
-          {% else %}
-            <span class="pd-stock-badge out">Out of Stock</span>
-            <span class="pd-stock-count">Enquire for next batch</span>
-          {% endif %}
+      <!-- Seller/Store Info Badge -->
+      <div class="pd-seller-card">
+        <div class="pd-seller-left">
+          <div class="pd-seller-logo">
+            TS
+          </div>
+          <div>
+            <div class="pd-seller-name">The Saveur Store (5,000+ Happy Subscribers)</div>
+            <div class="pd-seller-meta">
+              99.8% positive feedback · <a href="{{ url_for('products') }}">Store Products</a>
+            </div>
+          </div>
+        </div>
+        <div class="pd-seller-actions">
+          <a href="#pd-enquiry-form-section" class="btn-seller-msg">Contact Seller</a>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="pd-actions-block">
-        <!-- Qty Row -->
-        <div class="pd-qty-row">
-          <span class="pd-qty-label">Quantity</span>
-          <div class="pd-qty-control">
-            <button type="button" class="pd-qty-btn" onclick="changeQty(-1)" {% if product.stocks <= 0 %}disabled{% endif %}>−</button>
-            <input class="pd-qty-input" id="pd-qty" type="number" value="1" min="1" max="{{ product.stocks if product.stocks > 0 else 1 }}" readonly />
-            <button type="button" class="pd-qty-btn" onclick="changeQty(1)" {% if product.stocks <= 0 %}disabled{% endif %}>+</button>
+      <!-- Price Section -->
+      <div class="pd-price-sec">
+        {% if product.discount_percent and product.discount_percent > 0 %}
+        {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
+        <div class="pd-price-wrapper">
+          <span class="pd-price-val">₹{{ sale_price }}</span>
+          <span class="pd-price-or-offer">or Best Offer</span>
+        </div>
+        <div class="pd-was-price">
+          Was: <span style="text-decoration:line-through;">₹{{ product.price }}</span>
+          <span class="pd-save-pill">Save ₹{{ (product.price - sale_price)|round(2) }} ({{ product.discount_percent|int
+            }}% off)</span>
+        </div>
+        {% else %}
+        <div class="pd-price-wrapper">
+          <span class="pd-price-val">₹{{ product.price }}</span>
+          <span class="pd-price-or-offer">or Best Offer</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Item Specifications Grid -->
+      <div class="pd-specs-grid">
+        <div class="pd-spec-item">
+          <span class="pd-spec-label">Condition:</span>
+          <span class="pd-spec-value"> Brand New, Freshly Harvested</span>
+        </div>
+        <div class="pd-spec-item">
+          <span class="pd-spec-label">Category:</span>
+          <span class="pd-spec-value">{{ product.category }}</span>
+        </div>
+        <div class="pd-spec-item">
+          <span class="pd-spec-label">Unit size:</span>
+          <span class="pd-spec-value">{{ product.unit }}</span>
+        </div>
+        <div class="pd-spec-item">
+          <span class="pd-spec-label">Availability:</span>
+          <span class="pd-spec-value">
+            {% if product.stocks > 10 %}In Stock{% elif product.stocks > 0 %}Low Stock{% else %}Out of Stock{% endif %}
+          </span>
+        </div>
+        <div class="pd-spec-item" style="grid-column: span 2; border: none; padding-bottom: 0;">
+          <span class="pd-spec-label">Shipping:</span>
+          <span class="pd-spec-value" style="color: #2e7d32;">
+            {% if product.shipping_charge == 0.0 or not product.shipping_charge %}
+            Free shipping
+            {% else %}
+            ₹{{ product.shipping_charge }} Shipping
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- Breathe Easy Trust Badge -->
+      <div class="pd-breathe-easy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+        </svg>
+        <span>Breathe easy. Free shipping and returns.</span>
+      </div>
+
+      <!-- Quantity Selector & Actions -->
+      <div class="pd-ctas-block">
+        <!-- Quantity selection -->
+        <div class="pd-qty-selector">
+          <span>Quantity:</span>
+          <div class="pd-qty-input-wrap">
+            <button type="button" class="pd-qty-btn" onclick="changeQty(-1)" {% if product.stocks <=0 %}disabled{% endif
+              %}>−</button>
+            <input class="pd-qty-input" id="pd-qty" type="number" value="1" min="1"
+              max="{{ product.stocks if product.stocks > 0 else 1 }}" readonly />
+            <button type="button" class="pd-qty-btn" onclick="changeQty(1)" {% if product.stocks <=0 %}disabled{% endif
+              %}>+</button>
           </div>
+          <span style="color: var(--text-muted); font-size: 0.82rem;">
+            {% if product.stocks > 0 %}{{ product.stocks }} units available{% else %}Out of stock{% endif %}
+          </span>
         </div>
 
-        <!-- Buttons Row -->
-        <div class="pd-btn-row">
-          <!-- Add to Cart -->
-          <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="atc-form" style="flex:1; display:contents;">
-            <input type="hidden" name="quantity" id="atc-qty" value="1">
-            <button type="submit" class="pd-btn-atc" {% if product.stocks <= 0 %}disabled{% endif %}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-              Add to Cart
-            </button>
-          </form>
+        <!-- Call to Actions -->
+        <!-- Buy It Now (Primary Royal Blue CTA) -->
+        <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="buy-form">
+          <input type="hidden" name="quantity" id="buy-qty" value="1">
+          <input type="hidden" name="buy_now" value="1">
+          <button type="submit" class="pd-btn-primary" {% if product.stocks <=0 %}disabled{% endif %}>
+            Buy It Now
+          </button>
+        </form>
 
-          <!-- Buy Now -->
-          <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="buy-form" style="flex:1.3; display:contents;">
-            <input type="hidden" name="quantity" id="buy-qty" value="1">
-            <input type="hidden" name="buy_now" value="1">
-            <button type="submit" class="pd-btn-buy" {% if product.stocks <= 0 %}disabled{% endif %}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-              Buy Now
-            </button>
-          </form>
+        <!-- Add to cart (Secondary outline blue CTA) -->
+        <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="atc-form">
+          <input type="hidden" name="quantity" id="atc-qty" value="1">
+          <button type="submit" class="pd-btn-secondary" {% if product.stocks <=0 %}disabled{% endif %}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" width="16" height="16">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            Add to cart
+          </button>
+        </form>
 
-          <!-- Wishlist -->
-          <form action="{{ url_for('toggle_wishlist', product_id=product.id) }}" method="POST" style="display:contents;">
-            <button type="submit" class="pd-btn-wish {% if in_wishlist %}active{% endif %}" title="{{ 'Remove from Wishlist' if in_wishlist else 'Add to Wishlist' }}">
-              <svg viewBox="0 0 24 24" fill="{{ '#e74c3c' if in_wishlist else 'none' }}" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </button>
-          </form>
-        </div>
+        <!-- Make Offer (Opens interactive modal form) -->
+        <button type="button" class="pd-btn-tertiary" onclick="openOfferModal()">
+          Make offer
+        </button>
+
+        <!-- Add to Watchlist (Quaternary red/outline CTA) -->
+        <form action="{{ url_for('toggle_wishlist', product_id=product.id) }}" method="POST" style="display:contents;">
+          <button type="submit" class="pd-btn-watchlist {% if in_wishlist %}active{% endif %}"
+            title="{{ 'Remove from Watchlist' if in_wishlist else 'Add to Watchlist' }}">
+            <svg viewBox="0 0 24 24" fill="{{ '#e74c3c' if in_wishlist else 'none' }}" stroke="#e74c3c"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            <span>{% if in_wishlist %}In Watchlist{% else %}Add to Watchlist{% endif %}</span>
+          </button>
+        </form>
       </div>
 
       <!-- Description -->
-      <div class="pd-desc-block">
-        <h3>About this product</h3>
-        <p>{{ product.description }}</p>
+      <div class="pd-desc-block" style="margin-top: 10px;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">About this item</h3>
+        <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-mid);">{{ product.description }}</p>
       </div>
 
-      <!-- Bulk Enquiry -->
-      <div class="pd-enquiry">
-        <h3>Bulk Orders &amp; Queries</h3>
-        <p>Interested in {{ product.name }} in wholesale quantities? Get a custom quotation directly.</p>
+      <!-- Bulk Enquiry Form Target Section -->
+      <div class="pd-enquiry" id="pd-enquiry-form-section" style="margin-top: 10px;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">Bulk Orders &amp; Queries</h3>
+        <p style="font-size: 0.82rem; margin-bottom: 12px; color: rgba(255,255,255,0.75);">Interested in {{ product.name
+          }} in wholesale quantities? Make an offer or query directly.</p>
         <div class="pd-enquiry-btns">
-          <a href="https://wa.me/919500529076?text=Hi,%20I%20am%20interested%20in%20{{ product.name|urlencode }}%20in%20bulk." target="_blank" rel="noopener" class="e-wa">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          <a href="https://wa.me/919500529076?text=Hi,%20I%20am%20interested%20in%20{{ product.name|urlencode }}%20in%20bulk."
+            target="_blank" rel="noopener" class="e-wa">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+            </svg>
             WhatsApp
           </a>
           <a href="mailto:info@thesaveur.com?subject=Bulk%20Order%20-%20{{ product.name|urlencode }}" class="e-mail">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
             Email
           </a>
         </div>
@@ -822,26 +1312,44 @@
     <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
       {% for prod in related_products %}
       <article class="product-card">
-        <a href="{{ url_for('product_detail', id=prod.id) }}" style="display:block; text-decoration:none; color:inherit;">
+        <a href="{{ url_for('product_detail', id=prod.id) }}"
+          style="display:block; text-decoration:none; color:inherit;">
           <div class="product-img-wrap">
-            <img src="{% if '://' in prod.image_filename %}{{ prod.image_filename }}{% else %}{{ url_for('static', filename='images/' + prod.image_filename) }}{% endif %}" alt="{{ prod.name }}" loading="lazy"/>
-            <span class="product-badge {{ prod.category|lower }}">{{ prod.category }}</span>
-            {% if prod.is_bestseller %}<span class="bestseller-tag">⭐ Best Seller</span>{% endif %}
+            <img
+              src="{% if '://' in prod.image_filename %}{{ prod.image_filename }}{% else %}{{ url_for('static', filename='images/' + prod.image_filename) }}{% endif %}"
+              alt="{{ prod.name }}" loading="lazy" />
+            <div class="product-tags-left">
+              <span class="product-badge {{ prod.category|lower }}">{{ prod.category }}</span>
+            </div>
+            <div class="product-tags-right">
+              {% if prod.is_bestseller %}
+              <span class="bestseller-tag">⭐ Best Seller</span>
+              {% endif %}
+              {% if prod.discount_percent and prod.discount_percent > 0 %}
+              <span class="product-badge sale" style="background:#e74c3c;">{{ prod.discount_percent|int }}% OFF</span>
+              {% endif %}
+            </div>
           </div>
         </a>
         <div class="product-body">
           <h3 class="product-name" style="font-size:1rem; margin-bottom:6px; font-weight:700;">
-            <a href="{{ url_for('product_detail', id=prod.id) }}" style="color:inherit; text-decoration:none;">{{ prod.name }}</a>
+            <a href="{{ url_for('product_detail', id=prod.id) }}" style="color:inherit; text-decoration:none;">{{
+              prod.name }}</a>
           </h3>
-          <p class="product-desc" style="font-size:.85rem; -webkit-line-clamp:2; -webkit-box-orient:vertical; display:-webkit-box; overflow:hidden;">{{ prod.description }}</p>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; border-top:1px solid rgba(0,0,0,.06); padding-top:10px;">
+          <p class="product-desc"
+            style="font-size:.85rem; -webkit-line-clamp:2; -webkit-box-orient:vertical; display:-webkit-box; overflow:hidden;">
+            {{ prod.description }}</p>
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; border-top:1px solid rgba(0,0,0,.06); padding-top:10px;">
             <div>
               {% if prod.discount_percent and prod.discount_percent > 0 %}
-                {% set sp = (prod.price * (1 - prod.discount_percent / 100)) | round(2) %}
-                <span style="font-size:1.1rem; font-weight:700; color:#c0392b;">₹{{ sp }}</span>
-                <span style="font-size:.82rem; color:var(--text-muted); text-decoration:line-through; margin-left:4px;">₹{{ prod.price }}</span>
+              {% set sp = (prod.price * (1 - prod.discount_percent / 100)) | round(2) %}
+              <span style="font-size:1.1rem; font-weight:700; color:#c0392b;">₹{{ sp }}</span>
+              <span
+                style="font-size:.82rem; color:var(--text-muted); text-decoration:line-through; margin-left:4px;">₹{{
+                prod.price }}</span>
               {% else %}
-                <span style="font-size:1.1rem; font-weight:700; color:var(--green-dark);">₹{{ prod.price }}</span>
+              <span style="font-size:1.1rem; font-weight:700; color:var(--green-dark);">₹{{ prod.price }}</span>
               {% endif %}
               <span style="font-size:.78rem; color:var(--text-muted);"> / {{ prod.unit }}</span>
             </div>
@@ -857,7 +1365,7 @@
   {% endif %}
 
   <!-- ═══ REVIEWS ═══ -->
-  <section class="pd-reviews reveal" aria-label="Customer Reviews">
+  <section class="pd-reviews reveal" id="customer-reviews-section" aria-label="Customer Reviews">
     <div class="pd-section-head">
       <div class="section-tag">Customer Feedback</div>
       <h2>Reviews &amp; Ratings</h2>
@@ -873,20 +1381,25 @@
         </div>
         <div class="pd-rating-stars">
           {% for i in range(1,6) %}
-          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f" stroke-width="2" width="20" height="20">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f"
+            stroke-width="2" width="20" height="20">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
           {% endfor %}
         </div>
-        <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Based on {{ total_reviews }} review{{ 's' if total_reviews != 1 }}</p>
+        <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Based on {{ total_reviews }} review{{
+          's' if total_reviews != 1 }}</p>
         {% for stars in [5,4,3,2,1] %}
-          {% set cnt = rating_breakdown[stars] %}
-          {% set pct = (cnt / total_reviews * 100) if total_reviews > 0 else 0 %}
-          <div class="pd-bar-row">
-            <span style="width:48px; font-weight:600; color:var(--text-mid);">{{ stars }}★</span>
-            <div class="pd-bar-bg"><div class="pd-bar-fill" style="width:{{ pct }}%;"></div></div>
-            <span style="width:24px; text-align:right; color:var(--text-muted);">{{ cnt }}</span>
+        {% set cnt = rating_breakdown[stars] %}
+        {% set pct = (cnt / total_reviews * 100) if total_reviews > 0 else 0 %}
+        <div class="pd-bar-row">
+          <span style="width:48px; font-weight:600; color:var(--text-mid);">{{ stars }}★</span>
+          <div class="pd-bar-bg">
+            <div class="pd-bar-fill" style="width:{{ pct }}%;"></div>
           </div>
+          <span style="width:24px; text-align:right; color:var(--text-muted);">{{ cnt }}</span>
+        </div>
         {% endfor %}
       </div>
 
@@ -894,9 +1407,12 @@
       {% if session.get('user_id') %}
       <div class="pd-write-box">
         <h3>Share Your Experience</h3>
-        <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Have you tried this product? Tell others what you think!</p>
-        <form action="{{ url_for('add_review', id=product.id) }}" method="POST" enctype="multipart/form-data" onsubmit="return validateReviewForm()">
-          <p style="font-size:.85rem; color:var(--text-mid); margin-bottom:16px;">Posting as <strong>{{ session.get('user_name') }}</strong> <span class="pd-verified">Verified</span></p>
+        <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Have you tried this product? Tell
+          others what you think!</p>
+        <form action="{{ url_for('add_review', id=product.id) }}" method="POST" enctype="multipart/form-data"
+          onsubmit="return validateReviewForm()">
+          <p style="font-size:.85rem; color:var(--text-mid); margin-bottom:16px;">Posting as <strong>{{
+              session.get('user_name') }}</strong> <span class="pd-verified">Verified</span></p>
           <div class="pd-form-group">
             <label class="pd-form-label">Your Rating</label>
             <div class="pd-star-input">
@@ -909,12 +1425,16 @@
           </div>
           <div class="pd-form-group">
             <label class="pd-form-label" for="review-comment">Your Comments</label>
-            <textarea id="review-comment" name="comment" rows="4" placeholder="Write your review…" class="pd-form-textarea" required></textarea>
+            <textarea id="review-comment" name="comment" rows="4" placeholder="Write your review…"
+              class="pd-form-textarea" required></textarea>
           </div>
           <div class="pd-form-group">
             <label class="pd-form-label" for="review-image">Add Photo (Optional, Max 5 MB)</label>
-            <input type="file" id="review-image" name="review_image" accept="image/*" class="pd-form-file" onchange="checkReviewImageSize(this)" />
-            <span id="review-image-error" style="color:#e74c3c; font-size:0.75rem; display:none; margin-top:4px; font-weight:600;">Image size exceeds the maximum limit of 5 MB.</span>
+            <input type="file" id="review-image" name="review_image" accept="image/*" class="pd-form-file"
+              onchange="checkReviewImageSize(this)" />
+            <span id="review-image-error"
+              style="color:#e74c3c; font-size:0.75rem; display:none; margin-top:4px; font-weight:600;">Image size
+              exceeds the maximum limit of 5 MB.</span>
           </div>
           <button type="submit" class="pd-submit-btn">Submit Review</button>
         </form>
@@ -923,8 +1443,10 @@
       <div class="pd-write-box pd-login-box">
         <div class="pd-login-icon">🔒</div>
         <h3 style="margin:0;">Login to Review</h3>
-        <p style="font-size:.88rem; color:var(--text-muted); margin:0; max-width:280px;">You must be logged in to share your experience with this product.</p>
-        <a href="{{ url_for('login', next=request.path) }}" class="pd-submit-btn" style="text-decoration:none; text-align:center; display:block; margin-top:4px;">
+        <p style="font-size:.88rem; color:var(--text-muted); margin:0; max-width:280px;">You must be logged in to share
+          your experience with this product.</p>
+        <a href="{{ url_for('login', next=request.path) }}" class="pd-submit-btn"
+          style="text-decoration:none; text-align:center; display:block; margin-top:4px;">
           Log In
         </a>
       </div>
@@ -936,39 +1458,95 @@
       Customer Reviews ({{ total_reviews }})
     </h3>
     {% if reviews %}
-      {% for rev in reviews %}
-      <div class="pd-review-card">
-        <div class="pd-review-top">
-          <div>
-            <div class="pd-reviewer">
-              {{ rev.user_name }}
-              <span class="pd-verified">Verified Buyer</span>
-            </div>
-            <div class="pd-review-stars">
-              {% for i in range(1,6) %}
-              <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if rev.rating >= i else 'none' }}" stroke="#f1c40f" stroke-width="2" width="13" height="13">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              {% endfor %}
-            </div>
+    {% for rev in reviews %}
+    <div class="pd-review-card">
+      <div class="pd-review-top">
+        <div>
+          <div class="pd-reviewer">
+            {{ rev.user_name }}
+            <span class="pd-verified">Verified Buyer</span>
           </div>
-          <span class="pd-review-date">{{ rev.created_at.split(' ')[0] if rev.created_at else '' }}</span>
+          <div class="pd-review-stars">
+            {% for i in range(1,6) %}
+            <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if rev.rating >= i else 'none' }}" stroke="#f1c40f"
+              stroke-width="2" width="13" height="13">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            {% endfor %}
+          </div>
         </div>
-        <p class="pd-review-text">{{ rev.comment }}</p>
-        {% if rev.image_filename %}
-        <a href="{{ url_for('static', filename='images/' + rev.image_filename) }}" target="_blank" title="View full size image">
-          <img src="{{ url_for('static', filename='images/' + rev.image_filename) }}" alt="Review Photo" class="pd-review-img" />
-        </a>
-        {% endif %}
+        <span class="pd-review-date">{{ rev.created_at.split(' ')[0] if rev.created_at else '' }}</span>
       </div>
-      {% endfor %}
+      <p class="pd-review-text">{{ rev.comment }}</p>
+      {% if rev.image_filename %}
+      <a href="{{ url_for('static', filename='images/' + rev.image_filename) }}" target="_blank"
+        title="View full size image">
+        <img src="{{ url_for('static', filename='images/' + rev.image_filename) }}" alt="Review Photo"
+          class="pd-review-img" />
+      </a>
+      {% endif %}
+    </div>
+    {% endfor %}
     {% else %}
-    <div style="text-align:center; padding:48px; border:1px dashed rgba(0,0,0,.12); border-radius:16px; color:var(--text-muted); background:#fff;">
+    <div
+      style="text-align:center; padding:48px; border:1px dashed rgba(0,0,0,.12); border-radius:16px; color:var(--text-muted); background:#fff;">
       <div style="font-size:2rem; margin-bottom:10px;">⭐</div>
       <p>No reviews yet. Be the first to share your thoughts!</p>
     </div>
     {% endif %}
   </section>
+
+  <!-- Make Offer Modal Overlay -->
+  <div class="mo-modal-overlay" id="makeOfferModal" onclick="if(event.target===this) closeOfferModal()">
+    <div class="mo-modal-content">
+      <div class="mo-modal-header">
+        <h3>Make an Offer</h3>
+        <p>Submit your proposed deal for <strong>{{ product.name }}</strong>. We will review and reply within 24 hours.</p>
+      </div>
+      <form action="{{ url_for('submit_proposal') }}" method="POST">
+        <input type="hidden" name="product_id" value="{{ product.id }}">
+        <input type="hidden" name="product_name" value="{{ product.name }}">
+
+        <div class="mo-form-row">
+          <div class="mo-input-group">
+            <label class="mo-label">Proposed Price (₹)</label>
+            <input type="number" name="proposed_price" id="mo-proposed-price" class="mo-input" step="0.01" min="1" required>
+          </div>
+          <div class="mo-input-group">
+            <label class="mo-label">Quantity Required</label>
+            <input type="number" name="proposed_qty" id="mo-proposed-qty" class="mo-input" min="1" required>
+          </div>
+        </div>
+
+        <div class="mo-input-group">
+          <label class="mo-label">Your Name</label>
+          <input type="text" name="name" class="mo-input" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="mo-form-row">
+          <div class="mo-input-group">
+            <label class="mo-label">Email Address</label>
+            <input type="email" name="email" class="mo-input" placeholder="name@example.com" required>
+          </div>
+          <div class="mo-input-group">
+            <label class="mo-label">Phone Number</label>
+            <input type="tel" name="phone" class="mo-input" placeholder="e.g. +91 98765 43210">
+          </div>
+        </div>
+
+        <div class="mo-input-group">
+          <label class="mo-label">Message / Deal Details (Optional)</label>
+          <textarea name="message" class="mo-textarea" placeholder="Explain your proposal (e.g. regular buyer, custom specifications, delivery timeline...)"></textarea>
+        </div>
+
+        <div class="mo-buttons">
+          <button type="button" class="mo-btn-cancel" onclick="closeOfferModal()">Cancel</button>
+          <button type="submit" class="mo-btn-submit">Submit Offer</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 </div><!-- /pd-page -->
 {% endblock %}
@@ -1020,6 +1598,24 @@
       return false;
     }
     return true;
+  }
+
+  // Make Offer Modal control
+  function openOfferModal() {
+    // Populate defaults based on current selection
+    const priceText = document.querySelector('.pd-price-val').innerText.replace(/[^\d.]/g, '');
+    const currentQty = document.getElementById('pd-qty').value;
+    
+    document.getElementById('mo-proposed-price').value = priceText;
+    document.getElementById('mo-proposed-qty').value = currentQty;
+    
+    document.getElementById('makeOfferModal').classList.add('open');
+    document.body.style.overflow = 'hidden'; // prevent page scroll
+  }
+
+  function closeOfferModal() {
+    document.getElementById('makeOfferModal').classList.remove('open');
+    document.body.style.overflow = ''; // restore scroll
   }
 </script>
 {% endblock %}

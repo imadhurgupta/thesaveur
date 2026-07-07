@@ -152,55 +152,271 @@ orders, fast shipping.{% endblock %}
 
 {% if site_stats and site_stats.total_reviews > 0 %}
 <!-- ══════════════════════════════════════════════════════
-       OVERALL RATING SECTION
+       OVERALL RATING SECTION — PREMIUM
   ══════════════════════════════════════════════════════ -->
-<section style="padding: 64px 0; background: linear-gradient(135deg, #f9f6f0 0%, #fff 60%, #f4f0e8 100%);" aria-label="Overall Customer Rating">
+<section class="ratings-hero-section" aria-label="Overall Customer Rating">
+  <style>
+  .ratings-hero-section {
+    position: relative;
+    padding: 100px 0;
+    background: linear-gradient(160deg, #e8f0ea 0%, #d4e6d9 40%, #c2d9ca 70%, #daeadd 100%);
+    overflow: hidden;
+  }
+  /* Animated ambient orbs */
+  .ratings-hero-section::before {
+    content: '';
+    position: absolute;
+    top: -120px; left: -120px;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(197,160,89,0.18) 0%, transparent 70%);
+    animation: orbFloat 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .ratings-hero-section::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; right: -80px;
+    width: 380px; height: 380px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(64,145,108,0.2) 0%, transparent 70%);
+    animation: orbFloat 10s ease-in-out infinite reverse;
+    pointer-events: none;
+  }
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(30px, -20px) scale(1.05); }
+    66%       { transform: translate(-15px, 25px) scale(0.97); }
+  }
+  .ratings-section-header {
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 2;
+  }
+  .ratings-section-tag {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #2d6a4f;
+    background: rgba(45,106,79,0.1);
+    border: 1px solid rgba(45,106,79,0.3);
+    padding: 6px 20px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(45,106,79,0.08);
+  }
+  .ratings-section-tag::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: tagShimmer 3s ease infinite;
+  }
+  .ratings-title {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-style: italic;
+    font-weight: 400;
+    color: #1a3d28;
+    letter-spacing: -0.01em;
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+  .ratings-title em {
+    color: #2d6a4f;
+    font-style: normal;
+    background: linear-gradient(135deg, #2d6a4f, #52b788, #1b4332);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200%;
+    animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+  .ratings-subtitle {
+    font-size: 1rem;
+    color: rgba(27,67,50,0.7);
+    max-width: 440px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* Big decorative quote */
+  .ratings-quote-mark {
+    position: absolute;
+    top: 60px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 18rem;
+    line-height: 1;
+    font-family: 'DM Serif Display', serif;
+    color: rgba(45,106,79,0.06);
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+  }
+
+  /* Metrics row */
+  .ratings-metrics {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 2px;
+    position: relative;
+    z-index: 2;
+    max-width: 780px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(45,106,79,0.15);
+    border-radius: 28px;
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(27,67,50,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .rating-metric {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 44px 32px;
+    gap: 10px;
+    position: relative;
+    transition: background 0.3s;
+  }
+  .rating-metric:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 24px; bottom: 24px;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(45,106,79,0.2), transparent);
+  }
+  .rating-metric:hover {
+    background: rgba(45,106,79,0.04);
+  }
+  .rating-metric-value {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: 3.4rem;
+    font-weight: 400;
+    line-height: 1;
+    background: linear-gradient(135deg, #1b4332, #2d6a4f, #40916c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+  .rating-metric-stars {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .rating-metric-stars svg {
+    filter: drop-shadow(0 2px 6px rgba(241,196,15,0.5));
+  }
+  .rating-metric-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(27,67,50,0.5);
+    margin-top: 2px;
+  }
+  .rating-metric-sub {
+    font-size: 0.78rem;
+    color: rgba(27,67,50,0.4);
+    margin-top: -4px;
+  }
+  /* CTA link */
+  .ratings-cta {
+    text-align: center;
+    margin-top: 40px;
+    position: relative;
+    z-index: 2;
+  }
+  .ratings-cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(27,67,50,0.45);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .ratings-cta a:hover { color: #2d6a4f; }
+  @media (max-width: 600px) {
+    .ratings-metrics { flex-direction: column; border-radius: 20px; }
+    .rating-metric:not(:last-child)::after { top: auto; bottom: 0; left: 24px; right: 24px; width: auto; height: 1px; }
+    .rating-metric { padding: 28px 20px; }
+  }
+  </style>
+
+  <!-- Decorative large quote -->
+  <div class="ratings-quote-mark">"</div>
+
   <div class="container">
-
-    <!-- Section Header -->
-    <div class="text-center section-header reveal" style="margin-bottom: 40px;">
-      <span class="section-tag">Verified Buyers</span>
-      <h2 class="section-title">What Our Customers Say</h2>
-      <p class="section-subtitle" style="max-width: 480px; margin: 0 auto;">
-        Thousands of happy buyers have rated our products. Here's what they think overall.
-      </p>
+    <!-- Header -->
+    <div class="ratings-section-header reveal">
+      <div class="ratings-section-tag">Verified Buyers</div>
+      <h2 class="ratings-title">What Our <em>Customers</em> Say</h2>
+      <p class="ratings-subtitle">Thousands of happy buyers have rated our products. Here's what they think overall.</p>
     </div>
 
-    <!-- Site-Wide Score Badge (centered, prominent) -->
-    <div class="reveal" style="display:flex; justify-content:center;">
-      <div style="display:inline-flex; align-items:center; gap:32px; background:var(--green-dark); color:white; padding:28px 52px; border-radius:var(--radius-pill); box-shadow: 0 10px 40px rgba(15,41,30,0.28);">
+    <!-- Metrics Panel -->
+    <div class="ratings-metrics reveal">
 
-        <!-- Big Score -->
-        <div style="text-align:center;">
-          <div style="font-size:3rem; font-weight:900; line-height:1; font-family:'Playfair Display',serif; color:#f1c40f;">{{ site_stats.overall_rating }}</div>
-          <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; opacity:0.65; margin-top:4px;">Overall Rating</div>
-        </div>
-
-        <div style="width:1px; height:52px; background:rgba(255,255,255,0.18);"></div>
-
-        <!-- Stars -->
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-          <div style="display:flex; align-items:center; gap:5px;">
-            {% for i in range(1, 6) %}
-              <svg viewBox="0 0 24 24" fill="{% if site_stats.overall_rating >= i %}#f1c40f{% else %}rgba(255,255,255,0.2){% endif %}" width="26" height="26">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            {% endfor %}
-          </div>
-          <div style="font-size:0.8rem; opacity:0.7;">out of 5</div>
-        </div>
-
-        <div style="width:1px; height:52px; background:rgba(255,255,255,0.18);"></div>
-
-        <!-- Total Reviews -->
-        <div style="text-align:center;">
-          <div style="font-size:2rem; font-weight:800; line-height:1;">{{ site_stats.total_reviews }}</div>
-          <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; opacity:0.65; margin-top:4px;">Total Reviews</div>
-        </div>
-
+      <!-- Score -->
+      <div class="rating-metric">
+        <div class="rating-metric-value">{{ site_stats.overall_rating }}</div>
+        <div class="rating-metric-label">Overall Rating</div>
+        <div class="rating-metric-sub">out of 5.0</div>
       </div>
+
+      <!-- Stars -->
+      <div class="rating-metric">
+        <div class="rating-metric-stars">
+          {% for i in range(1, 6) %}
+          <svg viewBox="0 0 24 24"
+               fill="{% if site_stats.overall_rating >= i %}#f1c40f{% elif site_stats.overall_rating >= i - 0.5 %}url(#halfGrad){% else %}rgba(255,255,255,0.15){% endif %}"
+               width="28" height="28">
+            <defs>
+              <linearGradient id="halfGrad"><stop offset="50%" stop-color="#f1c40f"/><stop offset="50%" stop-color="rgba(255,255,255,0.15)"/></linearGradient>
+            </defs>
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          {% endfor %}
+        </div>
+        <div class="rating-metric-label">Customer Stars</div>
+        <div class="rating-metric-sub">Avg. star rating</div>
+      </div>
+
+      <!-- Total Reviews -->
+      <div class="rating-metric">
+        <div class="rating-metric-value">{{ site_stats.total_reviews }}</div>
+        <div class="rating-metric-label">Total Reviews</div>
+        <div class="rating-metric-sub">Verified purchases</div>
+      </div>
+
     </div>
 
+    <!-- CTA -->
+    <div class="ratings-cta">
+      <a href="{{ url_for('products') }}">
+        Explore our products &nbsp;
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
   </div>
 </section>
 {% endif %}
@@ -208,41 +424,324 @@ orders, fast shipping.{% endblock %}
 
 
 <!-- ══════════════════════════════════════════════════════
-       TRUST BAR SECTION
+       NEWSLETTER / SUBSCRIBERS SECTION
   ══════════════════════════════════════════════════════ -->
-<section class="trust-bar" aria-label="Trust Indicators">
+<section class="newsletter-section" aria-label="Newsletter Subscription">
+  <style>
+  .newsletter-section {
+    position: relative;
+    padding: 100px 0;
+    background: linear-gradient(160deg, #e8f5ee 0%, #d4ebdd 45%, #c8e6d4 70%, #e0f0e7 100%);
+    overflow: hidden;
+  }
+  .nl-orb-1 {
+    position: absolute;
+    top: -140px; left: -100px;
+    width: 520px; height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(197,160,89,0.15) 0%, transparent 70%);
+    animation: orbFloat 9s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .nl-orb-2 {
+    position: absolute;
+    bottom: -100px; right: -80px;
+    width: 420px; height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(64,145,108,0.18) 0%, transparent 70%);
+    animation: orbFloat 11s ease-in-out infinite reverse;
+    pointer-events: none;
+  }
+  .nl-leaf-left, .nl-leaf-right {
+    position: absolute; bottom: 0; opacity: 0.1; pointer-events: none;
+  }
+  .nl-leaf-left  { left: 0; }
+  .nl-leaf-right { right: 0; transform: scaleX(-1); }
+  .newsletter-inner {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .nl-tag {
+    display: inline-block; position: relative; overflow: hidden;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #2d6a4f; background: rgba(45,106,79,0.1);
+    border: 1px solid rgba(45,106,79,0.3); padding: 6px 20px; border-radius: 999px;
+    margin-bottom: 24px; box-shadow: 0 0 20px rgba(45,106,79,0.08);
+  }
+  .nl-tag::after {
+    content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: tagShimmer 3s ease infinite;
+  }
+  .nl-heading {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 400; font-style: italic;
+    color: #1a3d28; line-height: 1.2; margin-bottom: 16px;
+  }
+  .nl-heading em {
+    font-style: normal;
+    background: linear-gradient(135deg, #1b4332, #2d6a4f, #52b788);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; background-size: 200%; animation: shimmer 4s linear infinite;
+  }
+  .nl-subtext {
+    font-size: 1rem; color: rgba(27,67,50,0.65);
+    max-width: 500px; line-height: 1.75; margin-bottom: 44px;
+  }
+  .nl-form {
+    display: flex; align-items: center; gap: 0;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(45,106,79,0.2);
+    border-top: 1px solid rgba(197,160,89,0.25);
+    border-radius: 999px; padding: 6px 6px 6px 24px;
+    max-width: 520px; width: 100%;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(27,67,50,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .nl-form:focus-within {
+    border-color: rgba(45,106,79,0.4);
+    box-shadow: 0 8px 32px rgba(27,67,50,0.15), 0 0 0 3px rgba(45,106,79,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+  }
+  .nl-input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 0.95rem; color: #1a3d28; min-width: 0;
+  }
+  .nl-input::placeholder { color: rgba(27,67,50,0.4); }
+  .nl-btn {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #2d6a4f, #40916c, #52b788);
+    color: #fff; font-family: 'Inter', sans-serif;
+    font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
+    padding: 13px 26px; border: none; border-radius: 999px; cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 20px rgba(45,106,79,0.3); white-space: nowrap;
+  }
+  .nl-btn:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(45,106,79,0.45); }
+  .nl-btn svg { transition: transform 0.25s; }
+  .nl-btn:hover svg { transform: translateX(3px); }
+  .nl-perks {
+    display: flex; align-items: center; justify-content: center;
+    gap: 28px; margin-top: 36px; flex-wrap: wrap;
+  }
+  .nl-perk { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: rgba(27,67,50,0.5); }
+  .nl-perk-dot { width: 6px; height: 6px; border-radius: 50%; background: #40916c; opacity: 0.6; flex-shrink: 0; }
+  @media (max-width: 600px) {
+    .nl-form { flex-direction: column; border-radius: 20px; padding: 16px; gap: 12px; align-items: stretch; }
+    .nl-btn { border-radius: 999px; justify-content: center; }
+    .newsletter-section { padding: 72px 0; }
+    .nl-perks { gap: 16px; }
+  }
+  </style>
+
+  <div class="nl-orb-1"></div>
+  <div class="nl-orb-2"></div>
+  <svg class="nl-leaf-left" width="260" height="400" viewBox="0 0 260 400" fill="none">
+    <path d="M-20 400 C60 300 180 200 260 0 C180 80 80 200 -20 400Z" fill="#40916c"/>
+    <path d="M20 400 C90 320 200 220 240 40 C160 120 60 250 20 400Z" fill="#52b788"/>
+  </svg>
+  <svg class="nl-leaf-right" width="260" height="400" viewBox="0 0 260 400" fill="none">
+    <path d="M-20 400 C60 300 180 200 260 0 C180 80 80 200 -20 400Z" fill="#40916c"/>
+    <path d="M20 400 C90 320 200 220 240 40 C160 120 60 250 20 400Z" fill="#52b788"/>
+  </svg>
+
   <div class="container">
-    <div class="trust-bar-grid">
-      <div class="trust-item reveal stagger-1">
-        <div class="trust-icon-box">
-          <i data-lucide="package"></i>
+    <div class="newsletter-inner reveal">
+
+      <div class="nl-tag">Stay in the Loop</div>
+
+      <h2 class="nl-heading">
+        Get <em>Exclusive</em> Offers &amp;<br>New Arrivals First
+      </h2>
+
+      <p class="nl-subtext">
+        Join our community of food lovers. Be the first to know about seasonal harvests, limited batches, and members-only discounts.
+      </p>
+
+      <form class="nl-form" id="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
+        <input
+          class="nl-input"
+          type="email"
+          id="nl-email"
+          name="email"
+          placeholder="Enter your email address…"
+          required
+          autocomplete="email"
+          aria-label="Email address for newsletter"
+        />
+        <button class="nl-btn" type="submit">
+          Subscribe
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </form>
+
+      <!-- Stat counters -->
+      <div class="nl-stats">
+        <div class="nl-stat-card reveal stagger-1">
+          <div class="nl-stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="nl-stat-value"
+               data-target="{{ subscriber_count }}"
+               data-suffix="+"
+               id="nl-subs-count">{{ subscriber_count }}+</div>
+          <div class="nl-stat-label">Happy Subscribers</div>
         </div>
-        <div class="trust-info">
-          <span class="trust-number" data-target="{{ total_delivered_count }}" data-suffix="+">{{ total_delivered_count }}+</span>
-          <span class="trust-label">Orders Handpicked & Delivered</span>
+
+        <div class="nl-stat-divider"></div>
+
+        <div class="nl-stat-card reveal stagger-2">
+          <div class="nl-stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+              <path d="M5 12H3l9-9 9 9h-2"/>
+              <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+              <rect x="9" y="12" width="6" height="9"/>
+            </svg>
+          </div>
+          <div class="nl-stat-value"
+               data-target="{{ total_delivered_count }}"
+               data-suffix="+"
+               id="nl-orders-count">{{ total_delivered_count }}+</div>
+          <div class="nl-stat-label">Orders Handpicked &amp; Delivered</div>
         </div>
       </div>
-      <div class="trust-item reveal stagger-2">
-        <div class="trust-icon-box">
-          <i data-lucide="leaf"></i>
-        </div>
-        <div class="trust-info">
-          <span class="trust-number" data-target="100" data-suffix="%">100%</span>
-          <span class="trust-label">Certified Pure & Natural</span>
-        </div>
+
+      <div class="nl-perks">
+        <div class="nl-perk"><div class="nl-perk-dot"></div>No spam, ever</div>
+        <div class="nl-perk"><div class="nl-perk-dot"></div>Unsubscribe anytime</div>
+        <div class="nl-perk"><div class="nl-perk-dot"></div>Members-only deals</div>
+        <div class="nl-perk"><div class="nl-perk-dot"></div>Early harvest alerts</div>
       </div>
-      <div class="trust-item reveal stagger-3">
-        <div class="trust-icon-box">
-          <i data-lucide="globe"></i>
-        </div>
-        <div class="trust-info">
-          <span class="trust-number" data-target="{{ states_served }}" data-suffix="+">{{ states_served }}+</span>
-          <span class="trust-label">States Across India Served</span>
-        </div>
-      </div>
+
     </div>
   </div>
 </section>
+
+<style>
+/* Newsletter stat cards */
+.nl-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-top: 44px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(45,106,79,0.15);
+  border-top: 1px solid rgba(45,106,79,0.2);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(27,67,50,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.nl-stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 40px;
+  transition: background 0.3s;
+}
+.nl-stat-card:hover { background: rgba(45,106,79,0.04); }
+.nl-stat-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: rgba(45,106,79,0.1);
+  border: 1px solid rgba(45,106,79,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d6a4f;
+  box-shadow: 0 4px 14px rgba(45,106,79,0.1);
+}
+.nl-stat-value {
+  font-family: 'DM Serif Display', 'Playfair Display', serif;
+  font-size: 2.4rem;
+  font-weight: 400;
+  line-height: 1;
+  background: linear-gradient(135deg, #1b4332, #2d6a4f, #40916c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+.nl-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(27,67,50,0.5);
+  text-align: center;
+}
+.nl-stat-divider {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, rgba(45,106,79,0.2), transparent);
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .nl-stats { flex-direction: column; }
+  .nl-stat-divider { width: 60%; height: 1px; }
+  .nl-stat-card { padding: 24px 20px; }
+}
+</style>
+
+<script>
+function handleNewsletterSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById('nl-email').value.trim();
+  if (!email) return;
+  const btn = e.target.querySelector('.nl-btn');
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '✓ Subscribed!';
+  btn.style.background = 'linear-gradient(135deg,#2d6a4f,#40916c)';
+  btn.style.color = '#fff';
+  btn.disabled = true;
+  document.getElementById('nl-email').value = '';
+  setTimeout(() => {
+    btn.innerHTML = originalHTML;
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.disabled = false;
+  }, 3000);
+}
+
+/* Animated counter for nl-stat-value elements */
+(function() {
+  function animateCounter(el) {
+    const target = parseInt(el.dataset.target, 10);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1800;
+    const start = performance.now();
+    const startVal = Math.max(0, target - Math.round(target * 0.15));
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startVal + (target - startVal) * eased);
+      el.textContent = current.toLocaleString('en-IN') + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        animateCounter(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.nl-stat-value[data-target]').forEach(el => observer.observe(el));
+})();
+</script>
+
 
 
 <!-- ══════════════════════════════════════════════════════
@@ -298,17 +797,21 @@ orders, fast shipping.{% endblock %}
             <img
               src="{% if '://' in product.image_filename %}{{ product.image_filename }}{% else %}{{ url_for('static', filename='images/' + product.image_filename) }}{% endif %}"
               alt="{{ product.name }}" loading="lazy" />
-            <span class="product-badge {{ product.category|lower }}">
-              {{ product.category }}
-            </span>
-            {% if product.is_bestseller %}
-            <span class="bestseller-tag">⭐ Best Seller</span>
-            {% endif %}
-            {% if product.discount_percent and product.discount_percent > 0 %}
-            <span class="product-badge sale" style="background:#e74c3c; left:auto; right:12px;">
-              {{ product.discount_percent | int }}% OFF
-            </span>
-            {% endif %}
+            <div class="product-tags-left">
+              <span class="product-badge {{ product.category|lower }}">
+                {{ product.category }}
+              </span>
+            </div>
+            <div class="product-tags-right">
+              {% if product.is_bestseller %}
+              <span class="bestseller-tag">⭐ Best Seller</span>
+              {% endif %}
+              {% if product.discount_percent and product.discount_percent > 0 %}
+              <span class="product-badge sale" style="background:#e74c3c;">
+                {{ product.discount_percent | int }}% OFF
+              </span>
+              {% endif %}
+            </div>
           </div>
         </a>
         <div class="product-body">

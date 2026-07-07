@@ -278,6 +278,9 @@
         <button class="profile-nav-btn active" id="nav-info" onclick="showPanel('panel-info', this)">
           <span class="nav-icon">👤</span> Personal Details
         </button>
+        <button class="profile-nav-btn" id="nav-proposals" onclick="showPanel('panel-proposals', this)">
+          <span class="nav-icon">✉️</span> My Messages & Offers
+        </button>
         <button class="profile-nav-btn" id="nav-security" onclick="showPanel('panel-security', this)">
           <span class="nav-icon">🔒</span> Password & Security
         </button>
@@ -373,6 +376,73 @@
         </form>
       </div>
 
+      <!-- Panel 3: My Messages & Offers -->
+      <div id="panel-proposals" class="profile-panel">
+        <h2 class="panel-title">My Messages & Offers</h2>
+        <p class="panel-subtitle">View and track status of all custom price deals and enquiries you have submitted.</p>
+
+        {% if proposals %}
+          <div class="proposals-list" style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;">
+            {% for prop in proposals %}
+              {% set is_deal = 'PROPOSED DEAL' in prop.message %}
+              <div class="proposal-card" style="border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 12px;">
+                
+                <!-- Card Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ prop.created_at }}</span>
+                    <h3 style="font-family: 'DM Serif Display', serif; font-size: 1.15rem; font-weight: 400; color: var(--green-dark); margin: 4px 0 0 0;">{{ prop.product_interest }}</h3>
+                  </div>
+                  
+                  <!-- Status Badge -->
+                  <span style="font-size: 0.82rem; font-weight: 700; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+                    {% if prop.status == 'Accepted' %}
+                      background: #e8f5e9; color: #2e7d32;
+                    {% elif prop.status == 'Declined' %}
+                      background: #ffebee; color: #c62828;
+                    {% else %}
+                      background: #fff3e0; color: #ef6c00;
+                    {% endif %}">
+                    {% if prop.status == 'Accepted' %}
+                      ✅ Accepted
+                    {% elif prop.status == 'Declined' %}
+                      ❌ Declined
+                    {% else %}
+                      ⏳ Pending Review
+                    {% endif %}
+                  </span>
+                </div>
+
+                <!-- Message Body -->
+                <div style="font-size: 0.88rem; line-height: 1.5; color: var(--text-dark); background: #fafaf9; border-radius: 12px; padding: 16px; border: 1px solid rgba(0,0,0,0.03); white-space: pre-wrap;">{{ prop.message }}</div>
+
+                <!-- Accept / Checkout Actions -->
+                {% if prop.status == 'Accepted' %}
+                  <div style="display: flex; align-items: center; gap: 10px; background: rgba(46, 125, 50, 0.05); padding: 12px 16px; border-radius: 12px; border: 1px dashed rgba(46, 125, 50, 0.2);">
+                    <span style="font-size: 1.25rem;">🎉</span>
+                    <p style="font-size: 0.82rem; color: #2e7d32; font-weight: 500; margin: 0; flex: 1;">
+                      Your offer is approved! Our sales team is preparing details and will email/call you shortly to fulfill this custom order.
+                    </p>
+                  </div>
+                {% elif prop.status == 'Declined' %}
+                  <div style="display: flex; align-items: center; gap: 10px; background: rgba(198, 40, 40, 0.05); padding: 12px 16px; border-radius: 12px; border: 1px dashed rgba(198, 40, 40, 0.2);">
+                    <span style="font-size: 1.25rem;">ℹ️</span>
+                    <p style="font-size: 0.82rem; color: #c62828; font-weight: 500; margin: 0; flex: 1;">
+                      This offer was not accepted. You may place a new proposal with revised price/quantity, or contact support.
+                    </p>
+                  </div>
+                {% endif %}
+
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="text-align: center; padding: 48px; border: 1px dashed var(--border-color); border-radius: 16px; background: #fff; margin-top: 20px; color: var(--text-muted);">
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">✉️</div>
+            <p style="margin: 0; font-size: 0.9rem;">You haven't submitted any inquiries or deal proposals yet.</p>
+          </div>
+        {% endif %}
+      </div>
 
     </div><!-- /.profile-content -->
   </div><!-- /.profile-layout -->

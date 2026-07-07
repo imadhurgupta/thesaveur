@@ -705,13 +705,13 @@ def home():
 
 
 
-    # Site-wide orders statistics (dynamic Trust Bar counters)
+    # Site-wide orders statistics
 
-    # Delivered orders: base count of 1200 + actual orders in database (excluding pending payment and cancelled)
+    # Delivered orders: base count of 8000 + actual orders in database (excluding pending payment and cancelled)
 
     db_orders_count = db.execute("SELECT COUNT(*) FROM orders WHERE status != 'Pending Payment' AND status != 'Cancelled'").fetchone()[0]
 
-    total_delivered_count = 1200 + db_orders_count
+    total_delivered_count = 8000 + db_orders_count
 
 
 
@@ -720,6 +720,14 @@ def home():
     db_states_count = db.execute("SELECT COUNT(DISTINCT state) FROM orders WHERE state IS NOT NULL AND state != ''").fetchone()[0]
 
     states_served = max(28, db_states_count)
+
+
+
+    # Subscribers/Users count: 5000 base + real registered users
+
+    db_user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+
+    subscriber_count = 5000 + db_user_count
 
 
 
@@ -741,7 +749,9 @@ def home():
 
         total_delivered_count=total_delivered_count,
 
-        states_served=states_served
+        states_served=states_served,
+
+        subscriber_count=subscriber_count
 
     )
 
@@ -754,108 +764,54 @@ def home():
 
 
 @app.route('/products')
-
 def products():
-
     category = request.args.get('category', 'all').strip()
-
     db = get_db()
 
-
-
     # Query all categories (ordered for display)
-
     all_categories = db.execute(
-
         "SELECT * FROM categories ORDER BY display_order ASC"
-
     ).fetchall()
+    categories_list = [dict(c) for c in all_categories]
 
+    # Always fetch all products to support interactive client-side filtering
+    all_products = db.execute(
+        "SELECT * FROM products ORDER BY category, name"
+    ).fetchall()
+    products_list = [dict(p) for p in all_products]
 
-
-    matched_category_name = None
-
-    for cat in all_categories:
-
-        if cat['name'].lower() == category.lower():
-
-            matched_category_name = cat['name']
-
-            break
-
-
-
-    if matched_category_name:
-
-        products_list = db.execute(
-
-            "SELECT * FROM products WHERE category = ? ORDER BY name",
-
-            (matched_category_name,)
-
-        ).fetchall()
-
-        categories_with_products = []
-
-    else:
-
-        # Default to all products
-
-        products_list = db.execute(
-
-            "SELECT * FROM products ORDER BY category, name"
-
-        ).fetchall()
-
-        category = 'all'
-
-
-
-        # Build per-category groups for the "all" view
-
-        categories_with_products = []
-
-        for cat in all_categories:
-
-            cat_prods = db.execute(
-
-                "SELECT * FROM products WHERE category = ? ORDER BY name",
-
-                (cat['name'],)
-
-            ).fetchall()
-
-            if cat_prods:
-
-                categories_with_products.append({
-
-                    'category': cat,
-
-                    'products': cat_prods
-
-                })
-
-
+    # Enrich products with sub-categories dynamically
+    for p in products_list:
+        name_lower = p['name'].lower()
+        if 'green tea' in name_lower:
+            p['sub_category'] = 'Green Tea'
+        elif 'black tea' in name_lower or 'tea' in name_lower:
+            p['sub_category'] = 'Black Tea'
+        elif 'garam masala' in name_lower:
+            p['sub_category'] = 'Blend Spices'
+        elif 'powder' in name_lower or 'turmeric' in name_lower or 'chilli' in name_lower or 'pepper' in name_lower or 'aamchur' in name_lower:
+            p['sub_category'] = 'Ground Spices'
+        elif 't-shirt' in name_lower or 'shirt' in name_lower:
+            p['sub_category'] = 'Apparel'
+        elif 'bag' in name_lower or 'tote' in name_lower:
+            p['sub_category'] = 'Accessories'
+        else:
+            p['sub_category'] = 'Other'
 
     db.close()
 
     return render_template(
-
         'products.html',
-
         products=products_list,
-
-        active_filter=category,
-
-        categories_with_products=categories_with_products
-
+        categories=categories_list,
+        active_filter=category
     )
 
 
 
 
 
-@app.route('/product/<int:id>')
+@app.route('/product/<id>')
 
 def product_detail(id):
 
@@ -973,7 +929,7 @@ def product_detail(id):
 
 
 
-@app.route('/product/<int:id>/review', methods=['POST'])
+@app.route('/product/<id>/review', methods=['POST'])
 
 def add_review(id):
 
@@ -1142,7 +1098,45 @@ def submit_enquiry():
     return redirect(request.referrer or url_for('contact'))
 
 
+@app.route('/submit-proposal', methods=['POST'])
+def submit_proposal():
+    product_id = request.form.get('product_id', '').strip()
+    product_name = request.form.get('product_name', '').strip()
+    proposed_price = request.form.get('proposed_price', '').strip()
+    proposed_qty = request.form.get('proposed_qty', '').strip()
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    phone = request.form.get('phone', '').strip()
+    message = request.form.get('message', '').strip()
 
+    if not name or not email or not proposed_price or not proposed_qty:
+        flash('Required fields are missing.', 'error')
+        return redirect(request.referrer or url_for('home'))
+
+    try:
+        deal_value = float(proposed_price) * float(proposed_qty)
+    except ValueError:
+        deal_value = 0.0
+
+    full_message = (
+        f"💵 PROPOSED DEAL\n"
+        f"Proposed Price: ₹{proposed_price} per unit\n"
+        f"Proposed Quantity: {proposed_qty} units\n"
+        f"Total Deal Value: ₹{deal_value:.2f}\n\n"
+        f"Client Note:\n{message}"
+    )
+    product_interest = f"{product_name} (ID: {product_id}) [Deal Proposal]"
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO enquiries (name, email, phone, product_interest, message) VALUES (?, ?, ?, ?, ?)",
+        (name, email, phone, product_interest, full_message)
+    )
+    db.commit()
+    db.close()
+
+    flash(f"Proposal submitted! We will review your offer of ₹{proposed_price} for {proposed_qty} units and contact you soon.", "success")
+    return redirect(request.referrer or url_for('home'))
 
 
 # ─────── Shopping Cart ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -1165,7 +1159,7 @@ def view_cart():
 
     for prod_id, qty in cart.items():
 
-        product = db.execute("SELECT * FROM products WHERE id = ?", (int(prod_id),)).fetchone()
+        product = db.execute("SELECT * FROM products WHERE id = ?", (prod_id,)).fetchone()
 
         if product:
             p_dict = dict(product)
@@ -1190,7 +1184,7 @@ def view_cart():
 
 
 
-@app.route('/cart/add/<int:product_id>', methods=['POST'])
+@app.route('/cart/add/<product_id>', methods=['POST'])
 
 def add_to_cart(product_id):
 
@@ -1256,7 +1250,7 @@ def add_to_cart(product_id):
 
 
 
-@app.route('/cart/update/<int:product_id>', methods=['POST'])
+@app.route('/cart/update/<product_id>', methods=['POST'])
 
 def update_cart(product_id):
 
@@ -1308,7 +1302,7 @@ def update_cart(product_id):
 
 
 
-@app.route('/cart/remove/<int:product_id>', methods=['POST'])
+@app.route('/cart/remove/<product_id>', methods=['POST'])
 
 def remove_from_cart(product_id):
 
@@ -1328,7 +1322,7 @@ def remove_from_cart(product_id):
 
 
 
-@app.route('/wishlist/toggle/<int:product_id>', methods=['POST'])
+@app.route('/wishlist/toggle/<product_id>', methods=['POST'])
 
 def toggle_wishlist(product_id):
 
@@ -1627,11 +1621,11 @@ def profile():
 
 
 
+    proposals = db.execute("SELECT * FROM enquiries WHERE email = ? ORDER BY created_at DESC", (user['email'],)).fetchall()
+
     db.close()
 
-    
-
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', user=user, proposals=proposals)
 
 
 
@@ -1811,7 +1805,7 @@ def checkout():
 
     for prod_id, qty in cart.items():
 
-        product = db.execute("SELECT * FROM products WHERE id = ?", (int(prod_id),)).fetchone()
+        product = db.execute("SELECT * FROM products WHERE id = ?", (prod_id,)).fetchone()
 
         if product:
             p_dict = dict(product)
@@ -1895,7 +1889,7 @@ def checkout_submit():
 
         for prod_id, qty in cart.items():
 
-            product = db.execute("SELECT * FROM products WHERE id = ?", (int(prod_id),)).fetchone()
+            product = db.execute("SELECT * FROM products WHERE id = ?", (prod_id,)).fetchone()
 
             if not product:
 
@@ -1995,7 +1989,7 @@ def checkout_submit():
 
         product_shipping_total = 0.0
         for prod_id, qty in cart.items():
-            product_sh = db.execute("SELECT shipping_charge FROM products WHERE id = ?", (int(prod_id),)).fetchone()
+            product_sh = db.execute("SELECT shipping_charge FROM products WHERE id = ?", (prod_id,)).fetchone()
             if product_sh:
                 product_shipping_total += float(product_sh['shipping_charge'] or 0.0) * int(qty)
                 
@@ -3933,12 +3927,14 @@ def admin_add_product():
 
     primary_image = image_list[0] if image_list else ('Tea.jpg' if category == 'Tea' else 'Turmeric-Powder.jpg')
 
+    from database import generate_product_id
+    product_id = generate_product_id()
+
     db = get_db()
-    cursor = db.execute(
-        "INSERT INTO products (name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate)
+    db.execute(
+        "INSERT INTO products (id, name, category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (product_id, name, category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate)
     )
-    product_id = cursor.lastrowid
 
 
 
@@ -3970,7 +3966,7 @@ def admin_add_product():
 
 
 
-@app.route('/admin/edit-product/<int:id>', methods=['POST'])
+@app.route('/admin/edit-product/<id>', methods=['POST'])
 
 @admin_required
 
@@ -4063,7 +4059,7 @@ def admin_edit_product(id):
 
 
 
-@app.route('/admin/delete-product/<int:id>', methods=['POST'])
+@app.route('/admin/delete-product/<id>', methods=['POST'])
 
 @admin_required
 
@@ -4254,6 +4250,34 @@ def admin_delete_enquiry(id):
     db.close()
 
     flash('Enquiry deleted successfully.', 'success')
+
+    return redirect(url_for('admin_dashboard'))
+
+
+
+
+
+@app.route('/admin/enquiry/update-status/<int:id>/<string:status>', methods=['POST'])
+
+@admin_required
+
+def admin_update_enquiry_status(id, status):
+
+    if status not in ['Pending', 'Accepted', 'Declined']:
+
+        flash("Invalid status update requested.", "error")
+
+        return redirect(url_for('admin_dashboard'))
+
+    db = get_db()
+
+    db.execute("UPDATE enquiries SET status = ? WHERE id = ?", (status, id))
+
+    db.commit()
+
+    db.close()
+
+    flash(f"Proposal status updated to '{status}'.", "success")
 
     return redirect(url_for('admin_dashboard'))
 
