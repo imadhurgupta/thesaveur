@@ -67,6 +67,24 @@ class PostgresCursorWrapper:
                 translated = translate_to_postgres(stmt)
                 self.execute(translated)
 
+    def executemany(self, sql, seq_of_parameters):
+        sql = sql.replace('?', '%s')
+        try:
+            self.cur.executemany(sql, seq_of_parameters)
+        except Exception as e:
+            try:
+                self.cur.connection.rollback()
+            except Exception:
+                pass
+            import sqlite3
+            e_name = type(e).__name__
+            if 'IntegrityError' in e_name or 'UniqueViolation' in e_name:
+                raise sqlite3.IntegrityError(str(e)) from e
+            if any(term in e_name for term in ['Duplicate', 'OperationalError', 'ProgrammingError', 'Undefined', 'ActiveSqlTransaction', 'DatabaseError']):
+                raise sqlite3.OperationalError(str(e)) from e
+            raise e
+        return self
+
     def fetchone(self):
         return self.cur.fetchone()
 
