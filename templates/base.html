@@ -69,13 +69,13 @@
             </svg>
           </button>
           <div class="nav-dropdown-menu" id="profile-dropdown">
-            <a href="{{ url_for('profile') }}"><i data-lucide="user"></i> My Profile</a>
-            <a href="{{ url_for('my_orders') }}"><i data-lucide="package"></i> My Orders</a>
+            <a href="{{ url_for('profile') }}"><i data-lucide="user" width="16" height="16"></i> My Profile</a>
+            <a href="{{ url_for('my_orders') }}"><i data-lucide="package" width="16" height="16"></i> My Orders</a>
             {% if session.get('is_admin') %}
-            <a href="{{ url_for('admin_dashboard') }}" class="nav-admin"><i data-lucide="settings"></i> Admin Panel</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-admin"><i data-lucide="settings" width="16" height="16"></i> Admin Panel</a>
             {% endif %}
             <div class="nav-dropdown-divider"></div>
-            <a href="{{ url_for('logout') }}" class="nav-logout-btn"><i data-lucide="log-out"></i> Logout</a>
+            <a href="{{ url_for('logout') }}" class="nav-logout-btn"><i data-lucide="log-out" width="16" height="16"></i> Logout</a>
           </div>
         </li>
         {% else %}

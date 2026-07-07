@@ -1982,6 +1982,13 @@ button:active:not(:disabled),
   font-weight: 500;
 }
 
+.nav-dropdown-menu a i,
+.nav-dropdown-menu a svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0;
+}
+
 .nav-dropdown-menu a:hover {
   background: rgba(27, 67, 50, 0.06);
   color: var(--green-primary) !important;
