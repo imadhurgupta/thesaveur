@@ -9,6 +9,94 @@ _data_dir = os.environ.get('DATA_DIR', os.path.dirname(__file__))
 os.makedirs(_data_dir, exist_ok=True)
 DB_PATH = os.path.join(_data_dir, 'am_trader.db')
 
+def translate_to_postgres(sql):
+    # SQLite parameters ? to Postgres %s
+    sql = sql.replace('?', '%s')
+    # Auto increment
+    sql = sql.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
+    sql = sql.replace('AUTOINCREMENT', '')
+    sql = sql.replace('REAL', 'DOUBLE PRECISION')
+    return sql
+
+class PostgresCursorWrapper:
+    def __init__(self, cur):
+        self.cur = cur
+        self.lastrowid = None
+
+    def execute(self, sql, params=None):
+        if params:
+            if not isinstance(params, (list, tuple)):
+                params = (params,)
+            sql = sql.replace('?', '%s')
+        
+        is_insert = sql.strip().upper().startswith('INSERT')
+        if is_insert and 'RETURNING' not in sql.upper():
+            sql += " RETURNING id"
+            
+        try:
+            self.cur.execute(sql, params)
+        except Exception as e:
+            import sqlite3
+            # Check if this is a psycopg2/Postgres integrity error
+            e_name = type(e).__name__
+            if 'IntegrityError' in e_name or 'UniqueViolation' in e_name:
+                raise sqlite3.IntegrityError(str(e)) from e
+            raise e
+        
+        if is_insert:
+            try:
+                row = self.cur.fetchone()
+                if row:
+                    self.lastrowid = row[0]
+            except Exception:
+                pass
+        return self
+
+    def executescript(self, script_str):
+        statements = script_str.split(';')
+        for stmt in statements:
+            stmt = stmt.strip()
+            if stmt:
+                translated = translate_to_postgres(stmt)
+                self.cur.execute(translated)
+
+    def fetchone(self):
+        return self.cur.fetchone()
+
+    def fetchall(self):
+        return self.cur.fetchall()
+
+    def __iter__(self):
+        return iter(self.cur)
+
+class PostgresConnectionWrapper:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def cursor(self):
+        import psycopg2.extras
+        cur = self.conn.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) if hasattr(self.conn, 'conn') else self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        return PostgresCursorWrapper(cur)
+
+    def execute(self, sql, params=None):
+        cur = self.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def executescript(self, script_str):
+        cur = self.cursor()
+        cur.executescript(script_str)
+        return cur
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def close(self):
+        self.conn.close()
+
 def generate_user_id():
     chars = string.ascii_uppercase + string.digits
     return "USR-" + "".join(random.choice(chars) for _ in range(8))
@@ -18,6 +106,16 @@ def generate_product_id():
     return "PROD-" + "".join(random.choice(chars) for _ in range(8))
 
 def get_db():
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        try:
+            import psycopg2
+            import psycopg2.extras
+            conn = psycopg2.connect(db_url)
+            return PostgresConnectionWrapper(conn)
+        except Exception as e:
+            print(f"[WARNING] Failed to connect to PostgreSQL: {e}. Falling back to SQLite.")
+    
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -27,32 +125,35 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
 
-    # Check if products table exists and has INTEGER id type; if so, migrate
-    try:
-        cursor.execute("PRAGMA table_info(products)")
-        columns = cursor.fetchall()
-        if columns:
-            id_col = next((c for c in columns if c[1] == 'id'), None)
-            if id_col and 'INTEGER' in id_col[2].upper():
-                print("[MIGRATION] 'products' table is using INTEGER IDs. Dropping product-related tables for alphanumeric migration...")
-                cursor.execute("DROP TABLE IF EXISTS reviews")
-                cursor.execute("DROP TABLE IF EXISTS product_images")
-                cursor.execute("DROP TABLE IF EXISTS order_items")
-                cursor.execute("DROP TABLE IF EXISTS products")
-                conn.commit()
-    except sqlite3.OperationalError:
-        pass
+    is_postgres = isinstance(conn, PostgresConnectionWrapper)
 
-    # Check if orders table has user_id column; if not, drop it and recreate it
-    try:
-        cursor.execute("SELECT user_id FROM orders LIMIT 1")
-    except sqlite3.OperationalError:
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'")
-        if cursor.fetchone():
-            print("[MIGRATION] 'orders' table is out of date (missing 'user_id'). Recreating 'orders' and 'order_items'...")
-            cursor.execute("DROP TABLE IF EXISTS order_items")
-            cursor.execute("DROP TABLE IF EXISTS orders")
-            conn.commit()
+    if not is_postgres:
+        # Check if products table exists and has INTEGER id type; if so, migrate
+        try:
+            cursor.execute("PRAGMA table_info(products)")
+            columns = cursor.fetchall()
+            if columns:
+                id_col = next((c for c in columns if c[1] == 'id'), None)
+                if id_col and 'INTEGER' in id_col[2].upper():
+                    print("[MIGRATION] 'products' table is using INTEGER IDs. Dropping product-related tables for alphanumeric migration...")
+                    cursor.execute("DROP TABLE IF EXISTS reviews")
+                    cursor.execute("DROP TABLE IF EXISTS product_images")
+                    cursor.execute("DROP TABLE IF EXISTS order_items")
+                    cursor.execute("DROP TABLE IF EXISTS products")
+                    conn.commit()
+        except sqlite3.OperationalError:
+            pass
+
+        # Check if orders table has user_id column; if not, drop it and recreate it
+        try:
+            cursor.execute("SELECT user_id FROM orders LIMIT 1")
+        except sqlite3.OperationalError:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'")
+            if cursor.fetchone():
+                print("[MIGRATION] 'orders' table is out of date (missing 'user_id'). Recreating 'orders' and 'order_items'...")
+                cursor.execute("DROP TABLE IF EXISTS order_items")
+                cursor.execute("DROP TABLE IF EXISTS orders")
+                conn.commit()
 
     cursor.executescript('''
         CREATE TABLE IF NOT EXISTS products (
