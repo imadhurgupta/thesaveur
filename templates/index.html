@@ -149,48 +149,61 @@ orders, fast shipping.{% endblock %}
   {% endif %}
 </section>
 
-
 {% if site_stats and site_stats.total_reviews > 0 %}
 <!-- ══════════════════════════════════════════════════════
-       OVERALL RATING SECTION — PREMIUM
+       RATINGS & NEWSLETTER COMBINED SECTION
   ══════════════════════════════════════════════════════ -->
-<section class="ratings-hero-section" aria-label="Overall Customer Rating">
+<section class="ratings-newsletter-combined" aria-label="Ratings and Newsletter">
   <style>
-  .ratings-hero-section {
+  .ratings-newsletter-combined {
     position: relative;
     padding: 100px 0;
     background: linear-gradient(160deg, #e8f0ea 0%, #d4e6d9 40%, #c2d9ca 70%, #daeadd 100%);
     overflow: hidden;
   }
-  /* Animated ambient orbs */
-  .ratings-hero-section::before {
+  .ratings-newsletter-combined::before {
     content: '';
     position: absolute;
     top: -120px; left: -120px;
     width: 500px; height: 500px;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(197,160,89,0.18) 0%, transparent 70%);
-    animation: orbFloat 8s ease-in-out infinite;
+    animation: orbFloatCombined 8s ease-in-out infinite;
     pointer-events: none;
   }
-  .ratings-hero-section::after {
+  .ratings-newsletter-combined::after {
     content: '';
     position: absolute;
     bottom: -80px; right: -80px;
     width: 380px; height: 380px;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(64,145,108,0.2) 0%, transparent 70%);
-    animation: orbFloat 10s ease-in-out infinite reverse;
+    animation: orbFloatCombined 10s ease-in-out infinite reverse;
     pointer-events: none;
   }
-  @keyframes orbFloat {
+  @keyframes orbFloatCombined {
     0%, 100% { transform: translate(0, 0) scale(1); }
     33%       { transform: translate(30px, -20px) scale(1.05); }
     66%       { transform: translate(-15px, 25px) scale(0.97); }
   }
+
+  .combined-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+  .combined-col {
+    position: relative;
+    width: 100%;
+  }
+
+  /* Ratings section styles */
   .ratings-section-header {
     text-align: center;
-    margin-bottom: 60px;
+    margin-bottom: 40px;
     position: relative;
     z-index: 2;
   }
@@ -217,11 +230,16 @@ orders, fast shipping.{% endblock %}
     width: 60%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-    animation: tagShimmer 3s ease infinite;
+    animation: tagShimmerCombined 3s ease infinite;
+  }
+  @keyframes tagShimmerCombined {
+    0%   { left: -100%; }
+    60%  { left: 150%; }
+    100% { left: 150%; }
   }
   .ratings-title {
     font-family: 'DM Serif Display', 'Playfair Display', serif;
-    font-size: clamp(2rem, 4vw, 3rem);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
     font-style: italic;
     font-weight: 400;
     color: #1a3d28;
@@ -237,26 +255,24 @@ orders, fast shipping.{% endblock %}
     -webkit-text-fill-color: transparent;
     background-clip: text;
     background-size: 200%;
-    animation: shimmer 4s linear infinite;
+    animation: shimmerCombined 4s linear infinite;
   }
-  @keyframes shimmer {
+  @keyframes shimmerCombined {
     0%   { background-position: 0% center; }
     100% { background-position: 200% center; }
   }
   .ratings-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: rgba(27,67,50,0.7);
-    max-width: 440px;
+    max-width: 100%;
     margin: 0 auto;
-    line-height: 1.7;
+    line-height: 1.6;
   }
-
-  /* Big decorative quote */
   .ratings-quote-mark {
     position: absolute;
-    top: 60px; left: 50%;
+    top: 20px; left: 50%;
     transform: translateX(-50%);
-    font-size: 18rem;
+    font-size: 16rem;
     line-height: 1;
     font-family: 'DM Serif Display', serif;
     color: rgba(45,106,79,0.06);
@@ -264,8 +280,6 @@ orders, fast shipping.{% endblock %}
     user-select: none;
     z-index: 1;
   }
-
-  /* Metrics row */
   .ratings-metrics {
     display: flex;
     align-items: stretch;
@@ -273,7 +287,7 @@ orders, fast shipping.{% endblock %}
     gap: 2px;
     position: relative;
     z-index: 2;
-    max-width: 780px;
+    max-width: 100%;
     margin: 0 auto;
     background: rgba(255,255,255,0.7);
     border: 1px solid rgba(45,106,79,0.15);
@@ -288,7 +302,7 @@ orders, fast shipping.{% endblock %}
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 44px 32px;
+    padding: 36px 24px;
     gap: 10px;
     position: relative;
     transition: background 0.3s;
@@ -305,7 +319,7 @@ orders, fast shipping.{% endblock %}
   }
   .rating-metric-value {
     font-family: 'DM Serif Display', 'Playfair Display', serif;
-    font-size: 3.4rem;
+    font-size: 3rem;
     font-weight: 400;
     line-height: 1;
     background: linear-gradient(135deg, #1b4332, #2d6a4f, #40916c);
@@ -323,7 +337,7 @@ orders, fast shipping.{% endblock %}
     filter: drop-shadow(0 2px 6px rgba(241,196,15,0.5));
   }
   .rating-metric-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -331,14 +345,13 @@ orders, fast shipping.{% endblock %}
     margin-top: 2px;
   }
   .rating-metric-sub {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: rgba(27,67,50,0.4);
     margin-top: -4px;
   }
-  /* CTA link */
   .ratings-cta {
     text-align: center;
-    margin-top: 40px;
+    margin-top: 32px;
     position: relative;
     z-index: 2;
   }
@@ -355,76 +368,256 @@ orders, fast shipping.{% endblock %}
     transition: color 0.3s;
   }
   .ratings-cta a:hover { color: #2d6a4f; }
+
+  /* Newsletter section styles */
+  .nl-orb-1 {
+    position: absolute;
+    top: -140px; left: -100px;
+    width: 520px; height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(197,160,89,0.15) 0%, transparent 70%);
+    animation: orbFloatCombined 9s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .nl-orb-2 {
+    position: absolute;
+    bottom: -100px; right: -80px;
+    width: 420px; height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(64,145,108,0.18) 0%, transparent 70%);
+    animation: orbFloatCombined 11s ease-in-out infinite reverse;
+    pointer-events: none;
+  }
+  .nl-leaf-left, .nl-leaf-right {
+    position: absolute; bottom: 0; opacity: 0.08; pointer-events: none;
+  }
+  .nl-leaf-left  { left: 0; }
+  .nl-leaf-right { right: 0; transform: scaleX(-1); }
+  
+  .newsletter-inner {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .nl-tag {
+    display: inline-block; position: relative; overflow: hidden;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #2d6a4f; background: rgba(45,106,79,0.1);
+    border: 1px solid rgba(45,106,79,0.3); padding: 6px 20px; border-radius: 999px;
+    margin-bottom: 24px; box-shadow: 0 0 20px rgba(45,106,79,0.08);
+  }
+  .nl-tag::after {
+    content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: tagShimmerCombined 3s ease infinite;
+  }
+  .nl-heading {
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; font-style: italic;
+    color: #1a3d28; line-height: 1.2; margin-bottom: 16px;
+  }
+  .nl-heading em {
+    font-style: normal;
+    background: linear-gradient(135deg, #1b4332, #2d6a4f, #52b788);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; background-size: 200%; animation: shimmerCombined 4s linear infinite;
+  }
+  .nl-subtext {
+    font-size: 0.95rem; color: rgba(27,67,50,0.65);
+    max-width: 100%; line-height: 1.6; margin-bottom: 44px;
+  }
+  .nl-form {
+    display: flex; align-items: center; gap: 0;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(45,106,79,0.2);
+    border-top: 1px solid rgba(197,160,89,0.25);
+    border-radius: 999px; padding: 6px 6px 6px 24px;
+    max-width: 520px; width: 100%;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(27,67,50,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .nl-form:focus-within {
+    border-color: rgba(45,106,79,0.4);
+    box-shadow: 0 8px 32px rgba(27,67,50,0.15), 0 0 0 3px rgba(45,106,79,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+  }
+  .nl-input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 0.95rem; color: #1a3d28; min-width: 0;
+  }
+  .nl-input::placeholder { color: rgba(27,67,50,0.4); }
+  .nl-btn {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #2d6a4f, #40916c, #52b788);
+    color: #fff; font-family: 'Inter', sans-serif;
+    font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
+    padding: 13px 26px; border: none; border-radius: 999px; cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 4px 20px rgba(45,106,79,0.3); white-space: nowrap;
+  }
+  .nl-btn:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(45,106,79,0.45); }
+  .nl-btn svg { transition: transform 0.25s; }
+  .nl-btn:hover svg { transform: translateX(3px); }
+  .nl-perks {
+    display: flex; align-items: center; justify-content: center;
+    gap: 28px; margin-top: 36px; flex-wrap: wrap;
+  }
+  .nl-perk { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: rgba(27,67,50,0.5); }
+  .nl-perk-dot { width: 6px; height: 6px; border-radius: 50%; background: #40916c; opacity: 0.6; flex-shrink: 0; }
+
+  @media (max-width: 992px) {
+    .combined-grid {
+      grid-template-columns: 1fr;
+      gap: 64px;
+    }
+  }
   @media (max-width: 600px) {
     .ratings-metrics { flex-direction: column; border-radius: 20px; }
     .rating-metric:not(:last-child)::after { top: auto; bottom: 0; left: 24px; right: 24px; width: auto; height: 1px; }
     .rating-metric { padding: 28px 20px; }
+    .nl-form { flex-direction: column; border-radius: 20px; padding: 16px; gap: 12px; align-items: stretch; }
+    .nl-btn { border-radius: 999px; justify-content: center; }
+    .ratings-newsletter-combined { padding: 72px 0; }
+    .nl-perks { gap: 16px; }
   }
   </style>
 
-  <!-- Decorative large quote -->
-  <div class="ratings-quote-mark">"</div>
+  <div class="nl-orb-1"></div>
+  <div class="nl-orb-2"></div>
+  <svg class="nl-leaf-left" width="260" height="400" viewBox="0 0 260 400" fill="none">
+    <path d="M-20 400 C60 300 180 200 260 0 C180 80 80 200 -20 400Z" fill="#40916c"/>
+    <path d="M20 400 C90 320 200 220 240 40 C160 120 60 250 20 400Z" fill="#52b788"/>
+  </svg>
+  <svg class="nl-leaf-right" width="260" height="400" viewBox="0 0 260 400" fill="none">
+    <path d="M-20 400 C60 300 180 200 260 0 C180 80 80 200 -20 400Z" fill="#40916c"/>
+    <path d="M20 400 C90 320 200 220 240 40 C160 120 60 250 20 400Z" fill="#52b788"/>
+  </svg>
 
   <div class="container">
-    <!-- Header -->
-    <div class="ratings-section-header reveal">
-      <div class="ratings-section-tag">Verified Buyers</div>
-      <h2 class="ratings-title">What Our <em>Customers</em> Say</h2>
-      <p class="ratings-subtitle">Thousands of happy buyers have rated our products. Here's what they think overall.</p>
-    </div>
-
-    <!-- Metrics Panel -->
-    <div class="ratings-metrics reveal">
-
-      <!-- Score -->
-      <div class="rating-metric">
-        <div class="rating-metric-value">{{ site_stats.overall_rating }}</div>
-        <div class="rating-metric-label">Overall Rating</div>
-        <div class="rating-metric-sub">out of 5.0</div>
-      </div>
-
-      <!-- Stars -->
-      <div class="rating-metric">
-        <div class="rating-metric-stars">
-          {% for i in range(1, 6) %}
-          <svg viewBox="0 0 24 24"
-               fill="{% if site_stats.overall_rating >= i %}#f1c40f{% elif site_stats.overall_rating >= i - 0.5 %}url(#halfGrad){% else %}rgba(255,255,255,0.15){% endif %}"
-               width="28" height="28">
-            <defs>
-              <linearGradient id="halfGrad"><stop offset="50%" stop-color="#f1c40f"/><stop offset="50%" stop-color="rgba(255,255,255,0.15)"/></linearGradient>
-            </defs>
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-          {% endfor %}
+    <div class="combined-grid">
+      
+      <!-- Left Column: Ratings -->
+      <div class="combined-col ratings-col reveal">
+        <!-- Decorative large quote -->
+        <div class="ratings-quote-mark">"</div>
+        
+        <div class="ratings-section-header">
+          <div class="ratings-section-tag">Verified Buyers</div>
+          <h2 class="ratings-title">What Our <em>Customers</em> Say</h2>
+          <p class="ratings-subtitle">Thousands of happy buyers have rated our products. Here's what they think overall.</p>
         </div>
-        <div class="rating-metric-label">Customer Stars</div>
-        <div class="rating-metric-sub">Avg. star rating</div>
+
+        <div class="ratings-metrics">
+          <div class="rating-metric">
+            <div class="rating-metric-value">{{ site_stats.overall_rating }}</div>
+            <div class="rating-metric-label">Overall Rating</div>
+            <div class="rating-metric-sub">out of 5.0</div>
+          </div>
+          <div class="rating-metric">
+            <div class="rating-metric-stars">
+              {% for i in range(1, 6) %}
+              <svg viewBox="0 0 24 24"
+                   fill="{% if site_stats.overall_rating >= i %}#f1c40f{% elif site_stats.overall_rating >= i - 0.5 %}url(#halfGradCombined){% else %}rgba(255,255,255,0.15){% endif %}"
+                   width="28" height="28">
+                <defs>
+                  <linearGradient id="halfGradCombined"><stop offset="50%" stop-color="#f1c40f"/><stop offset="50%" stop-color="rgba(255,255,255,0.15)"/></linearGradient>
+                </defs>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              {% endfor %}
+            </div>
+            <div class="rating-metric-label">Customer Stars</div>
+            <div class="rating-metric-sub">Avg. star rating</div>
+          </div>
+          <div class="rating-metric">
+            <div class="rating-metric-value">{{ site_stats.total_reviews }}</div>
+            <div class="rating-metric-label">Total Reviews</div>
+            <div class="rating-metric-sub">Verified purchases</div>
+          </div>
+        </div>
+
+        <div class="ratings-cta">
+          <a href="{{ url_for('products') }}">
+            Explore our products &nbsp;
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
       </div>
 
-      <!-- Total Reviews -->
-      <div class="rating-metric">
-        <div class="rating-metric-value">{{ site_stats.total_reviews }}</div>
-        <div class="rating-metric-label">Total Reviews</div>
-        <div class="rating-metric-sub">Verified purchases</div>
+      <!-- Right Column: Newsletter -->
+      <div class="combined-col newsletter-col reveal">
+        <div class="newsletter-inner">
+          <div class="nl-tag">Stay in the Loop</div>
+          <h2 class="nl-heading">
+            Get <em>Exclusive</em> Offers &amp; New Arrivals First
+          </h2>
+          <p class="nl-subtext">
+            Join our community of food lovers. Be the first to know about seasonal harvests, limited batches, and members-only discounts.
+          </p>
+          <form class="nl-form" id="newsletter-form-combined" onsubmit="handleNewsletterSubmit(event)">
+            <input
+              class="nl-input"
+              type="email"
+              id="nl-email-combined"
+              name="email"
+              placeholder="Enter your email address…"
+              required
+              autocomplete="email"
+              aria-label="Email address for newsletter"
+            />
+            <button class="nl-btn" type="submit">
+              Subscribe
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </form>
+          <div class="nl-stats">
+            <div class="nl-stat-card">
+              <div class="nl-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div class="nl-stat-value"
+                   data-target="{{ subscriber_count }}"
+                   data-suffix="+"
+                   id="nl-subs-count-combined">{{ subscriber_count }}+</div>
+              <div class="nl-stat-label">Happy Subscribers</div>
+            </div>
+            <div class="nl-stat-divider"></div>
+            <div class="nl-stat-card">
+              <div class="nl-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+                  <path d="M5 12H3l9-9 9 9h-2"/>
+                  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>
+                  <rect x="9" y="12" width="6" height="9"/>
+                </svg>
+              </div>
+              <div class="nl-stat-value"
+                   data-target="{{ total_delivered_count }}"
+                   data-suffix="+"
+                   id="nl-orders-count-combined">{{ total_delivered_count }}+</div>
+              <div class="nl-stat-label">Orders Handpicked &amp; Delivered</div>
+            </div>
+          </div>
+          <div class="nl-perks">
+            <div class="nl-perk"><div class="nl-perk-dot"></div>No spam, ever</div>
+            <div class="nl-perk"><div class="nl-perk-dot"></div>Unsubscribe anytime</div>
+            <div class="nl-perk"><div class="nl-perk-dot"></div>Members-only deals</div>
+            <div class="nl-perk"><div class="nl-perk-dot"></div>Early harvest alerts</div>
+          </div>
+        </div>
       </div>
 
-    </div>
-
-    <!-- CTA -->
-    <div class="ratings-cta">
-      <a href="{{ url_for('products') }}">
-        Explore our products &nbsp;
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
     </div>
   </div>
 </section>
-{% endif %}
-
-
-
+{% else %}
 <!-- ══════════════════════════════════════════════════════
-       NEWSLETTER / SUBSCRIBERS SECTION
+       NEWSLETTER / SUBSCRIBERS SECTION (STANDALONE)
   ══════════════════════════════════════════════════════ -->
 <section class="newsletter-section" aria-label="Newsletter Subscription">
   <style>
@@ -486,7 +679,7 @@ orders, fast shipping.{% endblock %}
   }
   .nl-subtext {
     font-size: 1rem; color: rgba(27,67,50,0.65);
-    max-width: 500px; line-height: 1.75; margin-bottom: 44px;
+    max-width: 100%; line-height: 1.75; margin-bottom: 44px;
   }
   .nl-form {
     display: flex; align-items: center; gap: 0;
@@ -546,18 +739,14 @@ orders, fast shipping.{% endblock %}
   </svg>
 
   <div class="container">
-    <div class="newsletter-inner reveal">
-
+    <div class="newsletter-inner">
       <div class="nl-tag">Stay in the Loop</div>
-
       <h2 class="nl-heading">
-        Get <em>Exclusive</em> Offers &amp;<br>New Arrivals First
+        Get <em>Exclusive</em> Offers &amp; New Arrivals First
       </h2>
-
       <p class="nl-subtext">
         Join our community of food lovers. Be the first to know about seasonal harvests, limited batches, and members-only discounts.
       </p>
-
       <form class="nl-form" id="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
         <input
           class="nl-input"
@@ -576,10 +765,8 @@ orders, fast shipping.{% endblock %}
           </svg>
         </button>
       </form>
-
-      <!-- Stat counters -->
       <div class="nl-stats">
-        <div class="nl-stat-card reveal stagger-1">
+        <div class="nl-stat-card">
           <div class="nl-stat-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -594,10 +781,8 @@ orders, fast shipping.{% endblock %}
                id="nl-subs-count">{{ subscriber_count }}+</div>
           <div class="nl-stat-label">Happy Subscribers</div>
         </div>
-
         <div class="nl-stat-divider"></div>
-
-        <div class="nl-stat-card reveal stagger-2">
+        <div class="nl-stat-card">
           <div class="nl-stat-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
               <path d="M5 12H3l9-9 9 9h-2"/>
@@ -612,17 +797,16 @@ orders, fast shipping.{% endblock %}
           <div class="nl-stat-label">Orders Handpicked &amp; Delivered</div>
         </div>
       </div>
-
       <div class="nl-perks">
         <div class="nl-perk"><div class="nl-perk-dot"></div>No spam, ever</div>
         <div class="nl-perk"><div class="nl-perk-dot"></div>Unsubscribe anytime</div>
         <div class="nl-perk"><div class="nl-perk-dot"></div>Members-only deals</div>
         <div class="nl-perk"><div class="nl-perk-dot"></div>Early harvest alerts</div>
       </div>
-
     </div>
   </div>
 </section>
+{% endif %}
 
 <style>
 /* Newsletter stat cards */
@@ -696,7 +880,8 @@ orders, fast shipping.{% endblock %}
 <script>
 function handleNewsletterSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById('nl-email').value.trim();
+  const inputEl = document.getElementById('nl-email') || document.getElementById('nl-email-combined');
+  const email = inputEl.value.trim();
   if (!email) return;
   const btn = e.target.querySelector('.nl-btn');
   const originalHTML = btn.innerHTML;
@@ -704,7 +889,7 @@ function handleNewsletterSubmit(e) {
   btn.style.background = 'linear-gradient(135deg,#2d6a4f,#40916c)';
   btn.style.color = '#fff';
   btn.disabled = true;
-  document.getElementById('nl-email').value = '';
+  inputEl.value = '';
   setTimeout(() => {
     btn.innerHTML = originalHTML;
     btn.style.background = '';

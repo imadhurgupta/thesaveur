@@ -484,7 +484,7 @@
       <div class="inv-title-block">
         <div class="inv-label">Tax Invoice</div>
         <div class="inv-number">{{ order.order_number if order.order_number else ('#%05d' % order.id) }}</div>
-        <div class="inv-date">Date: {{ order.created_at.split(' ')[0] if order.created_at else 'N/A' }}</div>
+        <div class="inv-date">Date: {{ (order.created_at|string).split(' ')[0] if order.created_at else 'N/A' }}</div>
         <div>
           <span class="inv-status-pill {{ order.status.lower() }}">{{ order.status }}</span>
         </div>
@@ -499,7 +499,7 @@
       </div>
       <div class="inv-meta-cell">
         <div class="inv-meta-label">Order Date</div>
-        <div class="inv-meta-value">{{ order.created_at.split(' ')[0] if order.created_at else '—' }}</div>
+        <div class="inv-meta-value">{{ (order.created_at|string).split(' ')[0] if order.created_at else '—' }}</div>
       </div>
       <div class="inv-meta-cell">
         <div class="inv-meta-label">Payment Method</div>

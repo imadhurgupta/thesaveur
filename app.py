@@ -105,6 +105,27 @@ with app.app_context():
 
 
 
+@app.context_processor
+def inject_categories():
+    db = get_db()
+    try:
+        categories_raw = db.execute("SELECT * FROM categories ORDER BY display_order ASC").fetchall()
+        categories = []
+        for cat in categories_raw:
+            cat_dict = dict(cat)
+            subcats = db.execute("SELECT * FROM subcategories WHERE category_name = ? ORDER BY display_order ASC", (cat['name'],)).fetchall()
+            cat_dict['subcategories'] = [dict(sub) for sub in subcats]
+            categories.append(cat_dict)
+        return dict(nav_categories=categories)
+    except Exception as e:
+        print(f"[NAV CONTEXT] Error fetching categories: {e}")
+        return dict(nav_categories=[])
+    finally:
+        db.close()
+
+
+
+
 
 
 def generate_order_number():
@@ -3901,18 +3922,10 @@ def admin_add_product():
         flash('Product name and category are required.', 'error')
         return redirect(url_for('admin_dashboard'))
 
-    # Gather images from all sources (local uploads, Google Drive/OneDrive urls, manual CSV)
+    # Gather images from all sources (local uploads take priority)
     image_list = []
-    
-    # 1. Remote and manual inputs
-    remote_images = request.form.get('remote_images', '').strip()
-    manual_images = request.form.get('images', '').strip()
-    combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
-    
-    if combined_csv:
-        image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
-    # 2. Local uploads
+    # 1. Local uploads FIRST (highest priority)
     uploaded_files = request.files.getlist('local_images')
     for file in uploaded_files:
         if file and file.filename and allowed_file(file.filename):
@@ -3926,6 +3939,14 @@ def admin_add_product():
                 counter += 1
             file.save(filepath)
             image_list.append(filename)
+
+    # 2. Remote/manual inputs only if no local file was uploaded
+    if not image_list:
+        remote_images = request.form.get('remote_images', '').strip()
+        manual_images = request.form.get('images', '').strip()
+        combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
+        if combined_csv:
+            image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
     primary_image = image_list[0] if image_list else ('Tea.jpg' if category == 'Tea' else 'Turmeric-Powder.jpg')
 
@@ -3997,18 +4018,10 @@ def admin_edit_product(id):
         flash('Product name and category are required.', 'error')
         return redirect(url_for('admin_dashboard'))
 
-    # Gather images from all sources
+    # Gather images from all sources (local uploads take priority)
     image_list = []
-    
-    # 1. Remote and manual inputs
-    remote_images = request.form.get('remote_images', '').strip()
-    manual_images = request.form.get('images', '').strip()
-    combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
-    
-    if combined_csv:
-        image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
-    # 2. Local uploads
+    # 1. Local uploads FIRST (highest priority)
     uploaded_files = request.files.getlist('local_images')
     for file in uploaded_files:
         if file and file.filename and allowed_file(file.filename):
@@ -4022,6 +4035,14 @@ def admin_edit_product(id):
                 counter += 1
             file.save(filepath)
             image_list.append(filename)
+
+    # 2. Remote/manual inputs only if no local file was uploaded
+    if not image_list:
+        remote_images = request.form.get('remote_images', '').strip()
+        manual_images = request.form.get('images', '').strip()
+        combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
+        if combined_csv:
+            image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
     primary_image = image_list[0] if image_list else ('Tea.jpg' if category == 'Tea' else 'Turmeric-Powder.jpg')
 
@@ -4090,6 +4111,39 @@ def admin_delete_product(id):
     db.close()
 
     return redirect(url_for('admin_dashboard'))
+
+
+
+@app.route('/admin/bulk-delete-products', methods=['POST'])
+@admin_required
+def admin_bulk_delete_products():
+    product_ids = request.form.getlist('product_ids')
+    if not product_ids:
+        flash('No products selected for deletion.', 'error')
+        return redirect(url_for('admin_dashboard') + '#products-tab')
+
+    db = get_db()
+    deleted_count = 0
+    try:
+        for pid in product_ids:
+            product = db.execute("SELECT name FROM products WHERE id = ?", (pid,)).fetchone()
+            if product:
+                db.execute("DELETE FROM products WHERE id = ?", (pid,))
+                db.execute("DELETE FROM product_images WHERE product_id = ?", (pid,))
+                deleted_count += 1
+        db.commit()
+        if deleted_count > 0:
+            flash(f'Successfully deleted {deleted_count} selected products.', 'success')
+        else:
+            flash('No products found or deleted.', 'error')
+    except Exception as e:
+        print(f"[BULK DELETE] Error: {e}")
+        flash('An error occurred during bulk deletion.', 'error')
+    finally:
+        db.close()
+
+    return redirect(url_for('admin_dashboard') + '#products-tab')
+
 
 
 
@@ -4701,43 +4755,26 @@ def admin_add_slide():
 
 
 
-    # Image handling (local upload or remote url)
-
-    image_filename = 'hero_tea_garden.png'
-
+    # Image handling: local upload takes strict priority over remote url
+    uploaded_file = request.files.get('local_images')
     remote_image = request.form.get('remote_images', '').strip()
+    image_filename = ''
 
-    
-
-    if remote_image:
-
-        image_filename = remote_image
-
-    else:
-
-        uploaded_file = request.files.get('local_images')
-
-        if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
-
-            filename = secure_filename(uploaded_file.filename)
-
+    if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
+        filename = secure_filename(uploaded_file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        base, extension = os.path.splitext(filename)
+        counter = 1
+        while os.path.exists(filepath):
+            filename = f"{base}_{counter}{extension}"
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-            base, extension = os.path.splitext(filename)
-
-            counter = 1
-
-            while os.path.exists(filepath):
-
-                filename = f"{base}_{counter}{extension}"
-
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-                counter += 1
-
-            uploaded_file.save(filepath)
-
-            image_filename = filename
+            counter += 1
+        uploaded_file.save(filepath)
+        image_filename = filename
+    elif remote_image:
+        image_filename = remote_image
+    else:
+        image_filename = 'hero_tea_garden.png'
 
 
 
@@ -4811,39 +4848,35 @@ def admin_edit_slide(id):
 
     image_filename = slide['image_filename']
 
+    uploaded_file = request.files.get('local_images')
+
     remote_image = request.form.get('remote_images', '').strip()
 
-    
+    if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
 
-    if remote_image:
+        filename = secure_filename(uploaded_file.filename)
 
-        image_filename = remote_image
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-    else:
+        base, extension = os.path.splitext(filename)
 
-        uploaded_file = request.files.get('local_images')
+        counter = 1
 
-        if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
+        while os.path.exists(filepath):
 
-            filename = secure_filename(uploaded_file.filename)
+            filename = f"{base}_{counter}{extension}"
 
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-            base, extension = os.path.splitext(filename)
+            counter += 1
 
-            counter = 1
+        uploaded_file.save(filepath)
 
-            while os.path.exists(filepath):
+        image_filename = filename
 
-                filename = f"{base}_{counter}{extension}"
+    elif remote_image:
 
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-                counter += 1
-
-            uploaded_file.save(filepath)
-
-            image_filename = filename
+        image_filename = remote_image
 
 
 
@@ -4910,6 +4943,8 @@ def admin_delete_slide(id):
 def admin_add_category():
 
     import sqlite3
+    print("[ADD CATEGORY] request.form:", request.form)
+    print("[ADD CATEGORY] request.files:", request.files)
 
     name = request.form.get('name', '').strip()
 
@@ -4929,43 +4964,39 @@ def admin_add_category():
 
 
 
-    # Image handling (local upload or remote url)
+    # Image handling (local upload takes precedence over remote url)
 
-    image_filename = 'Tea.jpg'
+    uploaded_file = request.files.get('local_images')
 
     remote_image = request.form.get('remote_images', '').strip()
 
-    
+    image_filename = 'Tea.jpg'
 
-    if remote_image:
+    if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
 
-        image_filename = remote_image
+        filename = secure_filename(uploaded_file.filename)
 
-    else:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-        uploaded_file = request.files.get('local_images')
+        base, extension = os.path.splitext(filename)
 
-        if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
+        counter = 1
 
-            filename = secure_filename(uploaded_file.filename)
+        while os.path.exists(filepath):
+
+            filename = f"{base}_{counter}{extension}"
 
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-            base, extension = os.path.splitext(filename)
+            counter += 1
 
-            counter = 1
+        uploaded_file.save(filepath)
 
-            while os.path.exists(filepath):
+        image_filename = filename
 
-                filename = f"{base}_{counter}{extension}"
+    elif remote_image:
 
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-                counter += 1
-
-            uploaded_file.save(filepath)
-
-            image_filename = filename
+        image_filename = remote_image
 
 
 
@@ -5005,6 +5036,9 @@ def admin_add_category():
 
 def admin_edit_category(id):
 
+    print("[EDIT CATEGORY] request.form:", request.form)
+    print("[EDIT CATEGORY] request.files:", request.files)
+
     name = request.form.get('name', '').strip()
 
     display_name = request.form.get('display_name', '').strip()
@@ -5039,39 +5073,35 @@ def admin_edit_category(id):
 
     image_filename = category['image_filename']
 
+    uploaded_file = request.files.get('local_images')
+
     remote_image = request.form.get('remote_images', '').strip()
 
-    
+    if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
 
-    if remote_image:
+        filename = secure_filename(uploaded_file.filename)
 
-        image_filename = remote_image
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-    else:
+        base, extension = os.path.splitext(filename)
 
-        uploaded_file = request.files.get('local_images')
+        counter = 1
 
-        if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
+        while os.path.exists(filepath):
 
-            filename = secure_filename(uploaded_file.filename)
+            filename = f"{base}_{counter}{extension}"
 
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-            base, extension = os.path.splitext(filename)
+            counter += 1
 
-            counter = 1
+        uploaded_file.save(filepath)
 
-            while os.path.exists(filepath):
+        image_filename = filename
 
-                filename = f"{base}_{counter}{extension}"
+    elif remote_image:
 
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-                counter += 1
-
-            uploaded_file.save(filepath)
-
-            image_filename = filename
+        image_filename = remote_image
 
 
 

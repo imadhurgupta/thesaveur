@@ -1476,7 +1476,7 @@ Indian partners.{% endblock %}
             {% endfor %}
           </div>
         </div>
-        <span class="pd-review-date">{{ rev.created_at.split(' ')[0] if rev.created_at else '' }}</span>
+        <span class="pd-review-date">{{ (rev.created_at|string).split(' ')[0] if rev.created_at else '' }}</span>
       </div>
       <p class="pd-review-text">{{ rev.comment }}</p>
       {% if rev.image_filename %}
