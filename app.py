@@ -5805,7 +5805,7 @@ def admin_edit_category(id):
 
     db = get_db()
 
-    category = db.execute("SELECT image_filename FROM categories WHERE id = ?", (id,)).fetchone()
+    category = db.execute("SELECT name, image_filename FROM categories WHERE id = ?", (id,)).fetchone()
 
     if not category:
 
@@ -5851,6 +5851,8 @@ def admin_edit_category(id):
 
 
 
+    old_name = category['name']
+
     db.execute(
 
         """
@@ -5864,8 +5866,11 @@ def admin_edit_category(id):
         """,
 
         (name, display_name, description, image_filename, display_order, id)
-
     )
+
+    if old_name != name:
+        db.execute("UPDATE subcategories SET category_name = ? WHERE category_name = ?", (name, old_name))
+        db.execute("UPDATE products SET category = ? WHERE category = ?", (name, old_name))
 
     db.commit()
     invalidate_cache('nav_categories', 'nav_categories_list')

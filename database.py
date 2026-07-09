@@ -22,6 +22,7 @@ def generate_product_id():
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -508,6 +509,30 @@ def init_db():
     if loc_seeded:
         conn.commit()
         print(f"[OK] Seeded default location shipping rates.")
+
+    # ---- DYNAMIC REPAIR: Resolve category name changes in subcategories and products ----
+    try:
+        # Get all category technical names (slugs)
+        cursor.execute("SELECT name FROM categories")
+        valid_cats = {row[0] for row in cursor.fetchall()}
+
+        # Find orphaned subcategories
+        cursor.execute("SELECT DISTINCT category_name FROM subcategories")
+        subcat_parents = [row[0] for row in cursor.fetchall()]
+        
+        for parent in subcat_parents:
+            if parent not in valid_cats:
+                # Try to map close names, e.g. "Dry Fruits & Nuts" to "Nut & Dry Fruits"
+                # If "Nut & Dry Fruits" or "Dry Fruits" exists as a category, migrate the parent
+                for candidate in ["Nut & Dry Fruits", "Dry Fruits", "Dry Fruits & Nuts"]:
+                    if candidate in valid_cats:
+                        print(f"[REPAIR] Migrating subcategory parent '{parent}' to '{candidate}'")
+                        cursor.execute("UPDATE subcategories SET category_name = ? WHERE category_name = ?", (candidate, parent))
+                        cursor.execute("UPDATE products SET category = ? WHERE category = ?", (candidate, parent))
+                        conn.commit()
+                        break
+    except Exception as repair_err:
+        print(f"[WARNING] Database repair runner encountered an error: {repair_err}")
 
     conn.close()
     print("[OK] Database initialized successfully.")
