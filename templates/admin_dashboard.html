@@ -3886,7 +3886,7 @@
 
   const allSubcategories = [
     {% for subcat in subcategories %}
-      { id: {{ subcat.id }}, category: "{{ subcat.category_name }}", name: "{{ subcat.name }}", display: "{{ subcat.display_name }}" },
+      { id: {{ subcat.id }}, category: "{{ subcat.category_name|safe }}", name: "{{ subcat.name|safe }}", display: "{{ subcat.display_name|safe }}" },
     {% endfor %}
   ];
 
