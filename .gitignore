@@ -39,3 +39,6 @@ nginx/certs/
 # ── Scratch scripts ────────────────────────────────────────
 clear_db.py
 inspect_db.py
+
+thesaveur_key
+thesaveur_key.pub
