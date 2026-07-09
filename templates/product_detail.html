@@ -1429,18 +1429,17 @@ Indian partners.{% endblock %}
               class="pd-form-textarea" required></textarea>
           </div>
           <div class="pd-form-group">
-            <label class="pd-form-label" for="review-image">Add Photo (Optional, Max 5 MB)</label>
+            <label class="pd-form-label" for="review-image">Add Photo (Optional, Max 15 MB)</label>
             <input type="file" id="review-image" name="review_image" accept="image/*" class="pd-form-file"
               onchange="checkReviewImageSize(this)" />
             <div style="margin-top:6px; background:#fafaf5; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:0.72rem; color:#666; display:flex; gap:16px; flex-wrap:wrap;">
-              <span>📐 <strong>Max:</strong> any size</span>
-              <span>📏 <strong>Recommended:</strong> 800×800 px</span>
-              <span>💾 <strong>Max file size:</strong> 5 MB</span>
+              <span>📐 <strong>Any size:</strong> no resolution limit</span>
+              <span>💾 <strong>Max file size:</strong> 15 MB</span>
               <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
             </div>
             <span id="review-image-error"
               style="color:#e74c3c; font-size:0.75rem; display:none; margin-top:4px; font-weight:600;">Image size
-              exceeds the maximum limit of 5 MB.</span>
+              exceeds the maximum limit of 15 MB.</span>
           </div>
           <button type="submit" class="pd-submit-btn">Submit Review</button>
         </form>
@@ -1588,7 +1587,7 @@ Indian partners.{% endblock %}
   function checkReviewImageSize(input) {
     const file = input.files[0];
     const errSpan = document.getElementById('review-image-error');
-    if (file && file.size > 5 * 1024 * 1024) {
+    if (file && file.size > 15 * 1024 * 1024) {
       errSpan.style.display = 'block';
       input.value = '';
     } else {
@@ -1599,8 +1598,8 @@ Indian partners.{% endblock %}
   function validateReviewForm() {
     const input = document.getElementById('review-image');
     const file = input.files[0];
-    if (file && file.size > 5 * 1024 * 1024) {
-      alert('Image size exceeds the maximum limit of 5 MB.');
+    if (file && file.size > 15 * 1024 * 1024) {
+      alert('Image size exceeds the maximum limit of 15 MB.');
       return false;
     }
     return true;

@@ -1329,13 +1329,13 @@ def add_review(id):
                 flash("Invalid image format. Allowed formats: png, jpg, jpeg, gif, webp.", "error")
                 return redirect(url_for('product_detail', id=id))
             
-            # File size validation (Max 5 MB)
+            # File size validation (Max 15 MB)
             file.seek(0, os.SEEK_END)
             size = file.tell()
             file.seek(0)  # Reset file pointer
             
-            if size > 5 * 1024 * 1024:
-                flash("Image size exceeds the maximum limit of 5 MB.", "error")
+            if size > 15 * 1024 * 1024:
+                flash("Image size exceeds the maximum limit of 15 MB.", "error")
                 return redirect(url_for('product_detail', id=id))
                 
             filename = secure_filename(file.filename)
