@@ -214,26 +214,27 @@
           {% endfor %}
         </div>
 
-        <!-- Level 2: Sub-categories (Tea) -->
-        <div class="filter-level-2" id="subcat-tea">
-          <button class="filter-subcat-btn active" data-subcat="all">All Tea</button>
-          <button class="filter-subcat-btn" data-subcat="Black Tea">Black Tea</button>
-          <button class="filter-subcat-btn" data-subcat="Green Tea">Green Tea</button>
-        </div>
-
-        <!-- Level 2: Sub-categories (Spices) -->
-        <div class="filter-level-2" id="subcat-spices">
-          <button class="filter-subcat-btn active" data-subcat="all">All Spices</button>
-          <button class="filter-subcat-btn" data-subcat="Ground Spices">Ground Spices</button>
-          <button class="filter-subcat-btn" data-subcat="Blend Spices">Blend Spices</button>
-        </div>
-
-        <!-- Level 2: Sub-categories (Cloths) -->
-        <div class="filter-level-2" id="subcat-cloths">
-          <button class="filter-subcat-btn active" data-subcat="all">All Apparel</button>
-          <button class="filter-subcat-btn" data-subcat="Apparel">Apparel</button>
-          <button class="filter-subcat-btn" data-subcat="Accessories">Accessories</button>
-        </div>
+        <!-- Level 2: Sub-categories (Dynamic) -->
+        {% for cat in categories %}
+          {% set cat_name_lower = cat.name|lower %}
+          {% set ns = namespace(has_subs=false) %}
+          {% for sub in global_subcategories %}
+            {% if sub.category_name|lower == cat.name|lower %}
+              {% set ns.has_subs = true %}
+            {% endif %}
+          {% endfor %}
+          
+          {% if ns.has_subs %}
+            <div class="filter-level-2" id="subcat-{{ cat_name_lower }}">
+              <button class="filter-subcat-btn active" data-subcat="all">All {{ cat.display_name }}</button>
+              {% for sub in global_subcategories %}
+                {% if sub.category_name|lower == cat.name|lower %}
+                  <button class="filter-subcat-btn" data-subcat="{{ sub.display_name }}">{{ sub.display_name }}</button>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
       </div>
 
       <!-- ═══════════════════════════════════════════

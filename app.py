@@ -1127,8 +1127,10 @@ def products():
     if db:
         db.close()
 
-    # Enrich products with sub-categories dynamically
+    # Enrich products with sub-categories dynamically only if not set in the database
     for p in products_list:
+        if p.get('sub_category') and p['sub_category'].strip() != '' and p['sub_category'].strip().lower() != 'other':
+            continue
         name_lower = p['name'].lower()
         if 'green tea' in name_lower:
             p['sub_category'] = 'Green Tea'

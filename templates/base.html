@@ -18,16 +18,22 @@
   <!-- Open Graph / Facebook SEO -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{ request.url }}" />
-  <meta property="og:title" content="{% block og_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
-  <meta property="og:description" content="{% block og_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
-  <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
+  <meta property="og:title"
+    content="{% block og_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
+  <meta property="og:description"
+    content="{% block og_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
+  <meta property="og:image"
+    content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
 
   <!-- Twitter SEO -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="{{ request.url }}" />
-  <meta property="twitter:title" content="{% block twitter_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
-  <meta property="twitter:description" content="{% block twitter_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
-  <meta property="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
+  <meta property="twitter:title"
+    content="{% block twitter_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
+  <meta property="twitter:description"
+    content="{% block twitter_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
+  <meta property="twitter:image"
+    content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
 
   <!-- Preconnect for Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,199 +44,221 @@
 
   <!-- Products Dropdown Styles -->
   <style>
-  /* Desktop Products Hover Dropdown */
-  @media (min-width: 993px) {
-    .products-dropdown:hover #products-dropdown-menu {
-      display: flex !important;
+    /* Desktop Products Hover Dropdown */
+    @media (min-width: 993px) {
+      .products-dropdown:hover #products-dropdown-menu {
+        display: flex !important;
+      }
     }
-  }
-  /* Invisible pseudo-element bridging the gap above the dropdown menu */
-  #products-dropdown-menu::before {
-    content: '';
-    position: absolute;
-    top: -15px;
-    left: 0;
-    right: 0;
-    height: 15px;
-    background: transparent;
-  }
-  .nav-dropdown-submenu {
-    position: relative;
-  }
-  .nav-dropdown-submenu .submenu {
-    display: none;
-    position: absolute;
-    left: 100%;
-    top: 0;
-    margin-top: -8px;
-    margin-left: 6px;
-    background: rgba(12, 30, 18, 0.98);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 8px;
-    min-width: 200px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-    z-index: 201;
-    flex-direction: column;
-    gap: 4px;
-    animation: navDropdownSlide 0.2s ease;
-  }
-  /* Invisible pseudo-element bridging the gap to the left of the submenu */
-  .nav-dropdown-submenu .submenu::before {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 0;
-    bottom: 0;
-    width: 10px;
-    background: transparent;
-  }
-  .nav-dropdown-submenu:hover .submenu {
-    display: flex;
-  }
-  .nav-dropdown-submenu .submenu a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    color: rgba(255,255,255,0.78) !important;
-    font-size: 0.88rem;
-    font-weight: 500;
-    text-decoration: none !important;
-    transition: all 0.2s;
-  }
-  .nav-dropdown-submenu .submenu a:hover {
-    background: rgba(255,255,255,0.08);
-    color: var(--white) !important;
-    padding-left: 18px;
-  }
-  .submenu-arrow-icon {
-    transition: transform 0.25s;
-    color: rgba(255,255,255,0.6);
-  }
 
-  /* Mobile Products Dropdown Accordion */
-  .nav-mobile-dropdown {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-  }
-  .nav-mobile-dropdown-toggle,
-  .nav-mobile-subdropdown-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    font-family: inherit;
-    font-size: 1.08rem;
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    transition: var(--transition);
-  }
-  .nav-mobile-dropdown-toggle:hover,
-  .nav-mobile-subdropdown-toggle:hover {
-    color: var(--amber);
-  }
-  .nav-mobile-dropdown-toggle svg,
-  .nav-mobile-subdropdown-toggle svg {
-    flex-shrink: 0;
-  }
-  .mobile-arrow-icon,
-  .mobile-subarrow-icon {
-    transition: transform 0.25s;
-    color: rgba(255,255,255,0.6);
-  }
-  .nav-mobile-dropdown-menu {
-    display: none;
-    flex-direction: column;
-    gap: 0;
-    padding-left: 16px;
-    border-left: 1px solid rgba(255,255,255,0.1);
-    margin-left: 10px;
-    margin-bottom: 6px;
-  }
-  .nav-mobile-dropdown-menu a {
-    display: flex;
-    align-items: center;
-    padding: 8px 0;
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.75);
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
-  .nav-mobile-dropdown-menu a:hover {
-    color: var(--amber-light);
-    padding-left: 4px;
-  }
-  .nav-mobile-subdropdown {
-    width: 100%;
-  }
-  .nav-mobile-subdropdown-toggle {
-    font-size: 0.95rem;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-  }
-  .nav-mobile-subdropdown-menu {
-    display: none;
-    flex-direction: column;
-    gap: 0;
-    padding-left: 14px;
-    border-left: 1px solid rgba(255,255,255,0.06);
-    margin-left: 8px;
-    margin-bottom: 4px;
-  }
-  .nav-mobile-subdropdown-menu a {
-    padding: 6px 0;
-    font-size: 0.88rem;
-    color: rgba(255,255,255,0.65);
-    border-bottom: none;
-  }
-  .nav-mobile-subdropdown-menu a:hover {
-    color: var(--amber-light);
-    padding-left: 4px;
-  }
-  .cart-badge {
-    position: absolute;
-    top: -4px;
-    right: -12px;
-    background: var(--amber);
-    color: var(--white);
-    font-size: 0.7rem;
-    font-weight: 800;
-    min-width: 17px;
-    height: 17px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 4px;
-    border: 1.5px solid #0c1e12;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
-  .cart-badge-mobile {
-    position: absolute;
-    top: 8px;
-    left: 22px;
-    background: var(--amber);
-    color: var(--white);
-    font-size: 0.68rem;
-    font-weight: 800;
-    min-width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 3px;
-    border: 1px solid rgba(12, 30, 18, 0.98);
-  }
+    /* Invisible pseudo-element bridging the gap above the dropdown menu */
+    #products-dropdown-menu::before {
+      content: '';
+      position: absolute;
+      top: -15px;
+      left: 0;
+      right: 0;
+      height: 15px;
+      background: transparent;
+    }
+
+    .nav-dropdown-submenu {
+      position: relative;
+    }
+
+    .nav-dropdown-submenu .submenu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      margin-top: -8px;
+      margin-left: 6px;
+      background: rgba(12, 30, 18, 0.98);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 8px;
+      min-width: 200px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      z-index: 201;
+      flex-direction: column;
+      gap: 4px;
+      animation: navDropdownSlide 0.2s ease;
+    }
+
+    /* Invisible pseudo-element bridging the gap to the left of the submenu */
+    .nav-dropdown-submenu .submenu::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: transparent;
+    }
+
+    .nav-dropdown-submenu:hover .submenu {
+      display: flex;
+    }
+
+    .nav-dropdown-submenu .submenu a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: rgba(255, 255, 255, 0.78) !important;
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none !important;
+      transition: all 0.2s;
+    }
+
+    .nav-dropdown-submenu .submenu a:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--white) !important;
+      padding-left: 18px;
+    }
+
+    .submenu-arrow-icon {
+      transition: transform 0.25s;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Mobile Products Dropdown Accordion */
+    .nav-mobile-dropdown {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .nav-mobile-dropdown-toggle,
+    .nav-mobile-subdropdown-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      font-family: inherit;
+      font-size: 1.08rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .nav-mobile-dropdown-toggle:hover,
+    .nav-mobile-subdropdown-toggle:hover {
+      color: var(--amber);
+    }
+
+    .nav-mobile-dropdown-toggle svg,
+    .nav-mobile-subdropdown-toggle svg {
+      flex-shrink: 0;
+    }
+
+    .mobile-arrow-icon,
+    .mobile-subarrow-icon {
+      transition: transform 0.25s;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .nav-mobile-dropdown-menu {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      padding-left: 16px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      margin-left: 10px;
+      margin-bottom: 6px;
+    }
+
+    .nav-mobile-dropdown-menu a {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.75);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-mobile-dropdown-menu a:hover {
+      color: var(--amber-light);
+      padding-left: 4px;
+    }
+
+    .nav-mobile-subdropdown {
+      width: 100%;
+    }
+
+    .nav-mobile-subdropdown-toggle {
+      font-size: 0.95rem;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-mobile-subdropdown-menu {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      padding-left: 14px;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      margin-left: 8px;
+      margin-bottom: 4px;
+    }
+
+    .nav-mobile-subdropdown-menu a {
+      padding: 6px 0;
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.65);
+      border-bottom: none;
+    }
+
+    .nav-mobile-subdropdown-menu a:hover {
+      color: var(--amber-light);
+      padding-left: 4px;
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -4px;
+      right: -12px;
+      background: var(--amber);
+      color: var(--white);
+      font-size: 0.7rem;
+      font-weight: 800;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      border: 1.5px solid #0c1e12;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .cart-badge-mobile {
+      position: absolute;
+      top: 8px;
+      left: 22px;
+      background: var(--amber);
+      color: var(--white);
+      font-size: 0.68rem;
+      font-weight: 800;
+      min-width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      border: 1px solid rgba(12, 30, 18, 0.98);
+    }
   </style>
 
   <!-- Lucide Icons -->
@@ -259,9 +287,11 @@
       <ul class="nav-links" role="list">
         <li><a href="{{ url_for('home') }}">Home</a></li>
         <li class="nav-dropdown-item products-dropdown">
-          <a href="{{ url_for('products') }}" class="nav-dropdown-toggle-link" style="display: flex; align-items: center; gap: 6px;">
+          <a href="{{ url_for('products') }}" class="nav-dropdown-toggle-link"
+            style="display: flex; align-items: center; gap: 6px;">
             Products
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" class="arrow-icon" style="transition: transform 0.25s;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"
+              class="arrow-icon" style="transition: transform 0.25s;">
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </a>
@@ -271,31 +301,33 @@
               All Products
             </a>
             {% if nav_categories %}
-              <div class="nav-dropdown-divider"></div>
-              {% for cat in nav_categories %}
-                {% if cat.subcategories %}
-                  <div class="nav-dropdown-submenu">
-                    <a href="{{ url_for('products', category=cat.name|lower) }}">
-                      <i data-lucide="folder" style="width: 16px; height: 16px;"></i>
-                      {{ cat.display_name }}
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" class="submenu-arrow-icon" style="margin-left: auto;">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </a>
-                    <div class="submenu">
-                      <a href="{{ url_for('products', category=cat.name|lower) }}">All {{ cat.display_name }}</a>
-                      {% for sub in cat.subcategories %}
-                        <a href="{{ url_for('products', category=cat.name|lower, subcategory=sub.name|lower) }}">{{ sub.display_name }}</a>
-                      {% endfor %}
-                    </div>
-                  </div>
-                {% else %}
-                  <a href="{{ url_for('products', category=cat.name|lower) }}">
-                    <i data-lucide="folder" style="width: 16px; height: 16px;"></i>
-                    {{ cat.display_name }}
-                  </a>
-                {% endif %}
-              {% endfor %}
+            <div class="nav-dropdown-divider"></div>
+            {% for cat in nav_categories %}
+            {% if cat.subcategories %}
+            <div class="nav-dropdown-submenu">
+              <a href="{{ url_for('products', category=cat.name|lower) }}">
+                <i data-lucide="folder" style="width: 16px; height: 16px;"></i>
+                {{ cat.display_name }}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"
+                  class="submenu-arrow-icon" style="margin-left: auto;">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </a>
+              <div class="submenu">
+                <a href="{{ url_for('products', category=cat.name|lower) }}">All {{ cat.display_name }}</a>
+                {% for sub in cat.subcategories %}
+                <a href="{{ url_for('products', category=cat.name|lower, subcategory=sub.name|lower) }}">{{
+                  sub.display_name }}</a>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <a href="{{ url_for('products', category=cat.name|lower) }}">
+              <i data-lucide="folder" style="width: 16px; height: 16px;"></i>
+              {{ cat.display_name }}
+            </a>
+            {% endif %}
+            {% endfor %}
             {% endif %}
           </div>
         </li>
@@ -313,7 +345,7 @@
             {% set cart = session.get('cart', {}) %}
             {% set cart_count = cart.values()|sum if cart is mapping else 0 %}
             {% if cart_count > 0 %}
-              <span class="cart-badge">{{ cart_count }}</span>
+            <span class="cart-badge">{{ cart_count }}</span>
             {% endif %}
           </a>
         </li>
@@ -360,37 +392,40 @@
     <!-- Mobile Dropdown -->
     <div class="nav-mobile" id="mobile-nav" role="navigation">
       <a href="{{ url_for('home') }}"><i data-lucide="home"></i> Home</a>
-      
+
       <div class="nav-mobile-dropdown">
         <button class="nav-mobile-dropdown-toggle">
           <i data-lucide="package"></i> Products
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" class="mobile-arrow-icon" style="margin-left: auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"
+            class="mobile-arrow-icon" style="margin-left: auto;">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
         <div class="nav-mobile-dropdown-menu">
           <a href="{{ url_for('products') }}">All Products</a>
           {% if nav_categories %}
-            {% for cat in nav_categories %}
-              {% if cat.subcategories %}
-                <div class="nav-mobile-subdropdown">
-                  <button class="nav-mobile-subdropdown-toggle">
-                    {{ cat.display_name }}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" class="mobile-subarrow-icon" style="margin-left: auto;">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  <div class="nav-mobile-subdropdown-menu">
-                    <a href="{{ url_for('products', category=cat.name|lower) }}">All {{ cat.display_name }}</a>
-                    {% for sub in cat.subcategories %}
-                      <a href="{{ url_for('products', category=cat.name|lower, subcategory=sub.name|lower) }}">{{ sub.display_name }}</a>
-                    {% endfor %}
-                  </div>
-                </div>
-              {% else %}
-                <a href="{{ url_for('products', category=cat.name|lower) }}">{{ cat.display_name }}</a>
-              {% endif %}
-            {% endfor %}
+          {% for cat in nav_categories %}
+          {% if cat.subcategories %}
+          <div class="nav-mobile-subdropdown">
+            <button class="nav-mobile-subdropdown-toggle">
+              {{ cat.display_name }}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"
+                class="mobile-subarrow-icon" style="margin-left: auto;">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="nav-mobile-subdropdown-menu">
+              <a href="{{ url_for('products', category=cat.name|lower) }}">All {{ cat.display_name }}</a>
+              {% for sub in cat.subcategories %}
+              <a href="{{ url_for('products', category=cat.name|lower, subcategory=sub.name|lower) }}">{{
+                sub.display_name }}</a>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <a href="{{ url_for('products', category=cat.name|lower) }}">{{ cat.display_name }}</a>
+          {% endif %}
+          {% endfor %}
           {% endif %}
         </div>
       </div>
@@ -400,7 +435,7 @@
         {% set cart = session.get('cart', {}) %}
         {% set cart_count = cart.values()|sum if cart is mapping else 0 %}
         {% if cart_count > 0 %}
-          <span class="cart-badge-mobile">{{ cart_count }}</span>
+        <span class="cart-badge-mobile">{{ cart_count }}</span>
         {% endif %}
       </a>
       <a href="{{ url_for('about') }}"><i data-lucide="info"></i> About Us</a>
@@ -472,7 +507,8 @@
             households and businesses across the nation.</p>
           <div class="footer-social">
             <!-- Facebook -->
-            <a href="https://www.facebook.com/thesaveur" class="social-btn facebook" title="Facebook" aria-label="Follow us on Facebook" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.facebook.com/thesaveur" class="social-btn facebook" title="Facebook"
+              aria-label="Follow us on Facebook" target="_blank" rel="noopener noreferrer">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
               </svg>
@@ -537,6 +573,7 @@
           <div class="footer-contact-item">
             <span><i data-lucide="phone"></i></span>
             <span>+91 95005 29076</span>
+            <span>+91 93139 55748</span>
           </div>
           <div class="footer-contact-item">
             <span><i data-lucide="mail"></i></span>
