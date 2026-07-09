@@ -1751,7 +1751,7 @@ button:active:not(:disabled),
     height: 56.25vw !important; /* 16:9 Landscape Aspect Ratio */
     min-height: 320px !important;
     max-height: 420px !important;
-    margin: 90px auto 24px !important;
+    margin: 125px auto 24px !important;
     width: calc(100% - 24px) !important;
     border-radius: var(--radius-lg) !important;
   }
