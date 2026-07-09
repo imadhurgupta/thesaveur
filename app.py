@@ -4695,7 +4695,7 @@ def admin_add_product():
         if combined_csv:
             image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
-    primary_image = image_list[0] if image_list else ('Tea.jpg' if category == 'Tea' else 'Turmeric-Powder.jpg')
+    primary_image = image_list[0] if image_list else ''
 
     from database import generate_product_id
     product_id = generate_product_id()

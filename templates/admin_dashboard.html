@@ -3368,30 +3368,36 @@
 
 
 
+  // Stores actual File objects for local uploads so they can be attached to the form
+  let localFileObjects = [];
+
   // Previews local uploaded files
-
   function handleLocalFiles(files) {
-
     for (let i = 0; i < files.length; i++) {
-
       const file = files[i];
-
       const objectUrl = URL.createObjectURL(file);
-
+      // Push both the preview URL and the real File object
       activeImages.push({
-
         type: 'local',
-
         name: file.name,
-
-        url: objectUrl
-
+        url: objectUrl,
+        fileObj: file   // <-- keep the real File reference
       });
-
     }
-
+    syncLocalFilesToInput();
     updateSelectedImagesGallery();
+  }
 
+  // Syncs all local File objects back into the hidden file input so FormData picks them up
+  function syncLocalFilesToInput() {
+    const inputEl = document.getElementById('prod-local-images');
+    const dt = new DataTransfer();
+    activeImages.forEach(img => {
+      if (img.type === 'local' && img.fileObj) {
+        dt.items.add(img.fileObj);
+      }
+    });
+    inputEl.files = dt.files;
   }
 
 
@@ -3769,11 +3775,9 @@
 
 
   function removeImageFromGallery(index) {
-
     activeImages.splice(index, 1);
-
+    syncLocalFilesToInput();   // re-sync after removal
     updateSelectedImagesGallery();
-
   }
 
 
