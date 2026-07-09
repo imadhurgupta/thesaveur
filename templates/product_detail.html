@@ -1432,6 +1432,12 @@ Indian partners.{% endblock %}
             <label class="pd-form-label" for="review-image">Add Photo (Optional, Max 5 MB)</label>
             <input type="file" id="review-image" name="review_image" accept="image/*" class="pd-form-file"
               onchange="checkReviewImageSize(this)" />
+            <div style="margin-top:6px; background:#fafaf5; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:0.72rem; color:#666; display:flex; gap:16px; flex-wrap:wrap;">
+              <span>📐 <strong>Max:</strong> any size</span>
+              <span>📏 <strong>Recommended:</strong> 800×800 px</span>
+              <span>💾 <strong>Max file size:</strong> 5 MB</span>
+              <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
+            </div>
             <span id="review-image-error"
               style="color:#e74c3c; font-size:0.75rem; display:none; margin-top:4px; font-weight:600;">Image size
               exceeds the maximum limit of 5 MB.</span>
