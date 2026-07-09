@@ -2446,16 +2446,17 @@
 
         <div id="tab-input-local" style="display:block;">
 
-          <input type="file" id="prod-local-images" name="local_images" multiple accept="image/*" style="display:none;" onchange="handleLocalFiles(this.files)" />
+          <label for="prod-local-images" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:8px; width:100%; border:2px dashed var(--green-primary); border-radius:10px; cursor:pointer; background:rgba(45,122,60,0.04); transition:background 0.2s;" onmouseover="this.style.background='rgba(45,122,60,0.09)'" onmouseout="this.style.background='rgba(45,122,60,0.04)'">
+            <i data-lucide="upload-cloud" style="width:28px; height:28px; color:var(--green-primary); pointer-events:none;"></i>
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark); pointer-events:none;">Click to Choose Files</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); pointer-events:none;">PNG, JPG, JPEG, WEBP — multiple files allowed</span>
+            <input type="file" id="prod-local-images" name="local_images" multiple accept="image/*"
+              style="position:absolute; opacity:0; width:0; height:0; pointer-events:none;"
+              onchange="handleLocalFiles(this.files)" />
+          </label>
 
-          <button type="button" class="btn btn-outline" style="width:100%; border-style:dashed; border-color:var(--green-primary); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:8px;" onclick="document.getElementById('prod-local-images').click()">
+          <div id="prod-file-chosen" style="font-size:0.78rem; color:#2d7a3c; margin-top:6px; font-weight:600; min-height:18px;"></div>
 
-            <i data-lucide="upload-cloud" style="width:28px; height:28px; color:var(--green-primary)"></i>
-
-            <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark);">Choose Local Files</span>
-            <span style="font-size:0.75rem; color:var(--text-muted);">PNG, JPG, JPEG, WEBP (multiple)</span>
-
-          </button>
           <div style="margin-top:10px; background:#f0faf2; border:1px solid #b6e2c2; border-radius:8px; padding:10px 14px; font-size:0.75rem; color:#2d6a3f; display:flex; gap:20px; flex-wrap:wrap;">
             <span>📐 <strong>Recommended:</strong> 2048×2048 px (1:1 square, zoom-optimized)</span>
             <span>📏 <strong>Variable:</strong> any aspect ratio accepted</span>
@@ -3371,33 +3372,58 @@
   // Stores actual File objects for local uploads so they can be attached to the form
   let localFileObjects = [];
 
-  // Previews local uploaded files
+  // Previews local uploaded files — the real input is inside <label> so FormData picks it up automatically
   function handleLocalFiles(files) {
+    // Show file names label
+    const chosenEl = document.getElementById('prod-file-chosen');
+    if (chosenEl) {
+      if (files.length === 0) {
+        chosenEl.textContent = '';
+      } else if (files.length === 1) {
+        chosenEl.textContent = '✔ Selected: ' + files[0].name;
+      } else {
+        chosenEl.textContent = '✔ Selected: ' + files.length + ' files (' + Array.from(files).map(f => f.name).join(', ') + ')';
+      }
+    }
+
+    // Build preview gallery
+    // Clear existing local images from activeImages, keep remote ones
+    activeImages = activeImages.filter(img => img.type !== 'local');
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const objectUrl = URL.createObjectURL(file);
-      // Push both the preview URL and the real File object
       activeImages.push({
         type: 'local',
         name: file.name,
         url: objectUrl,
-        fileObj: file   // <-- keep the real File reference
+        fileObj: file
       });
     }
-    syncLocalFilesToInput();
     updateSelectedImagesGallery();
   }
 
-  // Syncs all local File objects back into the hidden file input so FormData picks them up
+  // Syncs File objects back to the file input (fallback for removeImageFromGallery)
   function syncLocalFilesToInput() {
     const inputEl = document.getElementById('prod-local-images');
-    const dt = new DataTransfer();
-    activeImages.forEach(img => {
-      if (img.type === 'local' && img.fileObj) {
-        dt.items.add(img.fileObj);
+    if (!inputEl || typeof DataTransfer === 'undefined') return;
+    try {
+      const dt = new DataTransfer();
+      activeImages.forEach(img => {
+        if (img.type === 'local' && img.fileObj) {
+          dt.items.add(img.fileObj);
+        }
+      });
+      inputEl.files = dt.files;
+      // Update label
+      const chosenEl = document.getElementById('prod-file-chosen');
+      if (chosenEl) {
+        const count = dt.files.length;
+        chosenEl.textContent = count === 0 ? '' : (count === 1 ? '✔ Selected: ' + dt.files[0].name : '✔ Selected: ' + count + ' files');
       }
-    });
-    inputEl.files = dt.files;
+    } catch(e) {
+      console.warn('DataTransfer not supported, file list may not update:', e);
+    }
   }
 
 
