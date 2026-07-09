@@ -4793,31 +4793,25 @@ def admin_edit_product(id):
         if combined_csv:
             image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
-    primary_image = image_list[0] if image_list else ('Tea.jpg' if category == 'Tea' else 'Turmeric-Powder.jpg')
-
     db = get_db()
-    db.execute(
-        "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
-        (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
-    )
 
-
-
-    # Update images mapping table
-
-    db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
-
-    if not image_list:
-
-        db.execute("INSERT INTO product_images (product_id, image_filename) VALUES (?, ?)", (id, primary_image))
-
-    else:
-
+    if image_list:
+        # New images provided — update both primary and product_images table
+        primary_image = image_list[0]
+        db.execute(
+            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
+            (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
+        )
+        # Update images mapping table
+        db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
         for img in image_list:
-
             db.execute("INSERT INTO product_images (product_id, image_filename) VALUES (?, ?)", (id, img))
-
-
+    else:
+        # No new image — keep existing image, only update other fields
+        db.execute(
+            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
+            (name, category, sub_category, description, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
+        )
 
     db.commit()
 
@@ -5526,7 +5520,7 @@ def admin_add_slide():
     elif remote_image:
         image_filename = remote_image
     else:
-        image_filename = 'hero_tea_garden.png'
+        image_filename = ''
 
 
 
@@ -5722,7 +5716,7 @@ def admin_add_category():
 
     remote_image = request.form.get('remote_images', '').strip()
 
-    image_filename = 'Tea.jpg'
+    image_filename = ''
 
     if uploaded_file and uploaded_file.filename and allowed_file(uploaded_file.filename):
 
