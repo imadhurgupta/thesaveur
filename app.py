@@ -1010,15 +1010,14 @@ def home():
 
     # Site-wide aggregate
 
-    site_stats = db.execute("""
-
-        SELECT COUNT(*) AS total_reviews,
-
-               ROUND(CAST(AVG(rating) AS NUMERIC), 1) AS overall_rating
-
-        FROM reviews
-
-    """).fetchone()
+    # Site-wide aggregate: Set customer review rating at 5.0 with a base of 100+ reviews
+    reviews_count_row = db.execute("SELECT COUNT(*) FROM reviews").fetchone()
+    db_reviews_count = reviews_count_row[0] if reviews_count_row else 0
+    
+    site_stats = {
+        'total_reviews': 100 + db_reviews_count,
+        'overall_rating': 5.0
+    }
 
 
 
