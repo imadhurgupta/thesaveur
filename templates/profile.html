@@ -6,36 +6,59 @@
 {% block extra_head %}
 <style>
   /* ═══════════════════════════════════════
-     PROFILE PAGE — LAYOUT
-  ═══════════════════════════════════════ */
+     PROFILE PAGE — LAYOUT UPGRADE
+     ═══════════════════════════════════════ */
   .profile-container {
-    max-width: 1060px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 120px 24px 80px;
+    padding: 140px 24px 80px;
+    position: relative;
   }
+  
+  /* Decorative ambient blurs */
+  .profile-container::before {
+    content: '';
+    position: absolute;
+    top: 5%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(45, 106, 79, 0.04) 0%, transparent 70%);
+    z-index: 1;
+    pointer-events: none;
+  }
+
   .profile-header-section {
-    margin-bottom: 36px;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
   }
   .profile-header-section h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.2rem;
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: 2.6rem;
+    font-weight: 400;
     color: var(--green-dark);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
   }
   .profile-header-section p {
-    color: var(--text-mid);
+    color: var(--text-muted);
     font-size: 0.95rem;
+    font-weight: 500;
   }
 
   .profile-layout {
     display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 28px;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
     align-items: start;
+    position: relative;
+    z-index: 2;
   }
   @media (max-width: 768px) {
     .profile-layout {
       grid-template-columns: 1fr;
+      gap: 24px;
     }
     .profile-container {
       padding: 100px 16px 60px;
@@ -44,58 +67,80 @@
 
   /* ═══════════════════════════════════════
      SIDEBAR
-  ═══════════════════════════════════════ */
+     ═══════════════════════════════════════ */
   .profile-sidebar {
-    background: #fff;
-    border-radius: 18px;
-    border: 1px solid rgba(0,0,0,0.07);
-    padding: 20px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(45, 106, 79, 0.12);
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(27, 67, 50, 0.03);
     position: sticky;
-    top: 100px;
+    top: 110px;
   }
   .profile-sidebar-avatar {
     text-align: center;
-    padding: 16px 0 20px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    margin-bottom: 16px;
+    padding: 8px 0 24px;
+    border-bottom: 1px solid rgba(45, 106, 79, 0.08);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .profile-avatar-circle {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    background: linear-gradient(135deg, #1b4332, #2d6a4f);
     color: #fff;
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 12px;
-    font-family: 'Playfair Display', serif;
+    margin: 0 auto 14px;
+    box-shadow: 0 8px 20px rgba(27, 67, 50, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    position: relative;
   }
   .profile-sidebar-name {
     font-weight: 700;
     color: var(--green-dark);
-    font-size: 0.95rem;
-    margin-bottom: 3px;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
   }
   .profile-sidebar-email {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     color: var(--text-muted);
+  }
+  
+  .profile-sidebar-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(197, 160, 89, 0.1);
+    border: 1px solid rgba(197, 160, 89, 0.3);
+    color: var(--amber-dark);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 99px;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .profile-nav {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
   .profile-nav-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 11px 14px;
-    border-radius: 10px;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
     background: transparent;
     color: var(--text-mid);
     font-weight: 600;
@@ -104,41 +149,47 @@
     cursor: pointer;
     text-align: left;
     width: 100%;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
   }
-  .profile-nav-btn .nav-icon {
-    font-size: 1.1rem;
-    width: 22px;
-    text-align: center;
-    flex-shrink: 0;
+  .profile-nav-btn i, .profile-nav-btn svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    transition: all 0.25s;
   }
   .profile-nav-btn:hover {
-    background: #f0faf5;
+    background: rgba(45, 106, 79, 0.05);
+    color: var(--green-primary);
+  }
+  .profile-nav-btn:hover i, .profile-nav-btn:hover svg {
     color: var(--green-primary);
   }
   .profile-nav-btn.active {
-    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    background: linear-gradient(135deg, #1b4332, #2d6a4f);
     color: #fff;
-    box-shadow: 0 4px 12px rgba(27, 67, 50, 0.25);
+    box-shadow: 0 6px 18px rgba(27, 67, 50, 0.2);
+  }
+  .profile-nav-btn.active i, .profile-nav-btn.active svg {
+    color: var(--amber-light) !important;
   }
 
   /* ═══════════════════════════════════════
      PANELS
-  ═══════════════════════════════════════ */
+     ═══════════════════════════════════════ */
   .profile-panel {
     display: none;
     background: #fff;
-    border-radius: 18px;
-    border: 1px solid rgba(0,0,0,0.07);
-    padding: 36px 40px;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.05);
-    animation: fadeIn 0.3s ease;
+    border-radius: 24px;
+    border: 1px solid rgba(45, 106, 79, 0.1);
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(27, 67, 50, 0.02);
+    animation: panelFadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
   }
   .profile-panel.active {
     display: block;
   }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
+  @keyframes panelFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   @media (max-width: 600px) {
@@ -146,84 +197,87 @@
   }
 
   .panel-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.45rem;
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
     color: var(--green-dark);
-    margin: 0 0 8px;
+    margin: 0 0 6px;
   }
   .panel-subtitle {
-    font-size: 0.87rem;
+    font-size: 0.88rem;
     color: var(--text-muted);
-    margin-bottom: 28px;
+    margin-bottom: 32px;
     padding-bottom: 20px;
-    border-bottom: 1px solid rgba(0,0,0,0.07);
+    border-bottom: 1px solid rgba(45, 106, 79, 0.08);
   }
 
   /* ═══════════════════════════════════════
      PROFILE FORM FIELDS (override dark .form-group)
-  ═══════════════════════════════════════ */
+     ═══════════════════════════════════════ */
   .pf-field {
-    margin-bottom: 18px;
+    margin-bottom: 22px;
   }
   .pf-field label {
     display: block;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .pf-field input,
   .pf-field select {
     width: 100%;
-    padding: 11px 14px;
-    background: #f8faf9;
-    border: 1.5px solid rgba(0,0,0,0.1);
-    border-radius: 10px;
+    padding: 12px 16px;
+    background: #fafbfa;
+    border: 1.5px solid rgba(45, 106, 79, 0.12);
+    border-radius: 12px;
     color: var(--text-dark);
     font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 0.92rem;
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
     outline: none;
     box-sizing: border-box;
   }
   .pf-field input:focus {
-    border-color: var(--green-light);
+    border-color: var(--green-primary);
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
+    box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.1);
   }
   .pf-field input:disabled {
-    background: #f0f0f0;
-    color: #999;
+    background: #f1f3f2;
+    color: rgba(0,0,0,0.4);
     cursor: not-allowed;
-    border-color: rgba(0,0,0,0.06);
+    border-color: rgba(45, 106, 79, 0.05);
   }
   .pf-field input::placeholder {
-    color: #bbb;
+    color: #a3b899;
+    opacity: 0.6;
   }
   .pf-row {
     display: grid;
-    gap: 16px;
+    gap: 20px;
   }
   .pf-row-2 { grid-template-columns: 1fr 1fr; }
   .pf-row-3 { grid-template-columns: 1fr 1fr 1fr; }
   @media (max-width: 600px) {
-    .pf-row-2, .pf-row-3 { grid-template-columns: 1fr; }
+    .pf-row-2, .pf-row-3 { grid-template-columns: 1fr; gap: 0; }
   }
 
   .pf-section-divider {
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
+    font-family: 'DM Serif Display', 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
     color: var(--green-dark);
-    margin: 28px 0 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed rgba(0,0,0,0.1);
+    margin: 36px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(45, 106, 79, 0.15);
   }
 
   /* ═══════════════════════════════════════
      SAVE BUTTON
-  ═══════════════════════════════════════ */
+     ═══════════════════════════════════════ */
   .pf-save-btn {
     display: inline-flex;
     align-items: center;
@@ -271,18 +325,21 @@
         </div>
         <div class="profile-sidebar-name">{{ user.full_name }}</div>
         <div class="profile-sidebar-email">{{ user.email }}</div>
+        <div class="profile-sidebar-badge">
+          <i data-lucide="shield-check" style="width: 12px; height: 12px; vertical-align: middle;"></i> Verified Buyer
+        </div>
       </div>
 
       <!-- Nav -->
       <nav class="profile-nav" aria-label="Profile sections">
         <button class="profile-nav-btn active" id="nav-info" onclick="showPanel('panel-info', this)">
-          <span class="nav-icon">👤</span> Personal Details
+          <i data-lucide="user"></i> Personal Details
         </button>
         <button class="profile-nav-btn" id="nav-proposals" onclick="showPanel('panel-proposals', this)">
-          <span class="nav-icon">✉️</span> My Messages & Offers
+          <i data-lucide="mail"></i> My Messages & Offers
         </button>
         <button class="profile-nav-btn" id="nav-security" onclick="showPanel('panel-security', this)">
-          <span class="nav-icon">🔒</span> Password & Security
+          <i data-lucide="lock"></i> Password & Security
         </button>
       </nav>
     </aside>
