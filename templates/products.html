@@ -173,6 +173,37 @@
     border: none;
     overflow: hidden;
   }
+
+  @media (max-width: 768px) {
+    .filter-container {
+      margin-bottom: 24px;
+      padding: 0 8px;
+    }
+    .filter-level-1 {
+      border-radius: 16px;
+      padding: 8px;
+      width: 100%;
+      justify-content: center;
+      gap: 6px;
+    }
+    .filter-cat-btn, .btn-all-products {
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      flex: 1 1 auto;
+      text-align: center;
+    }
+    .filter-level-2 {
+      width: 100%;
+      justify-content: center;
+      gap: 6px;
+    }
+    .filter-subcat-btn {
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      flex: 1 1 auto;
+      text-align: center;
+    }
+  }
 </style>
 {% endblock %}
 
