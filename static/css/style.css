@@ -2034,26 +2034,27 @@ button:active:not(:disabled),
 
 .nav-dropdown-menu a.nav-admin {
   font-weight: 600;
-  color: var(--green-dark) !important;
+  color: var(--amber-light) !important;
 }
 
 .nav-dropdown-menu a.nav-admin:hover {
-  background: rgba(15, 41, 30, 0.06);
-  color: var(--green-dark) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--white) !important;
 }
 
 .nav-dropdown-menu a.nav-logout-btn {
-  color: #e74c3c !important;
+  color: #f87171 !important;
+  font-weight: 600;
 }
 
 .nav-dropdown-menu a.nav-logout-btn:hover {
-  background: rgba(231, 76, 60, 0.06);
-  color: #c0392b !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #fca5a5 !important;
 }
 
 .nav-dropdown-menu a.active {
-  background: rgba(27, 67, 50, 0.08) !important;
-  color: var(--green-primary) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--white) !important;
   font-weight: 600;
 }
 
