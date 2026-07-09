@@ -1323,6 +1323,7 @@
     <button class="tab-btn" onclick="switchTab(event, 'users-tab')">Users</button>
     <button class="tab-btn" onclick="switchTab(event, 'promos-tab')">Promo Codes</button>
     <button class="tab-btn" onclick="switchTab(event, 'shipping-tab')">Shipping</button>
+    <button class="tab-btn" onclick="switchTab(event, 'settings-tab')">Backup & Restore</button>
   </nav>
 
 
@@ -2336,6 +2337,63 @@
 
     </div>
 
+  </section>
+
+  <!-- ────── Tab 9: Settings / Backup & Restore content ────── -->
+  <section id="settings-tab" class="tab-content">
+    <div class="card-container" style="max-width: 800px; margin: 0 auto;">
+      <div style="margin-bottom: 28px; text-align: center;">
+        <h2 style="font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">System Backup & Restore</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Backup your entire system database including products, orders, categories, and users, or restore from a previous backup file.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+        <!-- Backup Box -->
+        <div style="background: #fafbfa; border: 1px solid rgba(45, 106, 79, 0.15); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(45, 106, 79, 0.08); display: flex; align-items: center; justify-content: center; color: var(--green-primary);">
+            <i data-lucide="download-cloud" style="width: 32px; height: 32px;"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-dark); margin-bottom: 6px;">Download Backup</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">Generates a secure snapshot of the entire database. Download and keep this file safe.</p>
+          </div>
+          <a href="/admin/backup-db" class="btn btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-top: auto; padding: 10px 20px;">
+            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+            Download Database
+          </a>
+        </div>
+
+        <!-- Restore Box -->
+        <div style="background: #fafbfa; border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(197, 160, 89, 0.08); display: flex; align-items: center; justify-content: center; color: var(--amber-dark);">
+            <i data-lucide="upload-cloud" style="width: 32px; height: 32px;"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-dark); margin-bottom: 6px;">Restore System</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">Upload a previously downloaded <code>.db</code> file. This will overwrite all active orders, products, and user accounts.</p>
+          </div>
+          
+          <form action="/admin/restore-db" method="POST" enctype="multipart/form-data" style="width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center;" onsubmit="return confirm('WARNING: Restoring the database will overwrite all current system data. Are you sure you want to proceed?');">
+            <label class="btn btn-outline" style="cursor: pointer; padding: 8px 16px; font-size: 0.82rem; width: auto; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="file" style="width: 14px; height: 14px;"></i>
+              <span id="restore-file-name">Choose File</span>
+              <input type="file" name="backup_file" accept=".db" style="display: none;" onchange="if(this.files.length > 0){ document.getElementById('restore-file-name').textContent = this.files[0].name; document.getElementById('btn-restore-submit').disabled = false; } else { document.getElementById('restore-file-name').textContent = 'Choose File'; document.getElementById('btn-restore-submit').disabled = true; }" />
+            </label>
+            <button type="submit" id="btn-restore-submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.85rem;" disabled>
+              <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+              Restore Database
+            </button>
+          </form>
+        </div>
+      </div>
+      
+      <div style="margin-top: 32px; background: #fffcf8; border: 1px solid #f5ebd3; border-radius: 8px; padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start;">
+        <i data-lucide="alert-triangle" style="color: var(--amber-dark); width: 22px; height: 22px; flex-shrink: 0; margin-top: 2px;"></i>
+        <div style="font-size: 0.8rem; color: #735a29; line-height: 1.4;">
+          <strong>Security Note:</strong> Backup files contain sensitive customer data, orders information, and admin hashes. Store your downloaded database files securely. Restore will validate file integrity automatically before installation to prevent service interruption.
+        </div>
+      </div>
+    </div>
   </section>
 
 
