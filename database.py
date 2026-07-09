@@ -7,147 +7,7 @@ import string
 # In Docker, DATA_DIR=/app/data (a persistent volume). Locally it uses the project folder.
 _data_dir = os.environ.get('DATA_DIR', os.path.dirname(__file__))
 os.makedirs(_data_dir, exist_ok=True)
-DB_PATH = os.path.join(_data_dir, 'am_trader.db')
-
-
-def translate_to_postgres(sql):
-    """Convert SQLite-style SQL to PostgreSQL-compatible SQL."""
-    sql = sql.replace('?', '%s')
-    sql = sql.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
-    sql = sql.replace('AUTOINCREMENT', '')
-    sql = sql.replace(' REAL', ' DOUBLE PRECISION')
-    return sql
-
-
-def _normalize_error(e):
-    """Re-raise any DB exception as a sqlite3-compatible error."""
-    import sqlite3 as _sq3
-    e_name = type(e).__name__
-    e_str = str(e)
-    if any(x in e_name for x in ('IntegrityError', 'UniqueViolation', 'ForeignKeyViolation',
-                                   'NotNullViolation', 'CheckViolation', 'ExclusionViolation')):
-        raise _sq3.IntegrityError(e_str) from e
-    if any(x in e_name for x in ('OperationalError', 'ProgrammingError', 'UndefinedTable',
-                                   'UndefinedColumn', 'ActiveSqlTransaction', 'DatabaseError',
-                                   'DuplicateColumn', 'DuplicateTable', 'InvalidTextRepresentation')):
-        raise _sq3.OperationalError(e_str) from e
-    raise e
-
-
-class PostgresCursorWrapper:
-    """Wraps a psycopg2 cursor to behave like a sqlite3 cursor."""
-
-    def __init__(self, cur):
-        self.cur = cur
-        self.lastrowid = None
-
-    def execute(self, sql, params=None):
-        if params is not None:
-            if not isinstance(params, (list, tuple)):
-                params = (params,)
-            sql = sql.replace('?', '%s')
-
-        sql_stripped = sql.strip()
-        is_insert = sql_stripped.upper().startswith('INSERT')
-        if is_insert and 'RETURNING' not in sql_stripped.upper():
-            sql = sql_stripped + ' RETURNING id'
-
-        try:
-            self.cur.execute(sql, params)
-        except Exception as e:
-            try:
-                self.cur.connection.rollback()
-            except Exception:
-                pass
-            _normalize_error(e)
-
-        if is_insert:
-            try:
-                row = self.cur.fetchone()
-                if row is not None:
-                    try:
-                        self.lastrowid = row[0]
-                    except (KeyError, IndexError, TypeError):
-                        self.lastrowid = row.get('id') if hasattr(row, 'get') else None
-            except Exception:
-                pass
-        return self
-
-    def executemany(self, sql, seq_of_parameters):
-        sql = sql.replace('?', '%s')
-        try:
-            self.cur.executemany(sql, seq_of_parameters)
-        except Exception as e:
-            try:
-                self.cur.connection.rollback()
-            except Exception:
-                pass
-            _normalize_error(e)
-        return self
-
-    def executescript(self, script_str):
-        statements = [s.strip() for s in script_str.split(';')]
-        for stmt in statements:
-            if not stmt:
-                continue
-            translated = translate_to_postgres(stmt)
-            try:
-                self.cur.execute(translated)
-            except Exception as e:
-                try:
-                    self.cur.connection.rollback()
-                except Exception:
-                    pass
-                _normalize_error(e)
-
-    def fetchone(self):
-        return self.cur.fetchone()
-
-    def fetchall(self):
-        return self.cur.fetchall()
-
-    def __iter__(self):
-        return iter(self.cur)
-
-    @property
-    def rowcount(self):
-        return self.cur.rowcount
-
-    @property
-    def description(self):
-        return self.cur.description
-
-
-class PostgresConnectionWrapper:
-    """Wraps a psycopg2 connection to behave like a sqlite3 connection."""
-
-    def __init__(self, conn):
-        self.conn = conn
-
-    def cursor(self):
-        import psycopg2.extras
-        raw_conn = self.conn.conn if hasattr(self.conn, 'conn') else self.conn
-        cur = raw_conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        return PostgresCursorWrapper(cur)
-
-    def execute(self, sql, params=None):
-        cur = self.cursor()
-        cur.execute(sql, params)
-        return cur
-
-    def executescript(self, script_str):
-        cur = self.cursor()
-        cur.executescript(script_str)
-        return cur
-
-    def commit(self):
-        self.conn.commit()
-
-    def rollback(self):
-        self.conn.rollback()
-
-    def close(self):
-        self.conn.close()
+DB_PATH = os.path.join(_data_dir, 'thesaveur.db')
 
 
 def generate_user_id():
@@ -161,16 +21,6 @@ def generate_product_id():
 
 
 def get_db():
-    db_url = os.environ.get('DATABASE_URL')
-    if db_url:
-        try:
-            import psycopg2
-            import psycopg2.extras
-            conn = psycopg2.connect(db_url)
-            return PostgresConnectionWrapper(conn)
-        except Exception as e:
-            print(f"[WARNING] Failed to connect to PostgreSQL: {e}. Falling back to SQLite.")
-
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -214,36 +64,34 @@ def _pid(row):
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
-    is_postgres = isinstance(conn, PostgresConnectionWrapper)
 
     # ---- SQLite-only legacy migrations ----
-    if not is_postgres:
-        try:
-            cursor.execute("PRAGMA table_info(products)")
-            columns = cursor.fetchall()
-            if columns:
-                id_col = next((c for c in columns if c[1] == 'id'), None)
-                if id_col and 'INTEGER' in id_col[2].upper():
-                    print("[MIGRATION] Dropping INTEGER-id product tables for alphanumeric migration...")
-                    for t in ["reviews", "product_images", "order_items", "products"]:
-                        cursor.execute(f"DROP TABLE IF EXISTS {t}")
-                    conn.commit()
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            cursor.execute("SELECT user_id FROM orders LIMIT 1")
-        except sqlite3.OperationalError:
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'")
-            if cursor.fetchone():
-                print("[MIGRATION] Recreating orders and order_items...")
-                cursor.execute("DROP TABLE IF EXISTS order_items")
-                cursor.execute("DROP TABLE IF EXISTS orders")
+    try:
+        cursor.execute("PRAGMA table_info(products)")
+        columns = cursor.fetchall()
+        if columns:
+            id_col = next((c for c in columns if c[1] == 'id'), None)
+            if id_col and 'INTEGER' in id_col[2].upper():
+                print("[MIGRATION] Dropping INTEGER-id product tables for alphanumeric migration...")
+                for t in ["reviews", "product_images", "order_items", "products"]:
+                    cursor.execute(f"DROP TABLE IF EXISTS {t}")
                 conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("SELECT user_id FROM orders LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'")
+        if cursor.fetchone():
+            print("[MIGRATION] Recreating orders and order_items...")
+            cursor.execute("DROP TABLE IF EXISTS order_items")
+            cursor.execute("DROP TABLE IF EXISTS orders")
+            conn.commit()
 
     # ---- CREATE TABLES ----
-    PK = "SERIAL PRIMARY KEY" if is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
-    REAL = "DOUBLE PRECISION" if is_postgres else "REAL"
+    PK = "INTEGER PRIMARY KEY AUTOINCREMENT"
+    REAL = "REAL"
 
     create_stmts = [
         f"""CREATE TABLE IF NOT EXISTS products (
@@ -330,6 +178,8 @@ def init_db():
             razorpay_order_id TEXT,
             razorpay_payment_id TEXT,
             razorpay_signature TEXT,
+            paypal_order_id TEXT,
+            paypal_payment_id TEXT,
             discount_amount {REAL} DEFAULT 0,
             promo_code TEXT DEFAULT '',
             order_number TEXT DEFAULT '',
@@ -453,6 +303,8 @@ def init_db():
         "ALTER TABLE orders ADD COLUMN razorpay_order_id TEXT",
         "ALTER TABLE orders ADD COLUMN razorpay_payment_id TEXT",
         "ALTER TABLE orders ADD COLUMN razorpay_signature TEXT",
+        "ALTER TABLE orders ADD COLUMN paypal_order_id TEXT",
+        "ALTER TABLE orders ADD COLUMN paypal_payment_id TEXT",
         "ALTER TABLE orders ADD COLUMN shipping_charge REAL DEFAULT 0.0",
         "ALTER TABLE order_items ADD COLUMN original_price REAL DEFAULT 0",
         "ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0",

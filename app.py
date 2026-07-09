@@ -18,6 +18,12 @@ import os
 
 from dotenv import load_dotenv
 
+import redis
+
+import json
+
+from celery import Celery
+
 
 
 # Load environment variables from .env file
@@ -73,6 +79,171 @@ def get_razorpay_client():
 
 
 
+# PayPal Configuration
+
+PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID', '').strip()
+
+PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET', '').strip()
+
+PAYPAL_MODE = os.environ.get('PAYPAL_MODE', 'sandbox').strip().lower()
+
+PAYPAL_EXCHANGE_RATE = float(os.environ.get('PAYPAL_EXCHANGE_RATE_INR_TO_USD', 0.012) or 0.012)
+
+
+
+def get_paypal_api_base():
+
+    if PAYPAL_MODE == 'live':
+
+        return "https://api-m.paypal.com"
+
+    return "https://api-m.sandbox.paypal.com"
+
+
+
+def get_paypal_access_token():
+
+    if not PAYPAL_CLIENT_ID or not PAYPAL_CLIENT_SECRET:
+
+        return None
+
+    try:
+
+        url = f"{get_paypal_api_base()}/v1/oauth2/token"
+
+        headers = {
+
+            "Accept": "application/json",
+
+            "Accept-Language": "en_US",
+
+        }
+
+        data = {
+
+            "grant_type": "client_credentials"
+
+        }
+
+        res = requests.post(url, headers=headers, data=data, auth=(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET), timeout=10)
+
+        if res.status_code == 200:
+
+            return res.json().get('access_token')
+
+        else:
+
+            print(f"[PAYPAL] Failed to get access token: {res.status_code} - {res.text}")
+
+    except Exception as e:
+
+        print(f"[PAYPAL] OAuth error: {str(e)}")
+
+    return None
+
+
+
+@app.context_processor
+
+def inject_paypal_config():
+
+    return dict(
+
+        paypal_client_id=PAYPAL_CLIENT_ID,
+
+        paypal_mode=PAYPAL_MODE
+
+    )
+
+
+
+
+
+
+# Redis Configuration & Initialization
+
+redis_client = None
+
+try:
+
+    redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+    if redis_url:
+
+        redis_client = redis.Redis.from_url(redis_url, socket_timeout=3)
+
+        redis_client.ping()
+
+        print(f"[REDIS] Connected successfully to {redis_url}")
+
+except Exception as e:
+
+    print(f"[REDIS WARNING] Failed to connect: {e}. Caching is disabled.")
+
+    redis_client = None
+
+
+
+
+
+def invalidate_cache(*keys):
+
+    if redis_client:
+
+        try:
+
+            for key in keys:
+
+                redis_client.delete(key)
+
+                print(f"[REDIS] Cache invalidated for key: {key}")
+
+        except Exception as e:
+
+            print(f"[REDIS] Cache invalidation error: {e}")
+
+
+
+
+
+# Celery Configuration & Initialization
+
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', '').strip()
+
+USE_CELERY = bool(CELERY_BROKER_URL)
+
+
+
+celery_app = None
+
+if USE_CELERY:
+
+    try:
+
+        celery_app = Celery(app.name, broker=CELERY_BROKER_URL)
+
+        celery_app.conf.update(
+
+            result_backend=os.environ.get('CELERY_RESULT_BACKEND', 'rpc://'),
+
+            task_ignore_result=True
+
+        )
+
+        print(f"[CELERY] Initialized task queue with broker: {CELERY_BROKER_URL}")
+
+    except Exception as e:
+
+        print(f"[CELERY WARNING] Failed to initialize: {e}. Falling back to sync.")
+
+        USE_CELERY = False
+
+
+
+
+
+
+
 UPLOAD_FOLDER = os.environ.get(
 
     'UPLOAD_FOLDER',
@@ -107,6 +278,14 @@ with app.app_context():
 
 @app.context_processor
 def inject_categories():
+    if redis_client:
+        try:
+            cached_val = redis_client.get("nav_categories")
+            if cached_val:
+                return dict(nav_categories=json.loads(cached_val.decode('utf-8')))
+        except Exception as e:
+            print(f"[REDIS] Read error in nav context: {e}")
+
     db = get_db()
     try:
         categories_raw = db.execute("SELECT * FROM categories ORDER BY display_order ASC").fetchall()
@@ -116,6 +295,13 @@ def inject_categories():
             subcats = db.execute("SELECT * FROM subcategories WHERE category_name = ? ORDER BY display_order ASC", (cat['name'],)).fetchall()
             cat_dict['subcategories'] = [dict(sub) for sub in subcats]
             categories.append(cat_dict)
+
+        if redis_client:
+            try:
+                redis_client.setex("nav_categories", 3600, json.dumps(categories))
+            except Exception as e:
+                print(f"[REDIS] Write error in nav context: {e}")
+
         return dict(nav_categories=categories)
     except Exception as e:
         print(f"[NAV CONTEXT] Error fetching categories: {e}")
@@ -517,7 +703,7 @@ def send_order_delivered_email(user_email, user_name, order_number):
 
 
 
-def send_order_status_update_email(order_id, new_status):
+def send_order_status_update_email(order_id, new_status, host_url=None):
 
     """Fetch order details and send status update email based on current state."""
 
@@ -558,10 +744,13 @@ def send_order_status_update_email(order_id, new_status):
     order_number = order['order_number']
 
     
-
     if new_status == 'Shipped':
 
-        tracking_url = f"{request.host_url}track-order/{order_id}"
+        if not host_url and has_request_context():
+            host_url = request.host_url
+        if not host_url:
+            host_url = "https://thesaveur.com/"
+        tracking_url = f"{host_url}track-order/{order_id}"
 
         send_order_shipped_email(user_email, user_name, order_number, tracking_url)
 
@@ -581,6 +770,96 @@ def send_order_status_update_email(order_id, new_status):
         html_body = get_email_template("Order Cancelled", body_content, banner_color_start="#e74c3c", banner_color_end="#c0392b")
 
         send_custom_html_email(user_email, subject, html_body)
+
+
+
+
+
+# ── Celery Background Tasks ───────────────────────────────────────────────
+
+if USE_CELERY:
+
+    @celery_app.task(name='app.send_otp_email_task')
+    def send_otp_email_task(receiver_email, otp, purpose='reset'):
+        return send_otp_email(receiver_email, otp, purpose)
+
+    @celery_app.task(name='app.send_login_alert_email_task')
+    def send_login_alert_email_task(user_email, user_name):
+        return send_login_alert_email(user_email, user_name)
+
+    @celery_app.task(name='app.send_order_confirmation_email_task')
+    def send_order_confirmation_email_task(user_email, user_name, order_number, total_amount, shipping_address, items):
+        return send_order_confirmation_email(user_email, user_name, order_number, total_amount, shipping_address, items)
+
+    @celery_app.task(name='app.send_order_shipped_email_task')
+    def send_order_shipped_email_task(user_email, user_name, order_number, tracking_url):
+        return send_order_shipped_email(user_email, user_name, order_number, tracking_url)
+
+    @celery_app.task(name='app.send_order_delivered_email_task')
+    def send_order_delivered_email_task(user_email, user_name, order_number):
+        return send_order_delivered_email(user_email, user_name, order_number)
+
+    @celery_app.task(name='app.send_order_status_update_email_task')
+    def send_order_status_update_email_task(order_id, new_status, host_url=None):
+        return send_order_status_update_email(order_id, new_status, host_url)
+
+
+# ── Asynchronous Dispatch Helpers ─────────────────────────────────────────
+
+def queue_otp_email(receiver_email, otp, purpose='reset'):
+    if USE_CELERY:
+        try:
+            send_otp_email_task.delay(receiver_email, otp, purpose)
+            return True
+        except Exception as e:
+            print(f"[CELERY WARNING] Failed to queue OTP email: {e}. Executing sync.")
+    return send_otp_email(receiver_email, otp, purpose)
+
+def queue_login_alert_email(user_email, user_name):
+    if USE_CELERY:
+        try:
+            send_login_alert_email_task.delay(user_email, user_name)
+            return True
+        except Exception as e:
+            print(f"[CELERY WARNING] Failed to queue login alert: {e}. Executing sync.")
+    return send_login_alert_email(user_email, user_name)
+
+def queue_order_confirmation_email(user_email, user_name, order_number, total_amount, shipping_address, items):
+    if USE_CELERY:
+        try:
+            send_order_confirmation_email_task.delay(user_email, user_name, order_number, total_amount, shipping_address, items)
+            return True
+        except Exception as e:
+            print(f"[CELERY WARNING] Failed to queue order confirmation email: {e}. Executing sync.")
+    return send_order_confirmation_email(user_email, user_name, order_number, total_amount, shipping_address, items)
+
+def queue_order_shipped_email(user_email, user_name, order_number, tracking_url):
+    if USE_CELERY:
+        try:
+            send_order_shipped_email_task.delay(user_email, user_name, order_number, tracking_url)
+            return True
+        except Exception as e:
+            print(f"[CELERY WARNING] Failed to queue order shipped email: {e}. Executing sync.")
+    return send_order_shipped_email(user_email, user_name, order_number, tracking_url)
+
+def queue_order_delivered_email(user_email, user_name, order_number):
+    if USE_CELERY:
+        try:
+            send_order_delivered_email_task.delay(user_email, user_name, order_number)
+            return True
+        except Exception as e:
+            print(f"[CELERY WARNING] Failed to queue order delivered email: {e}. Executing sync.")
+    return send_order_delivered_email(user_email, user_name, order_number)
+
+def queue_order_status_update_email(order_id, new_status, host_url=None):
+    if USE_CELERY:
+        try:
+            send_order_status_update_email_task.delay(order_id, new_status, host_url)
+            return True
+        except Exception as e:
+            print(f"[CELERY WARNING] Failed to queue status update email: {e}. Executing sync.")
+    return send_order_status_update_email(order_id, new_status, host_url)
+
 
 
 
@@ -785,19 +1064,49 @@ def home():
 @app.route('/products')
 def products():
     category = request.args.get('category', 'all').strip()
-    db = get_db()
 
-    # Query all categories (ordered for display)
-    all_categories = db.execute(
-        "SELECT * FROM categories ORDER BY display_order ASC"
-    ).fetchall()
-    categories_list = [dict(c) for c in all_categories]
+    categories_list = None
+    products_list = None
 
-    # Always fetch all products to support interactive client-side filtering
-    all_products = db.execute(
-        "SELECT * FROM products ORDER BY category, name"
-    ).fetchall()
-    products_list = [dict(p) for p in all_products]
+    if redis_client:
+        try:
+            cached_cats = redis_client.get("nav_categories_list")
+            cached_prods = redis_client.get("all_products_list")
+            if cached_cats:
+                categories_list = json.loads(cached_cats.decode('utf-8'))
+            if cached_prods:
+                products_list = json.loads(cached_prods.decode('utf-8'))
+        except Exception as e:
+            print(f"[REDIS] Products cache read error: {e}")
+
+    db = None
+    if not categories_list or not products_list:
+        db = get_db()
+
+    if not categories_list:
+        all_categories = db.execute(
+            "SELECT * FROM categories ORDER BY display_order ASC"
+        ).fetchall()
+        categories_list = [dict(c) for c in all_categories]
+        if redis_client:
+            try:
+                redis_client.setex("nav_categories_list", 3600, json.dumps(categories_list))
+            except Exception as e:
+                print(f"[REDIS] Categories list write error: {e}")
+
+    if not products_list:
+        all_products = db.execute(
+            "SELECT * FROM products ORDER BY category, name"
+        ).fetchall()
+        products_list = [dict(p) for p in all_products]
+        if redis_client:
+            try:
+                redis_client.setex("all_products_list", 3600, json.dumps(products_list))
+            except Exception as e:
+                print(f"[REDIS] Products list write error: {e}")
+
+    if db:
+        db.close()
 
     # Enrich products with sub-categories dynamically
     for p in products_list:
@@ -816,8 +1125,6 @@ def products():
             p['sub_category'] = 'Accessories'
         else:
             p['sub_category'] = 'Other'
-
-    db.close()
 
     return render_template(
         'products.html',
@@ -2093,7 +2400,7 @@ def checkout_submit():
 
             try:
 
-                send_order_confirmation_email(
+                queue_order_confirmation_email(
 
                     contact_email, contact_name, order_number, final_total,
 
@@ -2120,6 +2427,86 @@ def checkout_submit():
             })
 
 
+
+        elif payment_method == 'PayPal':
+
+            # PayPal Payment: Create in Pending Payment state and generate PayPal Order
+
+            cursor = db.execute(
+                """INSERT INTO orders
+                   (user_id, total_amount, shipping_address, city, state, zip_code,
+                    payment_method, status, discount_amount, promo_code, order_number,
+                    contact_name, contact_email, contact_phone, paypal_order_id, shipping_charge)
+                   VALUES (?, ?, ?, ?, ?, ?, 'PayPal', 'Pending Payment', ?, ?, ?, ?, ?, ?, '', ?)""",
+                (session['user_id'], final_total, shipping_address, city, state, zip_code,
+                 final_discount, applied_promo['code'] if applied_promo else '',
+                 order_number, contact_name, contact_email, contact_phone, final_shipping_charge)
+            )
+
+            order_id = cursor.lastrowid
+
+            # Create order items
+
+            for item in order_items_to_create:
+                db.execute(
+                    "INSERT INTO order_items (order_id, product_id, quantity, price, original_price, discount_percent) VALUES (?, ?, ?, ?, ?, ?)",
+                    (order_id, item['product_id'], item['quantity'], item['price'], item['original_price'], item['discount_percent'])
+                )
+
+            # Generate PayPal Order ID
+            token = get_paypal_access_token()
+            paypal_ord_id = None
+            usd_total = round(final_total * PAYPAL_EXCHANGE_RATE, 2)
+
+            if token:
+                try:
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {token}"
+                    }
+                    payload = {
+                        "intent": "CAPTURE",
+                        "purchase_units": [
+                            {
+                                "reference_id": order_number,
+                                "amount": {
+                                    "currency_code": "USD",
+                                    "value": f"{usd_total:.2f}"
+                                },
+                                "description": f"Order {order_number} from The Saveur"
+                            }
+                        ]
+                    }
+                    url = f"{get_paypal_api_base()}/v2/checkout/orders"
+                    res = requests.post(url, headers=headers, json=payload, timeout=10)
+                    if res.status_code in (200, 201):
+                        paypal_ord_id = res.json().get('id')
+                    else:
+                        print(f"[PAYPAL] Order creation failed: {res.status_code} - {res.text}")
+                except Exception as py_err:
+                    print(f"[PAYPAL] Order API error: {str(py_err)}")
+
+            if not paypal_ord_id:
+                paypal_ord_id = f"MOCK_PAYPAL_ORD_{order_number}"
+
+            db.execute(
+                "UPDATE orders SET paypal_order_id = ? WHERE id = ?",
+                (paypal_ord_id, order_id)
+            )
+
+            db.commit()
+
+            return jsonify({
+                "success": True,
+                "paypal": True,
+                "order_id": order_id,
+                "order_number": order_number,
+                "paypal_order_id": paypal_ord_id,
+                "amount_usd": f"{usd_total:.2f}",
+                "contact_name": contact_name,
+                "contact_email": contact_email,
+                "contact_phone": contact_phone
+            })
 
         else:
 
@@ -2454,7 +2841,7 @@ def checkout_verify():
 
             
 
-            send_order_confirmation_email(
+            queue_order_confirmation_email(
 
                 order['contact_email'],
 
@@ -2497,6 +2884,268 @@ def checkout_verify():
         db.close()
 
         return jsonify({"success": False, "message": f"Error updating order: {str(e)}"}), 500
+
+
+
+
+
+@app.route('/checkout/verify-paypal', methods=['POST'])
+
+def checkout_verify_paypal():
+
+    if 'user_id' not in session:
+
+        return jsonify({"success": False, "message": "Unauthorized access."}), 401
+
+
+
+    order_id = request.form.get('order_id')
+
+    paypal_order_id = request.form.get('paypal_order_id', '').strip()
+
+    is_mock = "MOCK_PAYPAL_ORD" in paypal_order_id or not (PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET)
+
+
+
+    if not order_id:
+
+        return jsonify({"success": False, "message": "Missing order details."}), 400
+
+
+
+    db = get_db()
+
+    order = db.execute("SELECT * FROM orders WHERE id = ? AND user_id = ?", (order_id, session['user_id'])).fetchone()
+
+
+
+    if not order:
+
+        db.close()
+
+        return jsonify({"success": False, "message": "Order not found."}), 404
+
+
+
+    if order['status'] != 'Pending Payment':
+
+        db.close()
+
+        return jsonify({"success": False, "message": "Order already processed."}), 400
+
+
+
+    paypal_payment_id = None
+
+    capture_success = False
+
+
+
+    if is_mock:
+
+        capture_success = True
+
+        paypal_payment_id = f"MOCK_PAY_ID_{order['order_number']}"
+
+    else:
+
+        token = get_paypal_access_token()
+
+        if token:
+
+            try:
+
+                headers = {
+
+                    "Content-Type": "application/json",
+
+                    "Authorization": f"Bearer {token}"
+
+                }
+
+                url = f"{get_paypal_api_base()}/v2/checkout/orders/{paypal_order_id}/capture"
+
+                res = requests.post(url, headers=headers, timeout=10)
+
+                if res.status_code in (200, 201):
+
+                    res_data = res.json()
+
+                    if res_data.get('status') == 'COMPLETED':
+
+                        capture_success = True
+
+                        try:
+
+                            purchase_units = res_data.get('purchase_units', [])
+
+                            payments = purchase_units[0].get('payments', {})
+
+                            captures = payments.get('captures', [])
+
+                            paypal_payment_id = captures[0].get('id')
+
+                        except Exception:
+
+                            paypal_payment_id = f"PAY_ID_{order['order_number']}"
+
+                else:
+
+                    print(f"[PAYPAL] Capture API failed: {res.status_code} - {res.text}")
+
+            except Exception as e:
+
+                print(f"[PAYPAL] Capture error: {str(e)}")
+
+
+
+    if not capture_success:
+
+        db.close()
+
+        return jsonify({"success": False, "message": "PayPal payment capture failed."}), 400
+
+
+
+    try:
+
+        # Fetch order items to update stock
+
+        order_items = db.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
+
+
+
+        # Check stock again for safety
+
+        for item in order_items:
+
+            product = db.execute("SELECT stocks, name FROM products WHERE id = ?", (item['product_id'],)).fetchone()
+
+            if not product or product['stocks'] < item['quantity']:
+
+                db.close()
+
+                return jsonify({"success": False, "message": f"Insufficient stock for {product['name'] if product else 'product'}."}), 400
+
+
+
+        # Decrement product stock levels
+
+        for item in order_items:
+
+            db.execute(
+
+                "UPDATE products SET stocks = stocks - ? WHERE id = ?",
+
+                (item['quantity'], item['product_id'])
+
+            )
+
+
+
+        # Update order details and status
+
+        db.execute(
+
+            """UPDATE orders 
+
+               SET status = 'Processing', paypal_payment_id = ? 
+
+               WHERE id = ?""",
+
+            (paypal_payment_id, order_id)
+
+        )
+
+
+
+        # Increment promo code usage if applied
+
+        if order['promo_code']:
+
+            db.execute(
+
+                "UPDATE promo_codes SET used_count = used_count + 1 WHERE UPPER(code) = ?",
+
+                (order['promo_code'].upper(),)
+
+            )
+
+
+
+        db.commit()
+
+
+
+        # Send confirmation email
+
+        try:
+
+            items_list = []
+
+            for item in order_items:
+
+                prod = db.execute("SELECT name FROM products WHERE id = ?", (item['product_id'],)).fetchone()
+
+                items_list.append({
+
+                    'product_name': prod['name'] if prod else 'Product',
+
+                    'quantity': item['quantity'],
+
+                    'price': item['price']
+
+                })
+
+            
+
+            queue_order_confirmation_email(
+
+                order['contact_email'],
+
+                order['contact_name'],
+
+                order['order_number'],
+
+                order['total_amount'],
+
+                f"{order['shipping_address']}, {order['city']}, {order['state']} – {order['zip_code']}",
+
+                items_list
+
+            )
+
+        except Exception as mail_err:
+
+            print(f"[MAIL ALERT ERROR] Failed to send order confirmation email: {str(mail_err)}")
+
+
+
+        # Clear cart session
+
+        session['cart'] = {}
+
+        session.modified = True
+
+
+
+        db.close()
+
+        flash(f"Payment successful! Order {order['order_number']} is now being processed. 🎉", "success")
+
+        return jsonify({"success": True, "redirect_url": url_for('my_orders')})
+
+
+
+    except Exception as e:
+
+        db.rollback()
+
+        db.close()
+
+        return jsonify({"success": False, "message": f"Error updating order: {str(e)}"}), 500
+
+
 
 
 
@@ -2733,7 +3382,7 @@ def signup():
 
 
 
-        if not send_otp_email(email, otp, purpose='signup'):
+        if not queue_otp_email(email, otp, purpose='signup'):
 
             flash('Failed to send OTP email. Please check SMTP configuration and try again.', 'error')
 
@@ -2850,7 +3499,7 @@ def login():
 
                 
 
-                if not send_otp_email(user['email'], otp, purpose='admin_login'):
+                if not queue_otp_email(user['email'], otp, purpose='admin_login'):
 
                     print(f"[ERROR] Failed to send admin login OTP to {user['email']}")
 
@@ -2870,7 +3519,7 @@ def login():
 
                 # Send login alert email
 
-                send_login_alert_email(user['email'], user['full_name'])
+                queue_login_alert_email(user['email'], user['full_name'])
 
 
 
@@ -2979,7 +3628,7 @@ def forgot_password():
 
 
 
-        if not send_otp_email(email, otp, purpose='reset'):
+        if not queue_otp_email(email, otp, purpose='reset'):
 
             flash('Failed to send OTP email. Please ensure SMTP is configured correctly in your .env file.', 'error')
 
@@ -3203,7 +3852,7 @@ def verify_otp():
 
             # Send login alert email
 
-            send_login_alert_email(pending['email'], pending['full_name'])
+            queue_login_alert_email(pending['email'], pending['full_name'])
 
             
 
@@ -3456,7 +4105,7 @@ def resend_otp():
 
 
 
-    if not send_otp_email(email, otp, purpose=purpose):
+    if not queue_otp_email(email, otp, purpose=purpose):
 
         flash('Failed to resend OTP. Please check SMTP configuration.', 'error')
 
@@ -3726,7 +4375,7 @@ def handle_google_user_login(email, name):
             'next': url_for('home')
         }
         
-        if not send_otp_email(user['email'], otp, purpose='admin_login'):
+        if not queue_otp_email(user['email'], otp, purpose='admin_login'):
             print(f"[ERROR] Failed to send admin login OTP to {user['email']}")
             
         flash('Google authenticated successfully. A 6-digit verification code has been sent to your email. Please verify to log in as administrator.', 'success')
@@ -3739,7 +4388,7 @@ def handle_google_user_login(email, name):
     session['is_admin'] = False
     
     # Send login alert email
-    send_login_alert_email(user['email'], user['full_name'])
+    queue_login_alert_email(user['email'], user['full_name'])
     
     flash(f"Successfully signed in as {user['full_name']} via Google!", "success")
     return redirect(url_for('home'))
@@ -3977,6 +4626,8 @@ def admin_add_product():
 
     db.commit()
 
+    invalidate_cache('all_products_list')
+
     db.close()
 
 
@@ -4072,6 +4723,8 @@ def admin_edit_product(id):
 
     db.commit()
 
+    invalidate_cache('all_products_list')
+
     db.close()
 
 
@@ -4101,7 +4754,7 @@ def admin_delete_product(id):
         db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
 
         db.commit()
-
+        invalidate_cache('all_products_list')
         flash(f'Product "{product["name"]}" deleted successfully.', 'success')
 
     else:
@@ -4132,6 +4785,7 @@ def admin_bulk_delete_products():
                 db.execute("DELETE FROM product_images WHERE product_id = ?", (pid,))
                 deleted_count += 1
         db.commit()
+        invalidate_cache('all_products_list')
         if deleted_count > 0:
             flash(f'Successfully deleted {deleted_count} selected products.', 'success')
         else:
@@ -4417,7 +5071,7 @@ def admin_update_order_status(id):
 
     try:
 
-        send_order_status_update_email(id, status)
+        queue_order_status_update_email(id, status, host_url=request.host_url)
 
     except Exception as mail_err:
 
@@ -5013,7 +5667,7 @@ def admin_add_category():
         )
 
         db.commit()
-
+        invalidate_cache('nav_categories', 'nav_categories_list')
         flash(f'Category "{display_name}" added successfully.', 'success')
 
     except sqlite3.IntegrityError:
@@ -5122,7 +5776,7 @@ def admin_edit_category(id):
     )
 
     db.commit()
-
+    invalidate_cache('nav_categories', 'nav_categories_list')
     db.close()
 
 
@@ -5146,7 +5800,7 @@ def admin_delete_category(id):
     db.execute("DELETE FROM categories WHERE id = ?", (id,))
 
     db.commit()
-
+    invalidate_cache('nav_categories', 'nav_categories_list')
     db.close()
 
     flash('Category deleted successfully.', 'success')
@@ -5174,6 +5828,7 @@ def admin_add_subcategory():
             (category_name, name, display_name, description, display_order)
         )
         db.commit()
+        invalidate_cache('nav_categories', 'nav_categories_list')
         flash(f'Subcategory "{display_name}" added successfully.', 'success')
     except sqlite3.IntegrityError:
         flash(f'Subcategory name "{name}" already exists.', 'error')
@@ -5189,6 +5844,7 @@ def admin_delete_subcategory(id):
     db = get_db()
     db.execute("DELETE FROM subcategories WHERE id = ?", (id,))
     db.commit()
+    invalidate_cache('nav_categories', 'nav_categories_list')
     db.close()
     flash('Subcategory deleted successfully.', 'success')
     return redirect(url_for('admin_dashboard') + '#categories-tab')

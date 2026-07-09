@@ -15,4 +15,7 @@ razorpay==2.0.1
 requests==2.34.2
 urllib3==2.7.0
 Werkzeug==3.1.8
-psycopg2-binary==2.9.9
+redis==5.0.3
+celery==5.3.6
+
+

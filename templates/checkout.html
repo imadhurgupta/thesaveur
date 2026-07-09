@@ -103,7 +103,7 @@
   /* Payment Radio Options */
   .payment-methods {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-top: 8px;
   }
@@ -230,6 +230,13 @@
             <span class="payment-method-title">Online Payment</span>
           </div>
 
+          <!-- PayPal / Card -->
+          <div class="payment-method-card" onclick="selectPaymentMethod(this, 'PayPal')">
+            <input type="radio" name="payment_method" value="PayPal" style="display:none;" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg>
+            <span class="payment-method-title">PayPal / Card</span>
+          </div>
+
           <!-- Cash on Delivery -->
           <div class="payment-method-card" onclick="selectPaymentMethod(this, 'COD')">
             <input type="radio" name="payment_method" value="COD" style="display:none;" />
@@ -246,6 +253,8 @@
         <button type="submit" id="submit-order-btn" class="btn btn-primary" style="width:100%; margin-top:36px; padding:14px; font-size:1rem;">
           Place Order (₹<span id="submit-btn-total">{{ subtotal }}</span>)
         </button>
+        <!-- PayPal Button Container -->
+        <div id="paypal-button-container" style="display: none; margin-top: 36px; min-height: 45px;"></div>
       </form>
     </div>
 
@@ -301,7 +310,10 @@
 
 {% block extra_js %}
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id or 'sb' }}&currency=USD"></script>
 <script>
+  let selectedMethod = 'Online';
+
   function selectPaymentMethod(cardElement, methodValue) {
     // Deselect all
     document.querySelectorAll('.payment-method-card').forEach(card => {
@@ -315,6 +327,19 @@
     const radio = cardElement.querySelector('input[type="radio"]');
     if (radio) {
       radio.checked = true;
+    }
+
+    selectedMethod = methodValue;
+
+    const submitBtn = document.getElementById('submit-order-btn');
+    const paypalContainer = document.getElementById('paypal-button-container');
+
+    if (methodValue === 'PayPal') {
+      if (submitBtn) submitBtn.style.display = 'none';
+      if (paypalContainer) paypalContainer.style.display = 'block';
+    } else {
+      if (submitBtn) submitBtn.style.display = 'block';
+      if (paypalContainer) paypalContainer.style.display = 'none';
     }
   }
 
@@ -582,6 +607,85 @@
         submitBtn.innerHTML = originalText;
       }
     });
+
+    // Render PayPal Buttons if SDK is loaded
+    if (typeof paypal !== 'undefined') {
+      paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color:  'gold',
+          shape:  'rect',
+          label:  'paypal'
+        },
+        createOrder: async function(data, actions) {
+          // Trigger the standard form validation check
+          const contactName = document.getElementById('contact_name').value.trim();
+          const contactEmail = document.getElementById('contact_email').value.trim();
+          const contactPhone = document.getElementById('contact_phone').value.trim();
+          const address = document.getElementById('address').value.trim();
+          const city = document.getElementById('city').value.trim();
+          const state = document.getElementById('state').value.trim();
+          const zip = document.getElementById('zip').value.trim();
+
+          if (!contactName || !contactEmail || !contactPhone || !address || !city || !state || !zip) {
+            showToast('error', 'Please fill in all shipping and contact details before paying.');
+            return Promise.reject(new Error('Validation failed'));
+          }
+
+          // Create the order on our server
+          try {
+            const formData = new FormData(checkoutForm);
+            formData.set('payment_method', 'PayPal');
+
+            const response = await fetch("{{ url_for('checkout_submit') }}", {
+              method: 'POST',
+              body: formData
+            });
+
+            const orderData = await response.json();
+            if (!orderData.success) {
+              showToast('error', orderData.message || 'Failed to create PayPal order.');
+              return Promise.reject(new Error(orderData.message));
+            }
+
+            window.currentServerOrderId = orderData.order_id;
+            return orderData.paypal_order_id;
+          } catch (err) {
+            showToast('error', 'Error initiating PayPal payment.');
+            return Promise.reject(err);
+          }
+        },
+        onApprove: async function(data, actions) {
+          // Payment authorized, now verify and capture on our server
+          try {
+            const verifyForm = new FormData();
+            verifyForm.append('order_id', window.currentServerOrderId);
+            verifyForm.append('paypal_order_id', data.orderID);
+
+            const verifyResp = await fetch("{{ url_for('checkout_verify_paypal') }}", {
+              method: 'POST',
+              body: verifyForm
+            });
+
+            const verifyData = await verifyResp.json();
+            if (verifyData.success) {
+              showToast('success', 'Payment successful! Redirecting...');
+              setTimeout(() => {
+                window.location.href = verifyData.redirect_url;
+              }, 1500);
+            } else {
+              showToast('error', verifyData.message || 'Payment verification failed.');
+            }
+          } catch (err) {
+            showToast('error', 'Network error during PayPal verification.');
+          }
+        },
+        onError: function(err) {
+          console.error('PayPal error:', err);
+          showToast('error', 'An error occurred with PayPal checkout.');
+        }
+      }).render('#paypal-button-container');
+    }
   });
 </script>
 {% endblock %}

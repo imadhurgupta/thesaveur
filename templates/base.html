@@ -8,6 +8,27 @@
   <meta name="description"
     content="{% block meta_desc %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endblock %}" />
 
+  <!-- Favicons and Web Manifest -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32x32.png') }}" />
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16x16.png') }}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}" />
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}" />
+
+  <!-- Open Graph / Facebook SEO -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ request.url }}" />
+  <meta property="og:title" content="{% block og_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
+  <meta property="og:description" content="{% block og_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
+
+  <!-- Twitter SEO -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="{{ request.url }}" />
+  <meta property="twitter:title" content="{% block twitter_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
+  <meta property="twitter:description" content="{% block twitter_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
+  <meta property="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
+
   <!-- Preconnect for Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -487,7 +508,7 @@
               FSSAI Lic No: 12226999000440<br>
               <div style="margin-top: 6px; margin-bottom: 6px;">
                 <img src="{{ url_for('static', filename='images/fssai_logo.png') }}" alt="FSSAI Logo"
-                  style="height: 36px; filter: brightness(0) invert(1); opacity: 0.95;">
+                  style="height: 55px; filter: brightness(0) invert(1); opacity: 0.95;">
               </div>
               GSTIN: 08DKEPK9374L1ZF
             </div>
