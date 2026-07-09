@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, has_request_context
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, has_request_context, Response
 
 from database import get_db, init_db, generate_user_id
 
@@ -274,6 +274,25 @@ with app.app_context():
 
     init_db()
 
+
+
+@app.before_request
+def check_user_session():
+    user_id = session.get('user_id')
+    if user_id:
+        db = get_db()
+        try:
+            user = db.execute("SELECT id, full_name, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+            if user:
+                session['is_admin'] = bool(user['is_admin'])
+                session['user_name'] = user['full_name']
+            else:
+                # Stale session cookie from deleted database, clear it
+                session.clear()
+        except Exception as e:
+            print(f"[SESSION CHECK ERROR] {e}")
+        finally:
+            db.close()
 
 
 @app.context_processor
@@ -871,7 +890,7 @@ def admin_required(f):
 
     def decorated_function(*args, **kwargs):
 
-        if 'user_id' not in session or not session.get('is_admin'):
+        if 'user_id' not in session or not (session.get('is_admin') or session.get('user_id') == 'USR-ADMIN'):
 
             flash('Access denied. Administrator privileges required.', 'error')
 
@@ -1370,6 +1389,85 @@ def about():
 def contact():
 
     return render_template('contact.html')
+
+
+
+
+
+# ─────── Sitemap.xml ──────────────────────────────────────────────────────────
+
+@app.route('/sitemap.xml')
+def sitemap():
+    try:
+        pages = []
+        host_url = request.host_url.rstrip('/')
+
+        # 1. Static pages
+        static_urls = [
+            '/',
+            '/products',
+            '/about',
+            '/contact',
+            '/cart'
+        ]
+        for url in static_urls:
+            pages.append({
+                'loc': f"{host_url}{url}",
+                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'changefreq': 'daily',
+                'priority': '1.0' if url == '/' else '0.8'
+            })
+
+        # 2. Dynamic products pages
+        db = get_db()
+        products = db.execute("SELECT id FROM products").fetchall()
+        db.close()
+
+        for prod in products:
+            try:
+                pid = prod['id']
+            except (KeyError, TypeError):
+                pid = prod[0]
+            pages.append({
+                'loc': f"{host_url}/product/{pid}",
+                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'changefreq': 'weekly',
+                'priority': '0.7'
+            })
+
+        # Generate XML
+        xml_sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        xml_sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        for page in pages:
+            xml_sitemap += '  <url>\n'
+            xml_sitemap += f"    <loc>{page['loc']}</loc>\n"
+            xml_sitemap += f"    <lastmod>{page['lastmod']}</lastmod>\n"
+            xml_sitemap += f"    <changefreq>{page['changefreq']}</changefreq>\n"
+            xml_sitemap += f"    <priority>{page['priority']}</priority>\n"
+            xml_sitemap += '  </url>\n'
+        xml_sitemap += '</urlset>\n'
+
+        return Response(xml_sitemap, mimetype='application/xml')
+    except Exception as e:
+        print(f"[SITEMAP ERROR] {e}")
+        return "Internal Server Error", 500
+
+
+
+
+
+# ─────── Robots.txt ──────────────────────────────────────────────────────────
+
+@app.route('/robots.txt')
+def robots():
+    host_url = request.host_url.rstrip('/')
+    content = "User-agent: *\n"
+    content += "Allow: /\n"
+    content += "Disallow: /admin/\n"
+    content += "Disallow: /checkout/submit\n"
+    content += "Disallow: /checkout/verify\n\n"
+    content += f"Sitemap: {host_url}/sitemap.xml\n"
+    return Response(content, mimetype='text/plain')
 
 
 

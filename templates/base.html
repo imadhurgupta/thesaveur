@@ -196,6 +196,41 @@
     color: var(--amber-light);
     padding-left: 4px;
   }
+  .cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -12px;
+    background: var(--amber);
+    color: var(--white);
+    font-size: 0.7rem;
+    font-weight: 800;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 1.5px solid #0c1e12;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .cart-badge-mobile {
+    position: absolute;
+    top: 8px;
+    left: 22px;
+    background: var(--amber);
+    color: var(--white);
+    font-size: 0.68rem;
+    font-weight: 800;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 1px solid rgba(12, 30, 18, 0.98);
+  }
   </style>
 
   <!-- Lucide Icons -->
@@ -275,6 +310,11 @@
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
             Cart
+            {% set cart = session.get('cart', {}) %}
+            {% set cart_count = cart.values()|sum if cart is mapping else 0 %}
+            {% if cart_count > 0 %}
+              <span class="cart-badge">{{ cart_count }}</span>
+            {% endif %}
           </a>
         </li>
         {% if session.get('user_id') %}
@@ -294,7 +334,7 @@
           <div class="nav-dropdown-menu" id="profile-dropdown">
             <a href="{{ url_for('profile') }}"><i data-lucide="user" width="16" height="16"></i> My Profile</a>
             <a href="{{ url_for('my_orders') }}"><i data-lucide="package" width="16" height="16"></i> My Orders</a>
-            {% if session.get('is_admin') %}
+            {% if session.get('is_admin') or session.get('user_id') == 'USR-ADMIN' %}
             <a href="{{ url_for('admin_dashboard') }}" class="nav-admin"><i data-lucide="settings" width="16"
                 height="16"></i> Admin Panel</a>
             {% endif %}
@@ -355,13 +395,20 @@
         </div>
       </div>
 
-      <a href="{{ url_for('view_cart') }}"><i data-lucide="shopping-cart"></i> Cart</a>
+      <a href="{{ url_for('view_cart') }}" style="position:relative;">
+        <i data-lucide="shopping-cart"></i> Cart
+        {% set cart = session.get('cart', {}) %}
+        {% set cart_count = cart.values()|sum if cart is mapping else 0 %}
+        {% if cart_count > 0 %}
+          <span class="cart-badge-mobile">{{ cart_count }}</span>
+        {% endif %}
+      </a>
       <a href="{{ url_for('about') }}"><i data-lucide="info"></i> About Us</a>
       <a href="{{ url_for('contact') }}"><i data-lucide="phone"></i> Contact Us</a>
       {% if session.get('user_id') %}
       <a href="{{ url_for('profile') }}"><i data-lucide="user"></i> My Profile</a>
       <a href="{{ url_for('my_orders') }}"><i data-lucide="package"></i> My Orders</a>
-      {% if session.get('is_admin') %}
+      {% if session.get('is_admin') or session.get('user_id') == 'USR-ADMIN' %}
       <a href="{{ url_for('admin_dashboard') }}"><i data-lucide="settings"></i> Admin Panel</a>
       {% endif %}
       <a href="{{ url_for('logout') }}" class="nav-mobile-logout"><i data-lucide="log-out"></i> Logout ({{
@@ -425,7 +472,7 @@
             households and businesses across the nation.</p>
           <div class="footer-social">
             <!-- Facebook -->
-            <a href="#" class="social-btn facebook" title="Facebook" aria-label="Follow us on Facebook">
+            <a href="https://www.facebook.com/thesaveur" class="social-btn facebook" title="Facebook" aria-label="Follow us on Facebook" target="_blank" rel="noopener noreferrer">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
               </svg>

@@ -2646,14 +2646,14 @@ i[data-lucide],
   align-items: center;
   gap: 7px;
   color: var(--amber-pale);
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: var(--radius-pill);
   background: none;
   border: none;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: inherit;
   transition: var(--transition);
 }
 .nav-dropdown-toggle:hover {
