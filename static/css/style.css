@@ -556,8 +556,8 @@ button:active:not(:disabled),
 .footer-brand p { font-size: 0.9rem; line-height: 1.7; margin-bottom: 20px; }
 .footer-social { display: flex; gap: 10px; }
 .social-btn {
-  width: 38px;
-  height: 38px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -566,6 +566,10 @@ button:active:not(:disabled),
   transition: var(--transition);
   cursor: pointer;
   text-decoration: none;
+}
+.social-btn svg {
+  width: 22px !important;
+  height: 22px !important;
 }
 .social-btn.facebook {
   background: #1877F2;
