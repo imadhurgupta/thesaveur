@@ -1039,11 +1039,10 @@ def home():
 
 
 
-    # Subscribers/Users count: 5000 base + real registered users
-
+    # Subscribers/Users count: 5000 base + real registered users + newsletter subscribers
     db_user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-
-    subscriber_count = 5000 + db_user_count
+    db_subs_count = db.execute("SELECT COUNT(*) FROM subscribers").fetchone()[0]
+    subscriber_count = 5000 + db_user_count + db_subs_count
 
 
 
@@ -6184,6 +6183,35 @@ def admin_restore_db():
         flash(f"Restore failed during installation: {str(swap_err)}", "error")
         
     return redirect(url_for('admin_dashboard') + '#settings-tab')
+
+
+@app.route('/newsletter/subscribe', methods=['POST'])
+def newsletter_subscribe():
+    email = request.form.get('email', '').strip()
+    if not email:
+        return jsonify({'status': 'error', 'message': 'Email address is required.'}), 400
+        
+    db = get_db()
+    try:
+        existing = db.execute("SELECT id FROM subscribers WHERE email = ?", (email,)).fetchone()
+        if existing:
+            db_user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            db_subs_count = db.execute("SELECT COUNT(*) FROM subscribers").fetchone()[0]
+            total = 5000 + db_user_count + db_subs_count
+            db.close()
+            return jsonify({'status': 'success', 'message': 'You are already subscribed!', 'count': total})
+            
+        db.execute("INSERT INTO subscribers (email) VALUES (?)", (email,))
+        db.commit()
+        
+        db_user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        db_subs_count = db.execute("SELECT COUNT(*) FROM subscribers").fetchone()[0]
+        total = 5000 + db_user_count + db_subs_count
+        db.close()
+        return jsonify({'status': 'success', 'message': 'Thank you for subscribing!', 'count': total})
+    except Exception as e:
+        db.close()
+        return jsonify({'status': 'error', 'message': f'Subscription failed: {str(e)}'}), 500
 
 
 

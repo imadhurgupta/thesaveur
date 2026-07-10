@@ -260,6 +260,12 @@ def init_db():
             state TEXT NOT NULL UNIQUE,
             charge {REAL} NOT NULL DEFAULT 0.0
         )""",
+
+        f"""CREATE TABLE IF NOT EXISTS subscribers (
+            id {PK},
+            email TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
 
     for stmt in create_stmts:

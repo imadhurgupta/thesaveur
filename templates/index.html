@@ -883,19 +883,58 @@ function handleNewsletterSubmit(e) {
   const inputEl = document.getElementById('nl-email') || document.getElementById('nl-email-combined');
   const email = inputEl.value.trim();
   if (!email) return;
+  
   const btn = e.target.querySelector('.nl-btn');
   const originalHTML = btn.innerHTML;
-  btn.innerHTML = '✓ Subscribed!';
-  btn.style.background = 'linear-gradient(135deg,#2d6a4f,#40916c)';
-  btn.style.color = '#fff';
+  
+  btn.innerHTML = 'Subscribing...';
   btn.disabled = true;
-  inputEl.value = '';
-  setTimeout(() => {
+  
+  const formData = new FormData();
+  formData.append('email', email);
+  
+  fetch('/newsletter/subscribe', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      btn.innerHTML = '✓ Subscribed!';
+      btn.style.background = 'linear-gradient(135deg,#2d6a4f,#40916c)';
+      btn.style.color = '#fff';
+      inputEl.value = '';
+      
+      // Update counters in real-time
+      const countElCombined = document.getElementById('nl-subs-count-combined');
+      const countElStandalone = document.getElementById('nl-subs-count');
+      if (countElCombined && data.count) {
+        countElCombined.textContent = data.count + '+';
+        countElCombined.dataset.target = data.count;
+      }
+      if (countElStandalone && data.count) {
+        countElStandalone.textContent = data.count + '+';
+        countElStandalone.dataset.target = data.count;
+      }
+      
+      setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.disabled = false;
+      }, 3000);
+    } else {
+      alert(data.message || 'Subscription failed. Please try again.');
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('An error occurred. Please try again later.');
     btn.innerHTML = originalHTML;
-    btn.style.background = '';
-    btn.style.color = '';
     btn.disabled = false;
-  }, 3000);
+  });
 }
 
 /* Animated counter for nl-stat-value elements */
