@@ -222,3 +222,38 @@ if (profileToggle && profileDropdown) {
     }
   });
 }
+
+/* ─── Mobile Navigation Dropdowns ─────────────────────────── */
+const mobileDropdownToggle = document.querySelector('.nav-mobile-dropdown-toggle');
+const mobileDropdownMenu = document.querySelector('.nav-mobile-dropdown-menu');
+if (mobileDropdownToggle && mobileDropdownMenu) {
+  mobileDropdownToggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isOpen = mobileDropdownMenu.classList.contains('open');
+    mobileDropdownMenu.classList.toggle('open');
+    mobileDropdownMenu.style.display = isOpen ? 'none' : 'flex';
+    const arrow = mobileDropdownToggle.querySelector('.mobile-arrow-icon');
+    if (arrow) {
+      arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+  });
+}
+
+const mobileSubdropdowns = document.querySelectorAll('.nav-mobile-subdropdown');
+mobileSubdropdowns.forEach(sub => {
+  const toggle = sub.querySelector('.nav-mobile-subdropdown-toggle');
+  const menu = sub.querySelector('.nav-mobile-subdropdown-menu');
+  if (toggle && menu) {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isOpen = menu.classList.contains('open');
+      menu.classList.toggle('open');
+      menu.style.display = isOpen ? 'none' : 'flex';
+      const arrow = toggle.querySelector('.mobile-subarrow-icon');
+      if (arrow) {
+        arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+      }
+    });
+  }
+});
+
