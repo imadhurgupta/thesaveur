@@ -1155,17 +1155,17 @@ Indian partners.{% endblock %}
         {% if product.discount_percent and product.discount_percent > 0 %}
         {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
         <div class="pd-price-wrapper">
-          <span class="pd-price-val">₹{{ sale_price }}</span>
+          <span class="pd-price-val">${{ sale_price }}</span>
           <span class="pd-price-or-offer">or Best Offer</span>
         </div>
         <div class="pd-was-price">
-          Was: <span style="text-decoration:line-through;">₹{{ product.price }}</span>
-          <span class="pd-save-pill">Save ₹{{ (product.price - sale_price)|round(2) }} ({{ product.discount_percent|int
+          Was: <span style="text-decoration:line-through;">${{ product.price }}</span>
+          <span class="pd-save-pill">Save ${{ (product.price - sale_price)|round(2) }} ({{ product.discount_percent|int
             }}% off)</span>
         </div>
         {% else %}
         <div class="pd-price-wrapper">
-          <span class="pd-price-val">₹{{ product.price }}</span>
+          <span class="pd-price-val">${{ product.price }}</span>
           <span class="pd-price-or-offer">or Best Offer</span>
         </div>
         {% endif %}
@@ -1197,7 +1197,7 @@ Indian partners.{% endblock %}
             {% if product.shipping_charge == 0.0 or not product.shipping_charge %}
             Free shipping
             {% else %}
-            ₹{{ product.shipping_charge }} Shipping
+            ${{ product.shipping_charge }} Shipping
             {% endif %}
           </span>
         </div>
@@ -1347,12 +1347,12 @@ Indian partners.{% endblock %}
             <div>
               {% if prod.discount_percent and prod.discount_percent > 0 %}
               {% set sp = (prod.price * (1 - prod.discount_percent / 100)) | round(2) %}
-              <span style="font-size:1.1rem; font-weight:700; color:#c0392b;">₹{{ sp }}</span>
+              <span style="font-size:1.1rem; font-weight:700; color:#c0392b;">${{ sp }}</span>
               <span
-                style="font-size:.82rem; color:var(--text-muted); text-decoration:line-through; margin-left:4px;">₹{{
+                style="font-size:.82rem; color:var(--text-muted); text-decoration:line-through; margin-left:4px;">${{
                 prod.price }}</span>
               {% else %}
-              <span style="font-size:1.1rem; font-weight:700; color:var(--green-dark);">₹{{ prod.price }}</span>
+              <span style="font-size:1.1rem; font-weight:700; color:var(--green-dark);">${{ prod.price }}</span>
               {% endif %}
               <span style="font-size:.78rem; color:var(--text-muted);"> / {{ prod.unit }}</span>
             </div>
@@ -1518,7 +1518,7 @@ Indian partners.{% endblock %}
 
         <div class="mo-form-row">
           <div class="mo-input-group">
-            <label class="mo-label">Proposed Price (₹)</label>
+            <label class="mo-label">Proposed Price ($)</label>
             <input type="number" name="proposed_price" id="mo-proposed-price" class="mo-input" step="0.01" min="1" required>
           </div>
           <div class="mo-input-group">

@@ -87,7 +87,7 @@ PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET', '').strip()
 
 PAYPAL_MODE = os.environ.get('PAYPAL_MODE', 'sandbox').strip().lower()
 
-PAYPAL_EXCHANGE_RATE = float(os.environ.get('PAYPAL_EXCHANGE_RATE_INR_TO_USD', 0.012) or 0.012)
+PAYPAL_EXCHANGE_RATE = float(os.environ.get('PAYPAL_EXCHANGE_RATE_INR_TO_USD', 1.0) or 1.0)
 
 
 
@@ -631,9 +631,9 @@ def send_order_confirmation_email(user_email, user_name, order_number, total_amo
 
             <td style="padding: 10px; border-bottom: 1px solid #eeeeee; text-align: center;">{item['quantity']}</td>
 
-            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; text-align: right;">₹{item['price']:.2f}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; text-align: right;">${item['price']:.2f}</td>
 
-            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; text-align: right;">₹{subtotal:.2f}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eeeeee; text-align: right;">${subtotal:.2f}</td>
 
         </tr>
 
@@ -661,7 +661,7 @@ def send_order_confirmation_email(user_email, user_name, order_number, total_amo
     </table>
     
     <div style="margin-top: 20px; text-align: right; font-size: 16px; font-weight: bold; color: #2D5016;">
-        Total Amount: ₹{total_amount:.2f}
+        Total Amount: ${total_amount:.2f}
     </div>
     
     <div style="background-color: #FAF7F2; border-radius: 8px; padding: 15px; margin-top: 20px;">
@@ -1544,9 +1544,9 @@ def submit_proposal():
 
     full_message = (
         f"💵 PROPOSED DEAL\n"
-        f"Proposed Price: ₹{proposed_price} per unit\n"
+        f"Proposed Price: ${proposed_price} per unit\n"
         f"Proposed Quantity: {proposed_qty} units\n"
-        f"Total Deal Value: ₹{deal_value:.2f}\n\n"
+        f"Total Deal Value: ${deal_value:.2f}\n\n"
         f"Client Note:\n{message}"
     )
     product_interest = f"{product_name} (ID: {product_id}) [Deal Proposal]"
@@ -1559,7 +1559,7 @@ def submit_proposal():
     db.commit()
     db.close()
 
-    flash(f"Proposal submitted! We will review your offer of ₹{proposed_price} for {proposed_qty} units and contact you soon.", "success")
+    flash(f"Proposal submitted! We will review your offer of ${proposed_price} for {proposed_qty} units and contact you soon.", "success")
     return redirect(request.referrer or url_for('home'))
 
 
@@ -1977,7 +1977,7 @@ def validate_promo():
 
             'valid': False,
 
-            'message': f"Minimum order ₹{promo['min_order_amount']:.0f} required for this code."
+            'message': f"Minimum order ${promo['min_order_amount']:.0f} required for this code."
 
         })
 
@@ -2007,7 +2007,7 @@ def validate_promo():
 
         'final_total': final_total,
 
-        'message': f"Code applied! You save ₹{discount_amount:.2f}"
+        'message': f"Code applied! You save ${discount_amount:.2f}"
 
     })
 
@@ -2669,7 +2669,7 @@ def checkout_submit():
 
                         "amount": amount_paise,
 
-                        "currency": "INR",
+                        "currency": "USD",
 
                         "receipt": f"rcpt_{order_number}",
 

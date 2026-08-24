@@ -418,7 +418,7 @@
       <div>
         <div class="label">Amount to Pay</div>
         <div class="amount">
-          <span class="currency">₹</span>{{ "%.2f"|format(order.total_amount) }}
+          <span class="currency">$</span>{{ "%.2f"|format(order.total_amount) }}
         </div>
       </div>
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(139,92,246,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -454,7 +454,7 @@
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
         <line x1="1" y1="10" x2="23" y2="10"/>
       </svg>
-      <span class="btn-text">Pay ₹{{ "%.2f"|format(order.total_amount) }} Securely</span>
+      <span class="btn-text">Pay ${{ "%.2f"|format(order.total_amount) }} Securely</span>
     </button>
 
     <!-- Trust Row -->
@@ -516,7 +516,7 @@
           <div class="order-item-name">{{ item.product_name }}</div>
           <span class="order-item-qty">Qty: {{ item.quantity }}</span>
         </div>
-        <div class="order-item-price">₹{{ "%.2f"|format(item.price * item.quantity) }}</div>
+        <div class="order-item-price">${{ "%.2f"|format(item.price * item.quantity) }}</div>
       </li>
       {% endfor %}
     </ul>
@@ -525,7 +525,7 @@
     {% set subtotal = order.total_amount + (order.discount_amount or 0) %}
     <div class="summary-row">
       <span class="s-label">Subtotal</span>
-      <span class="s-value">₹{{ "%.2f"|format(subtotal) }}</span>
+      <span class="s-value">${{ "%.2f"|format(subtotal) }}</span>
     </div>
     {% if order.discount_amount and order.discount_amount > 0 %}
     <div class="summary-row">
@@ -533,20 +533,20 @@
         Discount
         {% if order.promo_code %}<span style="color:#a78bfa;font-size:0.75rem;">({{ order.promo_code }})</span>{% endif %}
       </span>
-      <span class="s-value" style="color:#4ade80;">−₹{{ "%.2f"|format(order.discount_amount) }}</span>
+      <span class="s-value" style="color:#4ade80;">−${{ "%.2f"|format(order.discount_amount) }}</span>
     </div>
     {% endif %}
     <div class="summary-row">
       <span class="s-label">Shipping</span>
       {% if order.shipping_charge and order.shipping_charge > 0 %}
-      <span class="s-value">₹{{ "%.2f"|format(order.shipping_charge) }}</span>
+      <span class="s-value">${{ "%.2f"|format(order.shipping_charge) }}</span>
       {% else %}
       <span class="s-value" style="color:#4ade80;">Free</span>
       {% endif %}
     </div>
     <div class="summary-total">
       <span class="t-label">Total</span>
-      <span class="t-value">₹{{ "%.2f"|format(order.total_amount) }}</span>
+      <span class="t-value">${{ "%.2f"|format(order.total_amount) }}</span>
     </div>
 
     <div class="divider"></div>
@@ -665,7 +665,7 @@
     const options = {
       key:          RAZORPAY_KEY_ID,
       amount:       ORDER_AMOUNT,
-      currency:     'INR',
+      currency:     'USD',
       name:         'The Saveur',
       description:  `Order ${ORDER_NUMBER}`,
       order_id:     RAZORPAY_ORDER_ID,

@@ -342,12 +342,6 @@ def init_db():
         ('PROD-SPICE-AAMCHUR', 'Aamchur Powder', 'Spices', 'Ground Spices',
          'Tangy dry mango powder perfect for adding a sour punch to dishes.',
          'Aamchur-Powder.jpg', 95.0, 70, 0, '100g'),
-        ('PROD-CLOTH-TSHIRT', 'Premium Cotton T-Shirt', 'Cloths', 'Apparel',
-         'Classic fit crew neck t-shirt made of 100% organic cotton. Super soft and breathable.',
-         'fashion.png', 599.0, 150, 1, '1 Unit'),
-        ('PROD-CLOTH-TOTE', 'Canvas Tote Bag', 'Cloths', 'Accessories',
-         'Heavy-duty cotton canvas tote bag with reinforced handles for everyday utility.',
-         'fashion.png', 349.0, 110, 0, '1 Unit'),
     ]
     seeded_count = 0
     for p in products:
@@ -407,10 +401,6 @@ def init_db():
          'Rich & Authentic\nIndian Spices',
          'Pure, high-essential-oil spices ground to perfection. No artificial colors or additives.',
          'Explore Spices', '/products?category=spices', 1),
-        ('fashion.png', 'shirt', '100% Cotton',
-         'Premium Organic\nApparel & Cloths',
-         'Sleek, everyday wear crafted from breathable, sustainably sourced organic cotton.',
-         'Shop Apparel', '/products?category=cloths', 2),
     ]
     slides_seeded = False
     for slide in slides_data:
@@ -429,7 +419,6 @@ def init_db():
     categories_data = [
         ('Tea', 'Premium Tea', 'Finest handpicked teas from single-estate gardens.', 'Tea.jpg', 0),
         ('Spices', 'Authentic Spices', 'Pure, aromatic ground and whole spices.', 'Garam-Masala.jpg', 1),
-        ('Cloths', 'Apparel & Cloths', 'Premium wear made from organic cotton.', 'fashion.png', 2),
     ]
     categories_seeded = False
     for cat in categories_data:
@@ -450,8 +439,6 @@ def init_db():
         ('Tea', 'Black Tea', 'Black Tea', 'Bold, premium estate black teas.', 1),
         ('Spices', 'Blend Spices', 'Blend Spices', 'Perfect mixes of ground spices.', 0),
         ('Spices', 'Ground Spices', 'Ground Spices', 'Single-ingredient ground spices.', 1),
-        ('Cloths', 'Apparel', 'Apparel', 'Premium organic cotton clothing.', 0),
-        ('Cloths', 'Accessories', 'Accessories', 'Sustainably sourced cloth accessories.', 1),
     ]
     subcategories_seeded = False
     for subcat in subcategories_data:

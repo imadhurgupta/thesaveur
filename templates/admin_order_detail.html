@@ -599,17 +599,17 @@
                 <div class="od-item-qty">
                   Quantity: {{ item.quantity }} ×
                   {% if disc_pct > 0 %}
-                    <span style="text-decoration: line-through; color: #94a3b8; font-size: 0.8rem;">₹{{ orig_pr }}</span>
-                    <span style="color: #10b981; font-weight: 600;">₹{{ item.price }}</span>
+                    <span style="text-decoration: line-through; color: #94a3b8; font-size: 0.8rem;">${{ orig_pr }}</span>
+                    <span style="color: #10b981; font-weight: 600;">${{ item.price }}</span>
                     <span style="background: rgba(16,185,129,0.08); color: #059669; font-size: 0.72rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-left: 4px;">{{ disc_pct | int }}% OFF</span>
                   {% else %}
-                    ₹{{ item.price }}
+                    ${{ item.price }}
                   {% endif %}
                 </div>
               </div>
               <div class="od-item-price">
                 <div class="unit">Subtotal</div>
-                <div class="total">₹{{ (item.quantity * item.price) | round(2) }}</div>
+                <div class="total">${{ (item.quantity * item.price) | round(2) }}</div>
               </div>
             </div>
             {% endfor %}
@@ -635,24 +635,24 @@
           {% endfor %}
           <div class="od-price-row">
             <span>Items Subtotal ({{ items|length }} item{{ 's' if items|length != 1 }})</span>
-            <span>₹{{ subtotal.val | round(2) }}</span>
+            <span>${{ subtotal.val | round(2) }}</span>
           </div>
           {% if item_discounts.val > 0 %}
           <div class="od-price-row">
             <span>Product Discount</span>
-            <span style="color:#059669; font-weight:600;">−₹{{ item_discounts.val | round(2) }}</span>
+            <span style="color:#059669; font-weight:600;">−${{ item_discounts.val | round(2) }}</span>
           </div>
           {% endif %}
           {% if order.promo_code %}
           <div class="od-price-row">
             <span>Coupon Code (<span style="color:#059669; font-weight:700;">{{ order.promo_code }}</span>)</span>
-            <span style="color:#059669; font-weight:600;">−₹{{ order.discount_amount | round(2) }}</span>
+            <span style="color:#059669; font-weight:600;">−${{ order.discount_amount | round(2) }}</span>
           </div>
           {% endif %}
           <div class="od-price-row">
             <span>Shipping &amp; Logistics</span>
             {% if order.shipping_charge and order.shipping_charge > 0 %}
-            <span style="font-weight:600;">₹{{ "%.2f"|format(order.shipping_charge) }}</span>
+            <span style="font-weight:600;">${{ "%.2f"|format(order.shipping_charge) }}</span>
             {% else %}
             <span style="color:#059669; font-weight:600;">Free / Comp</span>
             {% endif %}
@@ -663,7 +663,7 @@
           </div>
           <div class="od-price-row total">
             <span>Total Value</span>
-            <span class="amt">₹{{ order.total_amount }}</span>
+            <span class="amt">${{ order.total_amount }}</span>
           </div>
         </div>
       </div>

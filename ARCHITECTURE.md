@@ -288,6 +288,6 @@ Declare the following keys in the environment or `.env` file to configure cachin
 | `PAYPAL_CLIENT_ID` | *None* | PayPal OAuth client ID. |
 | `PAYPAL_CLIENT_SECRET` | *None* | PayPal OAuth client secret. |
 | `PAYPAL_MODE` | `sandbox` | Operations mode (`sandbox` or `live`). |
-| `PAYPAL_EXCHANGE_RATE_INR_TO_USD` | `0.012` | INR to USD currency rate. |
+| `PAYPAL_EXCHANGE_RATE_INR_TO_USD` | `1.0` | INR/USD base rate (1.0 for native USD platform). |
 | `RAZORPAY_KEY_ID` | *None* | Razorpay API key ID. |
 | `RAZORPAY_KEY_SECRET` | *None* | Razorpay API key secret. |

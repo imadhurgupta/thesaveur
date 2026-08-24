@@ -250,10 +250,10 @@
         <!-- Price -->
         <div class="cart-item-price">
           {% if item.discount_percent and item.discount_percent > 0 %}
-            <span style="color:var(--text-muted); text-decoration:line-through; font-size:0.85rem; margin-right:4px;">₹{{ item.original_price }}</span>
-            <span style="color:#e74c3c; font-weight:600;">₹{{ item.price }}</span>
+            <span style="color:var(--text-muted); text-decoration:line-through; font-size:0.85rem; margin-right:4px;">${{ item.original_price }}</span>
+            <span style="color:#e74c3c; font-weight:600;">${{ item.price }}</span>
           {% else %}
-            ₹{{ item.price }}
+            ${{ item.price }}
           {% endif %}
         </div>
 
@@ -267,7 +267,7 @@
         <!-- Action / Total -->
         <div class="cart-item-actions">
           <div class="cart-item-total">
-            ₹{{ item.item_total }}
+            ${{ item.item_total }}
           </div>
           <form action="{{ url_for('remove_from_cart', product_id=item.id) }}" method="POST">
             <button type="submit" class="remove-btn" title="Remove item">
@@ -285,7 +285,7 @@
       
       <div class="summary-row">
         <span>Subtotal</span>
-        <span>₹{{ subtotal }}</span>
+        <span>${{ subtotal }}</span>
       </div>
       <div class="summary-row">
         <span>Delivery Charge</span>
@@ -294,7 +294,7 @@
       
       <div class="summary-row total">
         <span>Total Amount</span>
-        <span>₹{{ subtotal }}</span>
+        <span>${{ subtotal }}</span>
       </div>
 
       <a href="{{ url_for('checkout') }}" class="btn btn-primary" style="width:100%; margin-top:20px; text-align:center;">
