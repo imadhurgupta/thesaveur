@@ -4760,11 +4760,12 @@ def admin_edit_product(id):
 
     if request.method == 'GET':
         db = get_db()
-        product = db.execute("SELECT * FROM products WHERE id = ?", (id,)).fetchone()
-        if not product:
+        product_row = db.execute("SELECT * FROM products WHERE id = ?", (id,)).fetchone()
+        if not product_row:
             flash('Product not found.', 'error')
             db.close()
             return redirect(url_for('admin_dashboard'))
+        product = dict(product_row)
         
         # Fetch associated images
         imgs = db.execute("SELECT image_filename FROM product_images WHERE product_id = ?", (id,)).fetchall()
