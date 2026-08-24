@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Product &ndash; The Saveur{% endblock %}
+
+{% block extra_head %}
+<style>
+  .product-form-container {
+    padding: 140px 40px 80px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .form-card {
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 40px;
+  }
+
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+
+  .form-header h1 {
+    font-size: 1.8rem;
+    color: var(--green-dark);
+    margin: 0;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-mid);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    outline: none;
+    background: #fff;
+    transition: var(--transition);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--green-light);
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .checkbox-group input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  .checkbox-group label {
+    margin-bottom: 0;
+    text-transform: none;
+    font-size: 0.9rem;
+    letter-spacing: normal;
+    color: var(--text-dark);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* Selected Images Gallery */
+  .selected-images-wrapper {
+    margin-top:16px;
+  }
+
+  .selected-img-badge {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(0,0,0,0.1);
+    overflow: hidden;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .selected-img-badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .selected-img-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.2s;
+  }
+
+  .selected-img-remove:hover {
+    background: #e74c3c;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding-top: 20px;
+  }
+
+  /* Button outlines */
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid rgba(0,0,0,0.15);
+    color: var(--text-dark);
+  }
+  .btn-outline:hover {
+    background: rgba(0,0,0,0.02);
+  }
+  .btn-outline.active {
+    border-color: var(--green-primary);
+    background: rgba(45,122,60,0.08);
+    color: var(--green-primary);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="product-form-container">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('admin_dashboard') }}" style="display: inline-flex; align-items: center; gap: 8px; color: var(--green-primary); text-decoration: none; font-weight: 500; font-size: 0.9rem;">
+      <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+      Back to Dashboard
+    </a>
+  </div>
+
+  <div class="form-card">
+    <div class="form-header">
+      <h1>Edit Product: {{ product.name }}</h1>
+    </div>
+
+    <form id="prod-modal-form" method="POST" action="{{ url_for('admin_edit_product', id=product.id) }}" enctype="multipart/form-data">
+      <!-- Name -->
+      <div class="form-group">
+        <label for="prod-name">Product Name *</label>
+        <input type="text" id="prod-name" name="name" required placeholder="e.g. Cardamom Powder" value="{{ product.name }}" />
+      </div>
+
+      <!-- Category, Sub Category & Unit -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label for="prod-category">Category *</label>
+          <select id="prod-category" name="category" required onchange="updateSubcategoryDropdown(this.value, 'prod-subcategory')">
+            {% for cat in categories %}
+              <option value="{{ cat.name }}" {% if product.category == cat.name %}selected{% endif %}>{{ cat.display_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="prod-subcategory">Sub Category</label>
+          <select id="prod-subcategory" name="sub_category">
+            <option value="">-- No Sub Category --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="prod-unit">Unit Size *</label>
+          <input type="text" id="prod-unit" name="unit" required placeholder="e.g. 200g, 1kg" value="{{ product.unit }}" />
+        </div>
+      </div>
+
+      <!-- Price, Discount, GST Rate, Stocks & Shipping -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label for="prod-price">Price ($) *</label>
+          <input type="number" id="prod-price" name="price" required step="0.01" min="0" placeholder="0.00" value="{{ product.price }}" />
+        </div>
+        <div class="form-group">
+          <label for="prod-discount-percent">Discount (%)</label>
+          <input type="number" id="prod-discount-percent" name="discount_percent" min="0" max="100" step="0.1" placeholder="0" value="{{ product.discount_percent if product.discount_percent else 0 }}" />
+        </div>
+        <div class="form-group">
+          <label for="prod-gst-rate">GST Rate (%)</label>
+          <input type="number" id="prod-gst-rate" name="gst_rate" min="0" max="100" step="0.1" placeholder="0.0" value="{{ product.gst_rate if product.gst_rate is not none else 0.0 }}" />
+        </div>
+        <div class="form-group">
+          <label for="prod-stocks">Stocks *</label>
+          <input type="number" id="prod-stocks" name="stocks" required min="0" placeholder="0" value="{{ product.stocks }}" />
+        </div>
+        <div class="form-group">
+          <label for="prod-shipping-charge">Shipping ($)</label>
+          <input type="number" id="prod-shipping-charge" name="shipping_charge" min="0" step="0.01" placeholder="0.00" value="{{ product.shipping_charge if product.shipping_charge else 0.0 }}" />
+        </div>
+      </div>
+
+      <!-- Image Manager -->
+      <div class="form-group">
+        <label>Product Images *</label>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <button type="button" class="btn btn-outline btn-sm active" id="btn-tab-local" onclick="setImageTab('local')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="laptop" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Local Files</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tab-drive" onclick="setImageTab('drive')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="hard-drive" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Google Drive</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tab-onedrive" onclick="setImageTab('onedrive')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="cloud" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> OneDrive</button>
+        </div>
+
+        <!-- Local upload input -->
+        <div id="tab-input-local" style="display:block;">
+          <label for="prod-local-images" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:8px; width:100%; border:2px dashed var(--green-primary); border-radius:10px; cursor:pointer; background:rgba(45,122,60,0.04); transition:background 0.2s;" onmouseover="this.style.background='rgba(45,122,60,0.09)'" onmouseout="this.style.background='rgba(45,122,60,0.04)'">
+            <i data-lucide="upload-cloud" style="width:28px; height:28px; color:var(--green-primary); pointer-events:none;"></i>
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark); pointer-events:none;">Click to Choose Files</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); pointer-events:none;">PNG, JPG, JPEG, WEBP — multiple files allowed</span>
+            <input type="file" id="prod-local-images" name="local_images" multiple accept="image/*"
+              style="position:absolute; opacity:0; width:0; height:0; pointer-events:none;"
+              onchange="handleLocalFiles(this.files)" />
+          </label>
+          <div id="prod-file-chosen" style="font-size:0.78rem; color:#2d7a3c; margin-top:6px; font-weight:600; min-height:18px;"></div>
+          <div style="margin-top:10px; background:#f0faf2; border:1px solid #b6e2c2; border-radius:8px; padding:10px 14px; font-size:0.75rem; color:#2d6a3f; display:flex; gap:20px; flex-wrap:wrap;">
+            <span>📐 <strong>Recommended:</strong> 2048×2048 px (1:1 square, zoom-optimized)</span>
+            <span>💾 <strong>Max size:</strong> 15 MB per image</span>
+            <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
+          </div>
+        </div>
+
+        <!-- Google Drive button -->
+        <div id="tab-input-drive" style="display:none;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="gdrive-paste-url" placeholder="Paste shared Google Drive file URL here..." style="flex:1; padding:10px; border:1px solid rgba(0,0,0,0.15); border-radius:4px; font-size:0.85rem;" />
+              <button type="button" class="btn btn-primary" onclick="resolveGoogleDriveUrl()" style="padding:10px 16px; font-size:0.85rem; height:fit-content; align-self:center;">Resolve</button>
+            </div>
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR</div>
+            <button type="button" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; padding:12px; gap:8px;" onclick="openGooglePickerAPI()">
+              <i data-lucide="hard-drive" style="width:20px; height:20px; color:#0F9D58"></i>
+              Browse via Google Drive API
+            </button>
+          </div>
+        </div>
+
+        <!-- OneDrive button -->
+        <div id="tab-input-onedrive" style="display:none;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="onedrive-paste-url" placeholder="Paste shared OneDrive link (1drv.ms or live.com)..." style="flex:1; padding:10px; border:1px solid rgba(0,0,0,0.15); border-radius:4px; font-size:0.85rem;" />
+              <button type="button" class="btn btn-primary" onclick="resolveOneDriveUrl()" style="padding:10px 16px; font-size:0.85rem; height:fit-content; align-self:center;">Resolve</button>
+            </div>
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR</div>
+            <button type="button" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; padding:12px; gap:8px;" onclick="openOneDrivePickerSDK()">
+              <i data-lucide="cloud" style="width:20px; height:20px; color:#0078d4"></i>
+              Browse via OneDrive SDK
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected / Current Images Gallery -->
+        <div class="selected-images-wrapper">
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">Selected Images</div>
+          <div id="selected-images-gallery" style="display:flex; flex-wrap:wrap; gap:8px; min-height:50px; padding:8px; border:1px dashed rgba(0,0,0,0.1); border-radius:var(--radius-sm); background:rgba(0,0,0,0.01);">
+            <div style="color:var(--text-muted); font-size:0.8rem; margin:auto; font-style:italic;" id="gallery-empty-msg">No images selected yet</div>
+          </div>
+        </div>
+
+        <!-- Hidden input for remote/manually set filenames -->
+        <input type="hidden" id="prod-remote-images" name="remote_images" />
+        <!-- Keep original images field hidden for compatibility -->
+        <input type="hidden" id="prod-image" name="images" />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="prod-description">Description</label>
+        <textarea id="prod-description" name="description" rows="3" placeholder="Describe the product details, source, flavor profile...">{{ product.description }}</textarea>
+      </div>
+
+      <!-- Bestseller checkbox -->
+      <div class="checkbox-group">
+        <input type="checkbox" id="prod-bestseller" name="is_bestseller" value="1" {% if product.is_bestseller %}checked{% endif %} />
+        <label for="prod-bestseller">Mark as Best Seller</label>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; justify-content:center; padding:10px 20px; text-decoration:none; font-weight:500; font-size:0.85rem; line-height:1.2;">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-sm" id="prod-submit-btn" style="padding:10px 20px; font-size:0.85rem; font-weight:500;">
+          Save Product
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Google Identity Services, Google APIs Client, and Microsoft OneDrive Live SDK -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://js.live.net/v7.2/OneDrive.js" async defer></script>
+
+<script>
+  // Google API & Picker Configuration
+  const GOOGLE_CLIENT_ID = "{{ google_client_id }}";
+  const GOOGLE_API_KEY = "";
+
+  // Microsoft OneDrive Client ID
+  const ONEDRIVE_CLIENT_ID = "";
+
+  let activeImages = [];
+  const initialImagesCsv = "{{ images_csv }}";
+  
+  if (initialImagesCsv) {
+    initialImagesCsv.split(',').forEach(img => {
+      const trimmed = img.trim();
+      if (trimmed) {
+        activeImages.push({
+          type: 'remote',
+          name: trimmed,
+          url: trimmed
+        });
+      }
+    });
+  }
+
+  function setImageTab(tab) {
+    document.getElementById('tab-input-local').style.display = tab === 'local' ? 'block' : 'none';
+    document.getElementById('tab-input-drive').style.display = tab === 'drive' ? 'block' : 'none';
+    document.getElementById('tab-input-onedrive').style.display = tab === 'onedrive' ? 'block' : 'none';
+
+    document.getElementById('btn-tab-local').classList.toggle('active', tab === 'local');
+    document.getElementById('btn-tab-drive').classList.toggle('active', tab === 'drive');
+    document.getElementById('btn-tab-onedrive').classList.toggle('active', tab === 'onedrive');
+  }
+
+  // Stores actual File objects for local uploads so they can be attached to the form
+  let localFileObjects = [];
+
+  // Previews local uploaded files
+  function handleLocalFiles(files) {
+    const chosenEl = document.getElementById('prod-file-chosen');
+    if (chosenEl) {
+      if (files.length === 0) {
+        chosenEl.textContent = '';
+      } else if (files.length === 1) {
+        chosenEl.textContent = '✔ Selected: ' + files[0].name;
+      } else {
+        chosenEl.textContent = '✔ Selected: ' + files.length + ' files (' + Array.from(files).map(f => f.name).join(', ') + ')';
+      }
+    }
+
+    activeImages = activeImages.filter(img => img.type !== 'local');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const objectUrl = URL.createObjectURL(file);
+      activeImages.push({
+        type: 'local',
+        name: file.name,
+        url: objectUrl,
+        fileObj: file
+      });
+    }
+    updateSelectedImagesGallery();
+  }
+
+  // Syncs File objects back to the file input
+  function syncLocalFilesToInput() {
+    const inputEl = document.getElementById('prod-local-images');
+    if (!inputEl || typeof DataTransfer === 'undefined') return;
+    try {
+      const dt = new DataTransfer();
+      activeImages.forEach(img => {
+        if (img.type === 'local' && img.fileObj) {
+          dt.items.add(img.fileObj);
+        }
+      });
+      inputEl.files = dt.files;
+      const chosenEl = document.getElementById('prod-file-chosen');
+      if (chosenEl) {
+        const count = dt.files.length;
+        chosenEl.textContent = count === 0 ? '' : (count === 1 ? '✔ Selected: ' + dt.files[0].name : '✔ Selected: ' + count + ' files');
+      }
+    } catch(e) {
+      console.warn('DataTransfer not supported, file list may not update:', e);
+    }
+  }
+
+  let oauthToken = null;
+
+  function openGooglePickerAPI() {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("your-google-client-id") || GOOGLE_CLIENT_ID.trim() === "") {
+      alert("Please configure a valid GOOGLE_CLIENT_ID in your .env file to use the Google Picker API.");
+      return;
+    }
+    
+    try {
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
+        callback: (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            oauthToken = tokenResponse.access_token;
+            loadGooglePicker(oauthToken);
+          }
+        },
+      });
+      client.requestAccessToken();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to initialize Google Auth Client. Please make sure Google Identity Services SDK is loaded and GOOGLE_CLIENT_ID is correct.");
+    }
+  }
+
+  function loadGooglePicker(token) {
+    gapi.load('picker', {
+      callback: () => {
+        const view = new google.picker.View(google.picker.ViewId.DOCS);
+        view.setMimeTypes('image/png,image/jpeg,image/jpg,image/webp');
+        
+        const picker = new google.picker.PickerBuilder()
+          .addView(view)
+          .setOAuthToken(token)
+          .setDeveloperKey(GOOGLE_API_KEY)
+          .setCallback(googlePickerCallback)
+          .build();
+        picker.setVisible(true);
+      }
+    });
+  }
+
+  function googlePickerCallback(data) {
+    if (data.action == google.picker.Action.PICKED) {
+      const doc = data.docs[0];
+      const name = doc.name;
+      const fileId = doc.id;
+      const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      
+      if (!activeImages.some(img => img.name === name)) {
+        activeImages.push({
+          type: 'remote',
+          name: name,
+          url: directUrl
+        });
+        updateSelectedImagesGallery();
+      }
+    }
+  }
+
+  function openOneDrivePickerSDK() {
+    const odOptions = {
+      clientId: ONEDRIVE_CLIENT_ID || "00000000-0000-0000-0000-000000000000",
+      action: "share",
+      multiSelect: true,
+      openInNewWindow: true,
+      advanced: {
+        redirectUri: window.location.origin + "/admin/dashboard"
+      },
+      success: function(files) {
+        if (files && files.value) {
+          files.value.forEach(file => {
+            const name = file.name;
+            const embedUrl = file.permissions && file.permissions[0] && file.permissions[0].link 
+              ? file.permissions[0].link.webUrl 
+              : file.webUrl;
+            
+            let directUrl = embedUrl;
+            if (embedUrl.includes("redir")) {
+              directUrl = embedUrl.replace("redir", "embed");
+            }
+            
+            if (!activeImages.some(img => img.name === name)) {
+              activeImages.push({
+                type: 'remote',
+                name: name,
+                url: directUrl
+              });
+            }
+          });
+          updateSelectedImagesGallery();
+        }
+      },
+      cancel: function() {
+        console.log("OneDrive picker cancelled");
+      },
+      error: function(e) {
+        console.error("OneDrive picker error", e);
+        alert("OneDrive Picker SDK requires a valid Client ID configured. You can paste the direct shared URL instead!");
+      }
+    };
+    
+    if (typeof OneDrive !== "undefined") {
+      OneDrive.open(odOptions);
+    } else {
+      alert("OneDrive SDK is still loading or blocked. Please paste the direct sharing link below instead!");
+    }
+  }
+
+  function resolveGoogleDriveUrl() {
+    const input = document.getElementById('gdrive-paste-url');
+    const url = input.value.trim();
+    if (!url) {
+      alert("Please paste a Google Drive link first.");
+      return;
+    }
+    
+    const match = url.match(/(?:https?:\/\/)?drive\.google\.com\/(?:file\/d\/|open\?id=)([^/?\s&]+)/);
+    if (match && match[1]) {
+      const fileId = match[1];
+      const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      const name = `gdrive_${fileId.substring(0, 8)}.jpg`;
+      
+      if (!activeImages.some(img => img.name === name)) {
+        activeImages.push({
+          type: 'remote',
+          name: name,
+          url: directUrl
+        });
+        updateSelectedImagesGallery();
+        input.value = '';
+        alert("Google Drive sharing link successfully resolved!");
+      } else {
+        alert("This image is already added.");
+      }
+    } else {
+      alert("Invalid Google Drive URL. Format must include 'file/d/FILE_ID' or 'open?id=FILE_ID'.");
+    }
+  }
+
+  function resolveOneDriveUrl() {
+    const input = document.getElementById('onedrive-paste-url');
+    const url = input.value.trim();
+    if (!url) {
+      alert("Please paste a OneDrive link first.");
+      return;
+    }
+    
+    fetch('/api/resolve-onedrive', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ url: url })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.resolved_url) {
+        const directUrl = data.resolved_url;
+        const name = `onedrive_${Math.random().toString(36).substring(2, 10)}.jpg`;
+        
+        if (!activeImages.some(img => img.name === name)) {
+          activeImages.push({
+            type: 'remote',
+            name: name,
+            url: directUrl
+          });
+          updateSelectedImagesGallery();
+          input.value = '';
+          alert("OneDrive sharing link successfully resolved!");
+        } else {
+          alert("This image is already added.");
+        }
+      } else {
+        alert("Error resolving OneDrive URL: " + (data.error || "Unknown error"));
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to resolve OneDrive URL.");
+    });
+  }
+
+  function removeImageFromGallery(index) {
+    activeImages.splice(index, 1);
+    syncLocalFilesToInput();
+    updateSelectedImagesGallery();
+  }
+
+  function updateSelectedImagesGallery() {
+    const gallery = document.getElementById('selected-images-gallery');
+    gallery.innerHTML = '';
+    
+    if (activeImages.length === 0) {
+      gallery.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; margin:auto; font-style:italic;" id="gallery-empty-msg">No images selected yet</div>';
+      document.getElementById('prod-remote-images').value = '';
+      document.getElementById('prod-image').value = '';
+      return;
+    }
+    
+    activeImages.forEach((img, index) => {
+      const card = document.createElement('div');
+      card.className = 'selected-img-badge';
+      
+      let imgSrc = img.url;
+      if (img.type === 'remote' && !img.url.startsWith('http') && !img.url.startsWith('blob')) {
+        imgSrc = "/static/images/" + img.url;
+      }
+      
+      card.innerHTML = `
+        <button type="button" class="selected-img-remove" onclick="removeImageFromGallery(${index})">&times;</button>
+        <img src="${imgSrc}" alt="${img.name}" />
+      `;
+      gallery.appendChild(card);
+    });
+    
+    const remoteList = activeImages
+      .filter(img => img.type === 'remote')
+      .map(img => img.url);
+    
+    document.getElementById('prod-remote-images').value = remoteList.join(',');
+    document.getElementById('prod-image').value = remoteList.join(',');
+  }
+
+  // Categories & Subcategories mapping data
+  const allSubcategories = [
+    {% for subcat in subcategories %}
+      { id: {{ subcat.id }}, category: "{{ subcat.category_name|safe }}", name: "{{ subcat.name|safe }}", display: "{{ subcat.display_name|safe }}" },
+    {% endfor %}
+  ];
+
+  function updateSubcategoryDropdown(selectedCategory, selectElId, selectedSubValue = '') {
+    const subSelect = document.getElementById(selectElId);
+    if (!subSelect) return;
+    subSelect.innerHTML = '<option value="">-- No Sub Category --</option>';
+    const filtered = allSubcategories.filter(s => s.category === selectedCategory);
+    filtered.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = s.display;
+      if (s.name === selectedSubValue) {
+        opt.selected = true;
+      }
+      subSelect.appendChild(opt);
+    });
+  }
+
+  // Initialize subcategories and image gallery on load
+  document.addEventListener('DOMContentLoaded', () => {
+    updateSubcategoryDropdown(document.getElementById('prod-category').value, 'prod-subcategory', "{{ product.sub_category if product.sub_category else '' }}");
+    updateSelectedImagesGallery();
+  });
+</script>
+{% endblock %}
