@@ -4942,31 +4942,24 @@ def admin_edit_product(id):
 
 
 @app.route('/admin/delete-product/<id>', methods=['POST'])
-
 @admin_required
-
 def admin_delete_product(id):
-
     db = get_db()
-
     product = db.execute("SELECT name FROM products WHERE id = ?", (id,)).fetchone()
-
     if product:
-
-        db.execute("DELETE FROM products WHERE id = ?", (id,))
-
-        db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
-
-        db.commit()
-        invalidate_cache('all_products_list')
-        flash(f'Product "{product["name"]}" deleted successfully.', 'success')
-
+        try:
+            db.execute("DELETE FROM products WHERE id = ?", (id,))
+            db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
+            db.commit()
+            invalidate_cache('all_products_list')
+            flash(f'Product "{product["name"]}" deleted successfully.', 'success')
+        except Exception as e:
+            db.rollback()
+            print(f"[DELETE PRODUCT] Error: {e}")
+            flash(f'Product "{product["name"]}" could not be deleted because it is referenced in existing orders.', 'error')
     else:
-
         flash('Product not found.', 'error')
-
     db.close()
-
     return redirect(url_for('admin_dashboard'))
 
 
@@ -4981,24 +4974,34 @@ def admin_bulk_delete_products():
 
     db = get_db()
     deleted_count = 0
-    try:
-        for pid in product_ids:
-            product = db.execute("SELECT name FROM products WHERE id = ?", (pid,)).fetchone()
-            if product:
+    failed_products = []
+
+    for pid in product_ids:
+        product = db.execute("SELECT name FROM products WHERE id = ?", (pid,)).fetchone()
+        if product:
+            try:
                 db.execute("DELETE FROM products WHERE id = ?", (pid,))
                 db.execute("DELETE FROM product_images WHERE product_id = ?", (pid,))
+                db.commit()
                 deleted_count += 1
-        db.commit()
-        invalidate_cache('all_products_list')
-        if deleted_count > 0:
+            except Exception as e:
+                db.rollback()
+                print(f"[BULK DELETE] Error for product {pid}: {e}")
+                failed_products.append(product['name'])
+
+    invalidate_cache('all_products_list')
+    db.close()
+
+    if deleted_count > 0:
+        if failed_products:
+            flash(f'Successfully deleted {deleted_count} products. The following could not be deleted because they are in existing orders: {", ".join(failed_products)}', 'warning')
+        else:
             flash(f'Successfully deleted {deleted_count} selected products.', 'success')
+    else:
+        if failed_products:
+            flash(f'Could not delete the selected products because they are referenced in existing orders: {", ".join(failed_products)}', 'error')
         else:
             flash('No products found or deleted.', 'error')
-    except Exception as e:
-        print(f"[BULK DELETE] Error: {e}")
-        flash('An error occurred during bulk deletion.', 'error')
-    finally:
-        db.close()
 
     return redirect(url_for('admin_dashboard') + '#products-tab')
 
