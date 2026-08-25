@@ -1071,7 +1071,7 @@ Indian partners.{% endblock %}
 
     <!-- LEFT: Gallery -->
     <div class="pd-gallery">
-      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #000;">
+      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #000; cursor: zoom-in;" onclick="openLightbox()">
         {% if images %}
         <img id="pd-hero-img"
           src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
@@ -1587,12 +1587,85 @@ Indian partners.{% endblock %}
       </form>
     </div>
   </div>
+  <!-- Lightbox Modal -->
+  <div id="pd-lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+    <span style="position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; user-select: none; z-index: 10000;" onclick="closeLightbox()">&times;</span>
+    <div id="pd-lightbox-content" style="max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+      <!-- Dynamic image or video will be injected here -->
+    </div>
+  </div>
 
 </div><!-- /pd-page -->
 {% endblock %}
 
 {% block extra_js %}
 <script>
+  // Lightbox functions
+  function openLightbox() {
+    const lightbox = document.getElementById('pd-lightbox');
+    const content = document.getElementById('pd-lightbox-content');
+    const videoContainer = document.getElementById('pd-video-container');
+    const heroImg = document.getElementById('pd-hero-img');
+
+    if (!lightbox || !content) return;
+
+    content.innerHTML = '';
+
+    // Check if video is currently displayed
+    if (videoContainer && videoContainer.style.display === 'block') {
+      const activeVideo = videoContainer.querySelector('iframe, video');
+      if (activeVideo) {
+        let clonedVideo = activeVideo.cloneNode(true);
+        clonedVideo.style.width = '80vw';
+        clonedVideo.style.height = '80vh';
+        clonedVideo.style.maxWidth = '100%';
+        clonedVideo.style.maxHeight = '100%';
+        clonedVideo.style.objectFit = 'contain';
+        if (clonedVideo.tagName.toLowerCase() === 'video') {
+          clonedVideo.controls = true;
+          clonedVideo.autoplay = true;
+        }
+        content.appendChild(clonedVideo);
+      }
+    } else if (heroImg) {
+      const img = document.createElement('img');
+      img.src = heroImg.src;
+      img.style.maxWidth = '90vw';
+      img.style.maxHeight = '90vh';
+      img.style.objectFit = 'contain';
+      img.style.borderRadius = 'var(--radius-sm)';
+      img.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+      content.appendChild(img);
+    }
+
+    lightbox.style.display = 'flex';
+    setTimeout(() => {
+      lightbox.style.opacity = '1';
+    }, 10);
+  }
+
+  function closeLightbox() {
+    const lightbox = document.getElementById('pd-lightbox');
+    if (!lightbox) return;
+    lightbox.style.opacity = '0';
+    setTimeout(() => {
+      lightbox.style.display = 'none';
+      const content = document.getElementById('pd-lightbox-content');
+      if (content) content.innerHTML = '';
+    }, 300);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const lightbox = document.getElementById('pd-lightbox');
+    if (lightbox) {
+      lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) {
+          closeLightbox();
+        }
+      });
+    }
+  });
+
   // Thumbnail switcher
   function switchImg(el, src) {
     const videoContainer = document.getElementById('pd-video-container');
