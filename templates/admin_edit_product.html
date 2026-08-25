@@ -333,6 +333,26 @@
         <input type="hidden" id="prod-image-order-csv" name="image_order_csv" />
       </div>
 
+      <!-- Video Manager -->
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label>Product Video (Optional)</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="prod-video-url" style="font-size:0.75rem; color:var(--text-muted); text-transform:none; letter-spacing:normal;">Video URL (YouTube, Vimeo, or Direct link)</label>
+            <input type="text" id="prod-video-url" name="video_url" placeholder="e.g. https://www.youtube.com/watch?v=..." value="{{ product.video_url if product.video_url and '://' in product.video_url else '' }}" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="prod-video-file" style="font-size:0.75rem; color:var(--text-muted); text-transform:none; letter-spacing:normal;">
+              Or Upload Local Video File (MP4, WebM)
+              {% if product.video_url and '://' not in product.video_url %}
+                <span style="color:var(--green-primary); font-weight:bold;">(Current: {{ product.video_url }})</span>
+              {% endif %}
+            </label>
+            <input type="file" id="prod-video-file" name="video_file" accept="video/*" style="padding: 10px;" />
+          </div>
+        </div>
+      </div>
+
       <!-- Description -->
       <div class="form-group">
         <label for="prod-description">Description</label>

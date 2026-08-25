@@ -259,12 +259,19 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov', 'avi'}
 
 
 
 def allowed_file(filename):
 
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+def allowed_video_file(filename):
+
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 
 
@@ -4727,13 +4734,28 @@ def admin_add_product():
 
     primary_image = image_list[0] if image_list else ''
 
+    # Handle video file upload or remote video URL
+    video_url = request.form.get('video_url', '').strip()
+    video_file = request.files.get('video_file')
+    if video_file and video_file.filename and allowed_video_file(video_file.filename):
+        filename = secure_filename(video_file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        base, extension = os.path.splitext(filename)
+        counter = 1
+        while os.path.exists(filepath):
+            filename = f"{base}_{counter}{extension}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            counter += 1
+        video_file.save(filepath)
+        video_url = filename
+
     from database import generate_product_id
     product_id = generate_product_id()
 
     db = get_db()
     db.execute(
-        "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (product_id, name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate)
+        "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (product_id, name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url)
     )
 
 
@@ -4865,14 +4887,29 @@ def admin_edit_product(id):
             if combined_csv:
                 image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
+    # Handle video file upload or remote video URL update
+    video_url = request.form.get('video_url', '').strip()
+    video_file = request.files.get('video_file')
+    if video_file and video_file.filename and allowed_video_file(video_file.filename):
+        filename = secure_filename(video_file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        base, extension = os.path.splitext(filename)
+        counter = 1
+        while os.path.exists(filepath):
+            filename = f"{base}_{counter}{extension}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            counter += 1
+        video_file.save(filepath)
+        video_url = filename
+
     db = get_db()
 
     if image_list:
         # New images provided — update both primary and product_images table
         primary_image = image_list[0]
         db.execute(
-            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
-            (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
+            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ?, video_url = ? WHERE id = ?",
+            (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, id)
         )
         # Update images mapping table
         db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
@@ -4881,8 +4918,8 @@ def admin_edit_product(id):
     else:
         # No new image — keep existing image, only update other fields
         db.execute(
-            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ? WHERE id = ?",
-            (name, category, sub_category, description, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, id)
+            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ?, video_url = ? WHERE id = ?",
+            (name, category, sub_category, description, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, id)
         )
 
     db.commit()

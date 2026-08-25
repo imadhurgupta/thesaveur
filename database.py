@@ -108,7 +108,8 @@ def init_db():
             unit TEXT DEFAULT '100g',
             shipping_charge {REAL} DEFAULT 0.0,
             gst_rate {REAL} DEFAULT 0.0,
-            discount_percent {REAL} DEFAULT 0
+            discount_percent {REAL} DEFAULT 0,
+            video_url TEXT
         )""",
 
         f"""CREATE TABLE IF NOT EXISTS product_images (
@@ -301,6 +302,7 @@ def init_db():
         "ALTER TABLE products ADD COLUMN discount_percent REAL DEFAULT 0",
         "ALTER TABLE products ADD COLUMN gst_rate REAL DEFAULT 0.0",
         "ALTER TABLE products ADD COLUMN shipping_charge REAL DEFAULT 0.0",
+        "ALTER TABLE products ADD COLUMN video_url TEXT",
         "ALTER TABLE orders ADD COLUMN discount_amount REAL DEFAULT 0",
         "ALTER TABLE orders ADD COLUMN promo_code TEXT DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN order_number TEXT DEFAULT ''",

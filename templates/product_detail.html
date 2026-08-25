@@ -1071,21 +1071,34 @@ Indian partners.{% endblock %}
 
     <!-- LEFT: Gallery -->
     <div class="pd-gallery">
-      <div class="pd-main-img">
+      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md);">
         <img id="pd-hero-img"
           src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
-          alt="{{ product.name }}" />
+          alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.25s;" />
+        <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5;"></div>
       </div>
-      {% if images|length > 1 %}
-      <div class="pd-thumbs">
+      {% if images|length > 1 or product.video_url %}
+      <div class="pd-thumbs" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
         {% for img in images %}
-        <div class="pd-thumb {% if loop.first %}active{% endif %}"
+        <div class="pd-thumb {% if loop.first %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
           onclick="switchImg(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
           <img
             src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}"
-            alt="" />
+            alt="" style="width: 100%; height: 100%; object-fit: cover;" />
         </div>
         {% endfor %}
+        
+        {% if product.video_url %}
+        <div class="pd-thumb video-thumb" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
+          onclick="switchVideo(this, '{{ product.video_url|escape }}')">
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <img
+            src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
+            alt="Video Preview" style="width: 100%; height: 100%; object-fit: cover;" />
+        </div>
+        {% endif %}
       </div>
       {% endif %}
     </div>
@@ -1563,6 +1576,12 @@ Indian partners.{% endblock %}
 <script>
   // Thumbnail switcher
   function switchImg(el, src) {
+    const videoContainer = document.getElementById('pd-video-container');
+    if (videoContainer) {
+      videoContainer.style.display = 'none';
+      videoContainer.innerHTML = '';
+    }
+
     const hero = document.getElementById('pd-hero-img');
     hero.style.opacity = '0';
     setTimeout(() => {
@@ -1571,6 +1590,43 @@ Indian partners.{% endblock %}
       document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
       el.classList.add('active');
     }, 250);
+  }
+
+  function switchVideo(el, videoUrl) {
+    const videoContainer = document.getElementById('pd-video-container');
+    if (!videoContainer) return;
+
+    videoContainer.innerHTML = '';
+
+    const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+    const isVimeo = videoUrl.includes('vimeo.com');
+
+    let html = '';
+    if (isYoutube) {
+      let videoId = '';
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = videoUrl.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
+      }
+      html = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" style="width:100%; height:100%; border:none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    } else if (isVimeo) {
+      const match = videoUrl.match(/vimeo\.com\/(\d+)/);
+      let videoId = match ? match[1] : '';
+      html = `<iframe src="https://player.vimeo.com/video/${videoId}?autoplay=1" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    } else {
+      let src = videoUrl;
+      if (!videoUrl.includes('://') && !videoUrl.startsWith('/')) {
+        src = "/static/images/" + videoUrl;
+      }
+      html = `<video src="${src}" controls autoplay style="width:100%; height:100%; object-fit:contain; background:#000;"></video>`;
+    }
+
+    videoContainer.innerHTML = html;
+    videoContainer.style.display = 'block';
+
+    document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
   }
 
   // Qty stepper
