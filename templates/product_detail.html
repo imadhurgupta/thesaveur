@@ -1071,10 +1071,14 @@ Indian partners.{% endblock %}
 
     <!-- LEFT: Gallery -->
     <div class="pd-gallery">
-      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md);">
+      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #000;">
+        {% if images %}
         <img id="pd-hero-img"
           src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
           alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.25s;" />
+        {% else %}
+        <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.25s; display: none;" />
+        {% endif %}
         <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5;"></div>
       </div>
       {% if images|length > 1 or product.video_url %}
@@ -1089,14 +1093,16 @@ Indian partners.{% endblock %}
         {% endfor %}
         
         {% if product.video_url %}
-        <div class="pd-thumb video-thumb" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
+        <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden; background: #1a1a1a;"
           onclick="switchVideo(this, '{{ product.video_url|escape }}')">
-          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </div>
+          {% if images %}
           <img
             src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
-            alt="Video Preview" style="width: 100%; height: 100%; object-fit: cover;" />
+            alt="Video Preview" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;" />
+          {% endif %}
         </div>
         {% endif %}
       </div>
@@ -1626,8 +1632,15 @@ Indian partners.{% endblock %}
     videoContainer.style.display = 'block';
 
     document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
+    if (el) el.classList.add('active');
   }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    {% if not images and product.video_url %}
+      const videoThumb = document.querySelector('.video-thumb');
+      switchVideo(videoThumb, '{{ product.video_url|escape }}');
+    {% endif %}
+  });
 
   // Qty stepper
   function changeQty(delta) {
