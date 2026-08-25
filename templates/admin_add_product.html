@@ -338,6 +338,12 @@
         <label for="prod-video-file">Product Video (Optional)</label>
         <label for="prod-video-file" style="font-size:0.75rem; color:var(--text-muted); text-transform:none; letter-spacing:normal; margin-bottom:6px;">Upload Local Video File (MP4, WebM)</label>
         <input type="file" id="prod-video-file" name="video_file" accept="video/*" style="padding: 10px;" />
+        
+        <!-- Local Video Preview Box -->
+        <div id="local-video-preview-wrapper" style="display: none; margin-top: 12px; max-width: 320px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid rgba(0,0,0,0.1); background: #000; position: relative; box-shadow: var(--shadow-sm);">
+          <div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.7rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; z-index: 2; pointer-events: none;">Selected Video Preview</div>
+          <video id="local-video-preview" controls style="width: 100%; height: auto; display: block; max-height: 240px;"></video>
+        </div>
       </div>
 
       <!-- Description -->
@@ -726,6 +732,24 @@
   // Initialize subcategories on load
   document.addEventListener('DOMContentLoaded', () => {
     updateSubcategoryDropdown(document.getElementById('prod-category').value, 'prod-subcategory');
-  });
-</script>
+    
+    // Local video preview listener
+    const videoInput = document.getElementById('prod-video-file');
+    if (videoInput) {
+      videoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const wrapper = document.getElementById('local-video-preview-wrapper');
+        const video = document.getElementById('local-video-preview');
+        
+        if (file) {
+          const objectUrl = URL.createObjectURL(file);
+          video.src = objectUrl;
+          wrapper.style.display = 'block';
+        } else {
+          video.src = '';
+          wrapper.style.display = 'none';
+        }
+      });
+    }
+  });</script>
 {% endblock %}
