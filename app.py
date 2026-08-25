@@ -1253,28 +1253,27 @@ def product_detail(id):
 
 
 
+    product_dict = dict(product)
+    import json
+    specs = []
+    if product_dict.get('specifications'):
+        try:
+            specs = json.loads(product_dict['specifications'])
+        except Exception:
+            pass
+
     db.close()
-
     return render_template(
-
         'product_detail.html', 
-
-        product=product, 
-
+        product=product_dict, 
         images=image_list, 
-
         related_products=related_products_list,
-
         reviews=reviews_list,
-
         total_reviews=total_reviews,
-
         avg_rating=avg_rating,
-
         rating_breakdown=rating_breakdown,
-
-        in_wishlist=in_wishlist
-
+        in_wishlist=in_wishlist,
+        specs=specs
     )
 
 
@@ -4749,13 +4748,24 @@ def admin_add_product():
         video_file.save(filepath)
         video_url = filename
 
+    import json
+    spec_keys = request.form.getlist('spec_keys[]')
+    spec_values = request.form.getlist('spec_values[]')
+    specs = []
+    for k, v in zip(spec_keys, spec_values):
+        k = k.strip()
+        v = v.strip()
+        if k and v:
+            specs.append({'key': k, 'value': v})
+    specifications_json = json.dumps(specs) if specs else None
+
     from database import generate_product_id
     product_id = generate_product_id()
 
     db = get_db()
     db.execute(
-        "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (product_id, name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url)
+        "INSERT INTO products (id, name, category, sub_category, description, image_filename, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, specifications) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (product_id, name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, specifications_json)
     )
 
 
@@ -4804,6 +4814,14 @@ def admin_edit_product(id):
             db.close()
             return redirect(url_for('admin_dashboard'))
         product = dict(product_row)
+        import json
+        specs = []
+        if product.get('specifications'):
+            try:
+                specs = json.loads(product['specifications'])
+            except Exception:
+                pass
+        product['specs'] = specs
         
         # Fetch associated images
         imgs = db.execute("SELECT image_filename FROM product_images WHERE product_id = ?", (id,)).fetchall()
@@ -4907,12 +4925,23 @@ def admin_edit_product(id):
             counter += 1
         video_file.save(filepath)
         video_url = filename
+    import json
+    spec_keys = request.form.getlist('spec_keys[]')
+    spec_values = request.form.getlist('spec_values[]')
+    specs = []
+    for k, v in zip(spec_keys, spec_values):
+        k = k.strip()
+        v = v.strip()
+        if k and v:
+            specs.append({'key': k, 'value': v})
+    specifications_json = json.dumps(specs) if specs else None
+
     if image_list:
         # New images provided — update both primary and product_images table
         primary_image = image_list[0]
         db.execute(
-            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ?, video_url = ? WHERE id = ?",
-            (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, id)
+            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, image_filename = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ?, video_url = ?, specifications = ? WHERE id = ?",
+            (name, category, sub_category, description, primary_image, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, specifications_json, id)
         )
         # Update images mapping table
         db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
@@ -4921,8 +4950,8 @@ def admin_edit_product(id):
     else:
         # No new image — keep existing image, only update other fields
         db.execute(
-            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ?, video_url = ? WHERE id = ?",
-            (name, category, sub_category, description, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, id)
+            "UPDATE products SET name = ?, category = ?, sub_category = ?, description = ?, price = ?, stocks = ?, unit = ?, is_bestseller = ?, discount_percent = ?, shipping_charge = ?, gst_rate = ?, video_url = ?, specifications = ? WHERE id = ?",
+            (name, category, sub_category, description, price, stocks, unit, is_bestseller, discount_percent, shipping_charge, gst_rate, video_url, specifications_json, id)
         )
 
     db.commit()

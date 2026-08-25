@@ -1223,6 +1223,14 @@ Indian partners.{% endblock %}
             {% if product.stocks > 10 %}In Stock{% elif product.stocks > 0 %}Low Stock{% else %}Out of Stock{% endif %}
           </span>
         </div>
+        {% if specs %}
+          {% for spec in specs %}
+          <div class="pd-spec-item">
+            <span class="pd-spec-label">{{ spec.key }}:</span>
+            <span class="pd-spec-value">{{ spec.value }}</span>
+          </div>
+          {% endfor %}
+        {% endif %}
         <div class="pd-spec-item" style="grid-column: span 2; border: none; padding-bottom: 0;">
           <span class="pd-spec-label">Shipping:</span>
           <span class="pd-spec-value" style="color: #2e7d32;">
