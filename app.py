@@ -3884,7 +3884,7 @@ def verify_otp():
             session_otp = session.get('admin_login_otp')
             session_expiry_str = session.get('admin_login_otp_expires_at')
             verified = False
-            if entered_otp == '123456':
+            if app.debug and entered_otp == '123456':
                 verified = True
             
             if not verified and session_otp and session_expiry_str:
@@ -4683,10 +4683,8 @@ def admin_add_product():
         flash('Product name and category are required.', 'error')
         return redirect(url_for('admin_dashboard'))
 
-    # Gather images from all sources (local uploads take priority)
-    image_list = []
-
-    # 1. Local uploads FIRST (highest priority)
+    # 1. Gather new local uploads
+    local_saved_files = []
     uploaded_files = request.files.getlist('local_images')
     for file in uploaded_files:
         if file and file.filename and allowed_file(file.filename):
@@ -4699,15 +4697,33 @@ def admin_add_product():
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 counter += 1
             file.save(filepath)
-            image_list.append(filename)
+            local_saved_files.append(filename)
 
-    # 2. Remote/manual inputs only if no local file was uploaded
-    if not image_list:
-        remote_images = request.form.get('remote_images', '').strip()
-        manual_images = request.form.get('images', '').strip()
-        combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
-        if combined_csv:
-            image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
+    image_order_csv = request.form.get('image_order_csv', '').strip()
+    image_list = []
+
+    if image_order_csv:
+        # Resolve files in user-selected custom shuffled order
+        items = [item.strip() for item in image_order_csv.split(',') if item.strip()]
+        for item in items:
+            if item.startswith('local:'):
+                try:
+                    local_index = int(item.split(':')[1])
+                    if 0 <= local_index < len(local_saved_files):
+                        image_list.append(local_saved_files[local_index])
+                except (ValueError, IndexError):
+                    pass
+            else:
+                image_list.append(item)
+    else:
+        # Fallback to default ordering compatibility mode
+        image_list.extend(local_saved_files)
+        if not image_list:
+            remote_images = request.form.get('remote_images', '').strip()
+            manual_images = request.form.get('images', '').strip()
+            combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
+            if combined_csv:
+                image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
     primary_image = image_list[0] if image_list else ''
 
@@ -4807,10 +4823,8 @@ def admin_edit_product(id):
         flash('Product name and category are required.', 'error')
         return redirect(url_for('admin_dashboard'))
 
-    # Gather images from all sources (local uploads take priority)
-    image_list = []
-
-    # 1. Local uploads FIRST (highest priority)
+    # 1. Gather new local uploads
+    local_saved_files = []
     uploaded_files = request.files.getlist('local_images')
     for file in uploaded_files:
         if file and file.filename and allowed_file(file.filename):
@@ -4823,15 +4837,33 @@ def admin_edit_product(id):
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 counter += 1
             file.save(filepath)
-            image_list.append(filename)
+            local_saved_files.append(filename)
 
-    # 2. Remote/manual inputs only if no local file was uploaded
-    if not image_list:
-        remote_images = request.form.get('remote_images', '').strip()
-        manual_images = request.form.get('images', '').strip()
-        combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
-        if combined_csv:
-            image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
+    image_order_csv = request.form.get('image_order_csv', '').strip()
+    image_list = []
+
+    if image_order_csv:
+        # Resolve files in user-selected custom shuffled order
+        items = [item.strip() for item in image_order_csv.split(',') if item.strip()]
+        for item in items:
+            if item.startswith('local:'):
+                try:
+                    local_index = int(item.split(':')[1])
+                    if 0 <= local_index < len(local_saved_files):
+                        image_list.append(local_saved_files[local_index])
+                except (ValueError, IndexError):
+                    pass
+            else:
+                image_list.append(item)
+    else:
+        # Fallback to default ordering compatibility mode
+        image_list.extend(local_saved_files)
+        if not image_list:
+            remote_images = request.form.get('remote_images', '').strip()
+            manual_images = request.form.get('images', '').strip()
+            combined_csv = f"{remote_images},{manual_images}" if remote_images and manual_images else (remote_images or manual_images)
+            if combined_csv:
+                image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
     db = get_db()
 

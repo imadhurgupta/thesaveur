@@ -131,28 +131,40 @@
     object-fit: cover;
   }
 
-  .selected-img-remove {
+  .selected-img-controls {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.6);
-    color: #fff;
-    border: none;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.65);
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 12px;
-    line-height: 1;
-    cursor: pointer;
-    z-index: 2;
-    transition: background 0.2s;
+    gap: 8px;
+    padding: 3px 4px;
+    z-index: 10;
   }
 
-  .selected-img-remove:hover {
-    background: #e74c3c;
+  .ctrl-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+
+  .ctrl-btn:hover {
+    color: #5bb374;
+  }
+
+  .ctrl-btn.remove:hover {
+    color: #e74c3c;
   }
 
   .form-actions {
@@ -317,6 +329,8 @@
         <input type="hidden" id="prod-remote-images" name="remote_images" />
         <!-- Keep original images field hidden for compatibility -->
         <input type="hidden" id="prod-image" name="images" />
+        <!-- Hidden input for custom shuffled image order -->
+        <input type="hidden" id="prod-image-order-csv" name="image_order_csv" />
       </div>
 
       <!-- Description -->
@@ -612,6 +626,22 @@
     updateSelectedImagesGallery();
   }
 
+  function moveImage(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= activeImages.length) return;
+    
+    // Swap the elements in activeImages array
+    const temp = activeImages[index];
+    activeImages[index] = activeImages[targetIndex];
+    activeImages[targetIndex] = temp;
+    
+    // Sync local file inputs if any local files changed order
+    syncLocalFilesToInput();
+    
+    // Re-render gallery
+    updateSelectedImagesGallery();
+  }
+
   function updateSelectedImagesGallery() {
     const gallery = document.getElementById('selected-images-gallery');
     gallery.innerHTML = '';
@@ -620,6 +650,7 @@
       gallery.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; margin:auto; font-style:italic;" id="gallery-empty-msg">No images selected yet</div>';
       document.getElementById('prod-remote-images').value = '';
       document.getElementById('prod-image').value = '';
+      document.getElementById('prod-image-order-csv').value = '';
       return;
     }
     
@@ -633,8 +664,12 @@
       }
       
       card.innerHTML = `
-        <button type="button" class="selected-img-remove" onclick="removeImageFromGallery(${index})">&times;</button>
         <img src="${imgSrc}" alt="${img.name}" />
+        <div class="selected-img-controls">
+          ${index > 0 ? `<button type="button" class="ctrl-btn" onclick="moveImage(${index}, -1)" title="Move Left">&lsaquo;</button>` : ''}
+          <button type="button" class="ctrl-btn remove" onclick="removeImageFromGallery(${index})" title="Remove">&times;</button>
+          ${index < activeImages.length - 1 ? `<button type="button" class="ctrl-btn" onclick="moveImage(${index}, 1)" title="Move Right">&rsaquo;</button>` : ''}
+        </div>
       `;
       gallery.appendChild(card);
     });
@@ -645,6 +680,17 @@
     
     document.getElementById('prod-remote-images').value = remoteList.join(',');
     document.getElementById('prod-image').value = remoteList.join(',');
+
+    // Populate custom shuffled image order metadata
+    let localCount = 0;
+    const orderList = activeImages.map(img => {
+      if (img.type === 'local') {
+        return `local:${localCount++}`;
+      } else {
+        return img.url;
+      }
+    });
+    document.getElementById('prod-image-order-csv').value = orderList.join(',');
   }
 
   // Categories & Subcategories mapping data
