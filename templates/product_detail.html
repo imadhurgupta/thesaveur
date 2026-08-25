@@ -1095,13 +1095,26 @@ Indian partners.{% endblock %}
         {% if product.video_url %}
         <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden; background: #1a1a1a;"
           onclick="switchVideo(this, '{{ product.video_url|escape }}')">
-          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
+          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
             <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </div>
-          {% if images %}
-          <img
-            src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
-            alt="Video Preview" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;" />
+          {% if 'youtube.com' in product.video_url or 'youtu.be' in product.video_url %}
+            {% set yt_id = '' %}
+            {% if 'watch?v=' in product.video_url %}
+              {% set yt_id = product.video_url.split('watch?v=')[1].split('&')[0] %}
+            {% elif 'youtu.be/' in product.video_url %}
+              {% set yt_id = product.video_url.split('youtu.be/')[1].split('?')[0] %}
+            {% endif %}
+            {% if yt_id %}
+              <img src="https://img.youtube.com/vi/{{ yt_id }}/hqdefault.jpg" alt="Video Preview" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;" />
+            {% else %}
+              <div style="width: 100%; height: 100%; background: #222;"></div>
+            {% endif %}
+          {% elif 'vimeo.com' in product.video_url %}
+            <div style="width: 100%; height: 100%; background: #222;"></div>
+          {% else %}
+            {% set local_video_src = product.video_url if '://' in product.video_url or product.video_url.startswith('/') else url_for('static', filename='images/' + product.video_url) %}
+            <video src="{{ local_video_src }}#t=0.5" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7; pointer-events: none;"></video>
           {% endif %}
         </div>
         {% endif %}
