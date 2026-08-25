@@ -76,7 +76,7 @@ Indian partners.{% endblock %}
   .pd-main-img img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.3s ease;
   }
 
@@ -1075,9 +1075,9 @@ Indian partners.{% endblock %}
         {% if images %}
         <img id="pd-hero-img"
           src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
-          alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.25s;" />
+          alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.25s;" />
         {% else %}
-        <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.25s; display: none;" />
+        <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.25s; display: none;" />
         {% endif %}
         <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5;"></div>
       </div>
