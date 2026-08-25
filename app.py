@@ -4948,15 +4948,19 @@ def admin_delete_product(id):
     product = db.execute("SELECT name FROM products WHERE id = ?", (id,)).fetchone()
     if product:
         try:
+            # Delete referencing order items first to satisfy foreign key constraints
+            db.execute("DELETE FROM order_items WHERE product_id = ?", (id,))
             db.execute("DELETE FROM products WHERE id = ?", (id,))
             db.execute("DELETE FROM product_images WHERE product_id = ?", (id,))
+            # Clean up empty orders that no longer contain any items
+            db.execute("DELETE FROM orders WHERE id NOT IN (SELECT DISTINCT order_id FROM order_items)")
             db.commit()
             invalidate_cache('all_products_list')
             flash(f'Product "{product["name"]}" deleted successfully.', 'success')
         except Exception as e:
             db.rollback()
             print(f"[DELETE PRODUCT] Error: {e}")
-            flash(f'Product "{product["name"]}" could not be deleted because it is referenced in existing orders.', 'error')
+            flash(f'An error occurred while deleting product "{product["name"]}".', 'error')
     else:
         flash('Product not found.', 'error')
     db.close()
@@ -4980,6 +4984,8 @@ def admin_bulk_delete_products():
         product = db.execute("SELECT name FROM products WHERE id = ?", (pid,)).fetchone()
         if product:
             try:
+                # Delete referencing order items first to satisfy foreign key constraints
+                db.execute("DELETE FROM order_items WHERE product_id = ?", (pid,))
                 db.execute("DELETE FROM products WHERE id = ?", (pid,))
                 db.execute("DELETE FROM product_images WHERE product_id = ?", (pid,))
                 db.commit()
@@ -4989,17 +4995,25 @@ def admin_bulk_delete_products():
                 print(f"[BULK DELETE] Error for product {pid}: {e}")
                 failed_products.append(product['name'])
 
+    try:
+        # Clean up empty orders once after bulk deleting products
+        db.execute("DELETE FROM orders WHERE id NOT IN (SELECT DISTINCT order_id FROM order_items)")
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[BULK DELETE] Error cleaning empty orders: {e}")
+
     invalidate_cache('all_products_list')
     db.close()
 
     if deleted_count > 0:
         if failed_products:
-            flash(f'Successfully deleted {deleted_count} products. The following could not be deleted because they are in existing orders: {", ".join(failed_products)}', 'warning')
+            flash(f'Successfully deleted {deleted_count} products. The following could not be deleted: {", ".join(failed_products)}', 'warning')
         else:
             flash(f'Successfully deleted {deleted_count} selected products.', 'success')
     else:
         if failed_products:
-            flash(f'Could not delete the selected products because they are referenced in existing orders: {", ".join(failed_products)}', 'error')
+            flash(f'Could not delete the selected products: {", ".join(failed_products)}', 'error')
         else:
             flash('No products found or deleted.', 'error')
 
