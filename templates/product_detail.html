@@ -1222,15 +1222,6 @@ Indian partners.{% endblock %}
           <span class="pd-spec-value">
             {% if product.stocks > 10 %}In Stock{% elif product.stocks > 0 %}Low Stock{% else %}Out of Stock{% endif %}
           </span>
-        </div>
-        {% if specs %}
-          {% for spec in specs %}
-          <div class="pd-spec-item">
-            <span class="pd-spec-label">{{ spec.key }}:</span>
-            <span class="pd-spec-value">{{ spec.value }}</span>
-          </div>
-          {% endfor %}
-        {% endif %}
         <div class="pd-spec-item" style="grid-column: span 2; border: none; padding-bottom: 0;">
           <span class="pd-spec-label">Shipping:</span>
           <span class="pd-spec-value" style="color: #2e7d32;">
@@ -1317,6 +1308,21 @@ Indian partners.{% endblock %}
         <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">About this item</h3>
         <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-mid);">{{ product.description }}</p>
       </div>
+
+      <!-- Custom Specifications Section -->
+      {% if specs %}
+      <div class="pd-custom-specs-block" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px; margin-bottom: 20px;">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px;">Product Specifications</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          {% for spec in specs %}
+          <div style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px; display: flex; flex-direction: column;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{{ spec.key }}</span>
+            <span style="font-size: 0.9rem; color: var(--text-dark); margin-top: 2px;">{{ spec.value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Bulk Enquiry Form Target Section -->
       <div class="pd-enquiry" id="pd-enquiry-form-section" style="margin-top: 10px;">
