@@ -335,22 +335,20 @@
 
       <!-- Video Manager -->
       <div class="form-group" style="margin-bottom: 24px;">
-        <label>Product Video (Optional)</label>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
-          <div class="form-group" style="margin-bottom:0;">
-            <label for="prod-video-url" style="font-size:0.75rem; color:var(--text-muted); text-transform:none; letter-spacing:normal;">Video URL (YouTube, Vimeo, or Direct link)</label>
-            <input type="text" id="prod-video-url" name="video_url" placeholder="e.g. https://www.youtube.com/watch?v=..." value="{{ product.video_url if product.video_url and '://' in product.video_url else '' }}" />
+        <label for="prod-video-file">Product Video (Optional)</label>
+        <label for="prod-video-file" style="font-size:0.75rem; color:var(--text-muted); text-transform:none; letter-spacing:normal; margin-bottom:6px;">
+          Upload Local Video File (MP4, WebM)
+          {% if product.video_url %}
+            <span style="color:var(--green-primary); font-weight:bold;">(Current: {{ product.video_url }})</span>
+          {% endif %}
+        </label>
+        <input type="file" id="prod-video-file" name="video_file" accept="video/*" style="padding: 10px;" />
+        {% if product.video_url %}
+          <div class="checkbox-group" style="margin-top: 10px; margin-bottom: 0;">
+            <input type="checkbox" id="remove-video" name="remove_video" value="1" />
+            <label for="remove-video" style="font-size:0.82rem; font-weight:500; text-transform:none; letter-spacing:normal; color:#e74c3c; cursor: pointer;">Remove current video</label>
           </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label for="prod-video-file" style="font-size:0.75rem; color:var(--text-muted); text-transform:none; letter-spacing:normal;">
-              Or Upload Local Video File (MP4, WebM)
-              {% if product.video_url and '://' not in product.video_url %}
-                <span style="color:var(--green-primary); font-weight:bold;">(Current: {{ product.video_url }})</span>
-              {% endif %}
-            </label>
-            <input type="file" id="prod-video-file" name="video_file" accept="video/*" style="padding: 10px;" />
-          </div>
-        </div>
+        {% endif %}
       </div>
 
       <!-- Description -->

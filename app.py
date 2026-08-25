@@ -4734,8 +4734,8 @@ def admin_add_product():
 
     primary_image = image_list[0] if image_list else ''
 
-    # Handle video file upload or remote video URL
-    video_url = request.form.get('video_url', '').strip()
+    # Handle local video file upload
+    video_url = ''
     video_file = request.files.get('video_file')
     if video_file and video_file.filename and allowed_video_file(video_file.filename):
         filename = secure_filename(video_file.filename)
@@ -4887,8 +4887,14 @@ def admin_edit_product(id):
             if combined_csv:
                 image_list.extend([img.strip() for img in combined_csv.split(',') if img.strip()])
 
-    # Handle video file upload or remote video URL update
-    video_url = request.form.get('video_url', '').strip()
+    # Handle local video file upload or removal option
+    db = get_db()
+    existing_product = db.execute("SELECT video_url FROM products WHERE id = ?", (id,)).fetchone()
+    video_url = existing_product['video_url'] if existing_product else ''
+
+    if request.form.get('remove_video') == '1':
+        video_url = ''
+
     video_file = request.files.get('video_file')
     if video_file and video_file.filename and allowed_video_file(video_file.filename):
         filename = secure_filename(video_file.filename)
@@ -4901,9 +4907,6 @@ def admin_edit_product(id):
             counter += 1
         video_file.save(filepath)
         video_url = filename
-
-    db = get_db()
-
     if image_list:
         # New images provided — update both primary and product_images table
         primary_image = image_list[0]
