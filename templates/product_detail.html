@@ -46,103 +46,10 @@ Indian partners.{% endblock %}
   @media (max-width: 991px) {
     .pd-grid {
       grid-template-columns: 1fr;
-      gap: 32px;
+      gap: 36px;
     }
     .pd-gallery {
       position: static !important;
-    }
-    .pd-page {
-      padding: 110px 16px 60px;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .pd-page {
-      padding: 115px 14px 40px !important;
-      overflow-x: hidden !important;
-      max-width: 100% !important;
-    }
-    .pd-main-img {
-      aspect-ratio: 1 / 1 !important;
-      max-height: 400px !important;
-      background: #ffffff !important;
-    }
-    .pd-slide {
-      background: #ffffff !important;
-    }
-    .pd-slide img {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: contain !important;
-      background: #ffffff !important;
-    }
-    .pd-title {
-      font-size: 1.45rem !important;
-      line-height: 1.25 !important;
-      word-break: break-word !important;
-      overflow-wrap: break-word !important;
-    }
-    .pd-breadcrumb {
-      flex-wrap: wrap !important;
-      font-size: 0.75rem !important;
-      gap: 4px !important;
-      margin-bottom: 16px !important;
-    }
-    .pd-seller-card {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      gap: 12px !important;
-      padding: 12px 14px !important;
-    }
-    .pd-seller-left {
-      min-width: 0 !important;
-      width: 100% !important;
-    }
-    .pd-seller-name {
-      font-size: 0.82rem !important;
-      word-break: break-word !important;
-    }
-    .pd-seller-actions {
-      width: 100% !important;
-    }
-    .btn-seller-msg {
-      width: 100% !important;
-      text-align: center !important;
-      display: block !important;
-    }
-    .pd-thumbs {
-      padding: 4px 0 8px !important;
-    }
-    .pd-thumb {
-      width: 54px !important;
-      height: 54px !important;
-    }
-  }
-
-  @media (max-width: 500px) {
-    .pd-page {
-      padding: 105px 12px 40px !important;
-    }
-    .pd-specs-grid {
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-    .pd-custom-specs-block div[style*="grid-template-columns"] {
-      grid-template-columns: 1fr !important;
-    }
-    .pd-reviews-grid {
-      grid-template-columns: 1fr !important;
-    }
-    .pd-rating-box, .pd-write-box {
-      padding: 20px 16px !important;
-    }
-    .mo-modal-content {
-      padding: 22px 16px !important;
-      width: 95% !important;
-    }
-    .mo-form-row {
-      grid-template-columns: 1fr !important;
-      gap: 10px !important;
     }
   }
 
@@ -153,212 +60,28 @@ Indian partners.{% endblock %}
   }
 
   .pd-main-img {
-    position: relative;
     border-radius: 16px;
     overflow: hidden;
     background: #ffffff;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     aspect-ratio: 3/4;
-    margin-bottom: 12px;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-
-  .pd-slider-track {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    touch-action: pan-y pinch-zoom;
-    cursor: grab;
-  }
-
-  .pd-slider-track::-webkit-scrollbar {
-    display: none;
-  }
-
-  .pd-slider-track.is-dragging {
-    cursor: grabbing;
-    scroll-snap-type: none;
-    scroll-behavior: auto;
-  }
-
-  .pd-slide {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: 12px;
     position: relative;
-    background: #ffffff;
-    cursor: zoom-in;
   }
 
-  .pd-slide img {
+  .pd-main-img img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    pointer-events: none;
-    user-select: none;
-    -webkit-user-drag: none;
     transition: transform 0.3s ease;
   }
 
-  @media (hover: hover) and (pointer: fine) {
-    .pd-slide:hover img {
-      transform: scale(1.02);
-    }
-  }
-
-  /* Slider Navigation Arrows */
-  .pd-slider-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 8;
-    color: var(--text-dark, #222);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .pd-main-img:hover .pd-slider-btn {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  @media (max-width: 991px) {
-    .pd-slider-btn {
-      opacity: 0.85;
-      pointer-events: auto;
-      width: 34px;
-      height: 34px;
-    }
-  }
-
-  .pd-slider-btn:hover {
-    background: #ffffff;
-    color: var(--green-primary, #2d6a4f);
-    transform: translateY(-50%) scale(1.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  }
-
-  .pd-slider-btn:active {
-    transform: translateY(-50%) scale(0.95);
-  }
-
-  .pd-prev-btn {
-    left: 10px;
-  }
-
-  .pd-next-btn {
-    right: 10px;
-  }
-
-  .pd-slider-btn.disabled,
-  .pd-slider-btn:disabled {
-    opacity: 0.25 !important;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
-  /* Slide Counter Badge */
-  .pd-slide-counter {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background: rgba(20, 30, 25, 0.7);
-    backdrop-filter: blur(6px);
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    padding: 3px 9px;
-    border-radius: 14px;
-    z-index: 7;
-    pointer-events: none;
-  }
-
-  /* Zoom hint button */
-  .pd-zoom-hint {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: var(--text-mid, #555);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 7;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  }
-
-  .pd-zoom-hint:hover {
-    background: #fff;
-    color: var(--green-primary, #2d6a4f);
-    transform: scale(1.08);
-  }
-
-  /* Dots on Mobile */
-  .pd-slider-dots {
-    display: none;
-    position: absolute;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    gap: 6px;
-    z-index: 7;
-    pointer-events: auto;
-  }
-
-  @media (max-width: 768px) {
-    .pd-slider-dots {
-      display: flex;
-      align-items: center;
-    }
-  }
-
-  .pd-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.22);
-    transition: all 0.25s ease;
-    cursor: pointer;
-  }
-
-  .pd-dot.active {
-    background: var(--green-primary, #2d6a4f);
-    width: 18px;
-    border-radius: 9px;
+  .pd-main-img:hover img {
+    transform: scale(1.02);
   }
 
   .pd-thumbs {
@@ -366,9 +89,6 @@ Indian partners.{% endblock %}
     gap: 8px;
     overflow-x: auto;
     padding: 4px 0;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
   }
 
   .pd-thumb {
@@ -387,60 +107,11 @@ Indian partners.{% endblock %}
     width: 100%;
     height: 100%;
     object-fit: cover;
-    pointer-events: none;
   }
 
   .pd-thumb.active {
     border-color: var(--green-light);
     box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
-  }
-
-  /* Lightbox Navigation */
-  .pd-lb-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10001;
-    transition: all 0.2s;
-  }
-
-  .pd-lb-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-50%) scale(1.08);
-  }
-
-  .pd-lb-prev {
-    left: 20px;
-  }
-
-  .pd-lb-next {
-    right: 20px;
-  }
-
-  .pd-lb-counter {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 20px;
-    z-index: 10001;
   }
 
   /* Badges row */
@@ -1400,92 +1071,32 @@ Indian partners.{% endblock %}
 
     <!-- LEFT: Gallery -->
     <div class="pd-gallery">
-      {% set total_slide_count = (images|length if images else 0) + (1 if product.video_url else 0) %}
-      {% if total_slide_count == 0 %}{% set total_slide_count = 1 %}{% endif %}
-
-      <div class="pd-main-img" id="pd-main-img-box">
-        <!-- Touch / Swipeable Slider Track -->
-        <div class="pd-slider-track" id="pd-slider-track">
-          {% if images %}
-            {% for img in images %}
-            <div class="pd-slide" data-index="{{ loop.index0 }}" onclick="handleSlideClick(event, {{ loop.index0 }})">
-              <img src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}"
-                alt="{{ product.name }} - Image {{ loop.index }}"
-                loading="{% if loop.first %}eager{% else %}lazy{% endif %}"
-                draggable="false" />
-            </div>
-            {% endfor %}
-          {% elif not product.video_url %}
-            <div class="pd-slide" data-index="0" onclick="handleSlideClick(event, 0)">
-              <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" draggable="false" />
-            </div>
-          {% endif %}
-
-          {% if product.video_url %}
-          <div class="pd-slide pd-slide-video" data-index="{{ images|length if images else 0 }}" style="background: #000;">
-            <div id="pd-video-container" style="display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 3;"></div>
-            <div id="pd-video-poster" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #161a18; color: #fff; cursor: pointer;" onclick="loadAndPlayVideo()">
-              <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 2px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; transition: transform 0.2s;">
-                <svg viewBox="0 0 24 24" fill="#fff" width="26" height="26" style="margin-left: 3px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              </div>
-              <span style="font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em;">Watch Product Video</span>
-            </div>
-          </div>
-          {% endif %}
-        </div>
-
-        {% if total_slide_count > 1 %}
-        <!-- Navigation Arrows -->
-        <button type="button" class="pd-slider-btn pd-prev-btn" id="pd-prev-btn" aria-label="Previous image" onclick="slidePrev(event)">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <button type="button" class="pd-slider-btn pd-next-btn" id="pd-next-btn" aria-label="Next image" onclick="slideNext(event)">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-
-        <!-- Slide Counter Badge -->
-        <div class="pd-slide-counter">
-          <span id="pd-cur-slide-num">1</span> / <span>{{ total_slide_count }}</span>
-        </div>
-
-        <!-- Mobile Dots -->
-        <div class="pd-slider-dots" id="pd-slider-dots">
-          {% for i in range(total_slide_count) %}
-          <span class="pd-dot {% if loop.first %}active{% endif %}" data-dot-index="{{ loop.index0 }}" onclick="goToSlide({{ loop.index0 }})"></span>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Zoom / Lightbox Trigger -->
-        <div class="pd-zoom-hint" title="Tap to zoom" onclick="openLightbox()">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-          </svg>
-        </div>
-      </div>
-
-      {% if total_slide_count > 1 %}
-      <div class="pd-thumbs" id="pd-thumbs">
+      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #fff; cursor: zoom-in;" onclick="openLightbox()">
         {% if images %}
-          {% for img in images %}
-          <div class="pd-thumb {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"
-            onclick="goToSlide({{ loop.index0 }})">
-            <img
-              src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}"
-              alt="{{ product.name }} thumbnail {{ loop.index }}" />
-          </div>
-          {% endfor %}
+        <img id="pd-hero-img"
+          src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
+          alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.25s;" />
+        {% else %}
+        <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.25s; display: none;" />
         {% endif %}
+        <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 5;"></div>
+      </div>
+      {% if images|length > 1 or product.video_url %}
+      <div class="pd-thumbs" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+        {% for img in images %}
+        <div class="pd-thumb {% if loop.first %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
+          onclick="switchImg(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
+          <img
+            src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}"
+            alt="" style="width: 100%; height: 100%; object-fit: cover;" />
+        </div>
+        {% endfor %}
         
         {% if product.video_url %}
-        <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" data-index="{{ images|length if images else 0 }}"
-          onclick="goToSlide({{ images|length if images else 0 }})">
+        <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden; background: #1a1a1a;"
+          onclick="switchVideo(this, '{{ product.video_url|escape }}')">
           <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </div>
           {% if 'youtube.com' in product.video_url or 'youtu.be' in product.video_url %}
             {% set yt_id = '' %}
@@ -1744,7 +1355,7 @@ Indian partners.{% endblock %}
       <div class="section-tag">Recommendations</div>
       <h2>Similar &amp; Related Products</h2>
     </div>
-    <div class="products-grid">
+    <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
       {% for prod in related_products %}
       <article class="product-card">
         <a href="{{ url_for('product_detail', id=prod.id) }}"
@@ -1987,23 +1598,12 @@ Indian partners.{% endblock %}
       </form>
     </div>
   </div>
-  <!-- Lightbox Modal with Touch Swiping -->
+  <!-- Lightbox Modal -->
   <div id="pd-lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
-    <span class="pd-lb-close" style="position: absolute; top: 20px; right: 26px; color: #fff; font-size: 38px; font-weight: 300; cursor: pointer; transition: 0.2s; user-select: none; z-index: 10000; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.1); line-height: 1;" onclick="closeLightbox()">&times;</span>
-
-    <button type="button" class="pd-lb-btn pd-lb-prev" id="pd-lb-prev" aria-label="Previous" onclick="lightboxPrev(event)">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-
+    <span style="position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; user-select: none; z-index: 10000;" onclick="closeLightbox()">&times;</span>
     <div id="pd-lightbox-content" style="max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
       <!-- Dynamic image or video will be injected here -->
     </div>
-
-    <button type="button" class="pd-lb-btn pd-lb-next" id="pd-lb-next" aria-label="Next" onclick="lightboxNext(event)">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-
-    <div id="pd-lb-counter" class="pd-lb-counter"></div>
   </div>
 
 </div><!-- /pd-page -->
@@ -2011,357 +1611,48 @@ Indian partners.{% endblock %}
 
 {% block extra_js %}
 <script>
-  // ── Product Gallery & Touch Slider ──
-  const galleryMedia = [
-    {% if images %}
-      {% for img in images %}
-      {
-        type: 'image',
-        src: "{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}",
-        alt: "{{ product.name|escape }} - Image {{ loop.index }}"
-      },
-      {% endfor %}
-    {% elif not product.video_url %}
-      {
-        type: 'image',
-        src: "{{ url_for('static', filename='images/default.jpg') }}",
-        alt: "{{ product.name|escape }}"
-      },
-    {% endif %}
-    {% if product.video_url %}
-      {
-        type: 'video',
-        url: "{{ product.video_url|escape }}"
-      }
-    {% endif %}
-  ];
-
-  let currentSlideIndex = 0;
-  const totalSlides = galleryMedia.length;
-  let track = null;
-  let touchMoved = false;
-  let isPointerDown = false;
-  let pointerStartX = 0;
-  let pointerStartScroll = 0;
-  let mouseDragged = false;
-  let isVideoLoaded = false;
-
-  function initGallerySlider() {
-    track = document.getElementById('pd-slider-track');
-    if (!track) return;
-
-    // Track scroll listener with requestAnimationFrame
-    let scrollTicking = false;
-    track.addEventListener('scroll', () => {
-      if (!scrollTicking) {
-        window.requestAnimationFrame(() => {
-          syncActiveSlideFromScroll();
-          scrollTicking = false;
-        });
-        scrollTicking = true;
-      }
-    }, { passive: true });
-
-    // Touch gesture detection for tap-vs-swipe
-    let touchStartX = 0;
-    let touchStartY = 0;
-    track.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      touchMoved = false;
-    }, { passive: true });
-
-    track.addEventListener('touchmove', (e) => {
-      const diffX = Math.abs(e.touches[0].clientX - touchStartX);
-      const diffY = Math.abs(e.touches[0].clientY - touchStartY);
-      if (diffX > 8 || diffY > 8) {
-        touchMoved = true;
-      }
-    }, { passive: true });
-
-    // Mouse drag scrolling (for desktop drag-to-slide)
-    track.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      isPointerDown = true;
-      mouseDragged = false;
-      pointerStartX = e.clientX;
-      pointerStartScroll = track.scrollLeft;
-      track.classList.add('is-dragging');
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (!isPointerDown || !track) return;
-      const deltaX = e.clientX - pointerStartX;
-      if (Math.abs(deltaX) > 6) {
-        mouseDragged = true;
-      }
-      track.scrollLeft = pointerStartScroll - deltaX;
-    });
-
-    window.addEventListener('mouseup', (e) => {
-      if (!isPointerDown || !track) return;
-      isPointerDown = false;
-      track.classList.remove('is-dragging');
-      if (mouseDragged) {
-        const slideWidth = track.clientWidth;
-        if (slideWidth > 0) {
-          const targetIndex = Math.round(track.scrollLeft / slideWidth);
-          goToSlide(Math.max(0, Math.min(totalSlides - 1, targetIndex)));
-        }
-      }
-    });
-
-    // Auto load video if product has only video
-    {% if not images and product.video_url %}
-    loadAndPlayVideo();
-    {% endif %}
-
-    updateUI(0);
-  }
-
-  function syncActiveSlideFromScroll() {
-    if (!track) return;
-    const slideWidth = track.clientWidth;
-    if (!slideWidth) return;
-    const newIndex = Math.round(track.scrollLeft / slideWidth);
-    if (newIndex !== currentSlideIndex && newIndex >= 0 && newIndex < totalSlides) {
-      currentSlideIndex = newIndex;
-      updateUI(currentSlideIndex);
-    }
-  }
-
-  function goToSlide(index, smooth = true) {
-    if (!track || index < 0 || index >= totalSlides) return;
-    currentSlideIndex = index;
-    const slideWidth = track.clientWidth;
-    track.scrollTo({
-      left: index * slideWidth,
-      behavior: smooth ? 'smooth' : 'auto'
-    });
-    updateUI(index);
-  }
-
-  function slidePrev(e) {
-    if (e) e.stopPropagation();
-    if (currentSlideIndex > 0) {
-      goToSlide(currentSlideIndex - 1);
-    } else {
-      goToSlide(totalSlides - 1);
-    }
-  }
-
-  function slideNext(e) {
-    if (e) e.stopPropagation();
-    if (currentSlideIndex < totalSlides - 1) {
-      goToSlide(currentSlideIndex + 1);
-    } else {
-      goToSlide(0);
-    }
-  }
-
-  function updateUI(index) {
-    // Update counter badge
-    const curNum = document.getElementById('pd-cur-slide-num');
-    if (curNum) curNum.textContent = (index + 1);
-
-    // Update thumbnail active state
-    document.querySelectorAll('.pd-thumb').forEach((thumb) => {
-      const tIdx = parseInt(thumb.dataset.index);
-      if (tIdx === index) {
-        thumb.classList.add('active');
-        thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      } else {
-        thumb.classList.remove('active');
-      }
-    });
-
-    // Update dots
-    document.querySelectorAll('.pd-dot').forEach((dot, dIdx) => {
-      if (dIdx === index) {
-        dot.classList.add('active');
-      } else {
-        dot.classList.remove('active');
-      }
-    });
-
-    // If navigated to video slide, load it
-    if (galleryMedia[index] && galleryMedia[index].type === 'video') {
-      loadAndPlayVideo();
-    }
-  }
-
-  function handleSlideClick(event, index) {
-    if (touchMoved || mouseDragged) return; // Ignore drag/swipe
-    openLightbox(index);
-  }
-
-  function loadAndPlayVideo() {
-    {% if product.video_url %}
-    const videoUrl = '{{ product.video_url|escape }}';
-    const videoContainer = document.getElementById('pd-video-container');
-    const videoPoster = document.getElementById('pd-video-poster');
-    if (!videoContainer) return;
-
-    if (!isVideoLoaded) {
-      const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-      const isVimeo = videoUrl.includes('vimeo.com');
-
-      let html = '';
-      if (isYoutube) {
-        let videoId = '';
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = videoUrl.match(regExp);
-        if (match && match[2].length === 11) {
-          videoId = match[2];
-        }
-        html = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" style="width:100%; height:100%; border:none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-      } else if (isVimeo) {
-        const match = videoUrl.match(/vimeo\.com\/(\d+)/);
-        let videoId = match ? match[1] : '';
-        html = `<iframe src="https://player.vimeo.com/video/${videoId}?autoplay=1" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-      } else {
-        let src = videoUrl;
-        if (!videoUrl.includes('://') && !videoUrl.startsWith('/')) {
-          src = "/static/images/" + videoUrl;
-        }
-        html = `<video src="${src}" controls autoplay playsinline style="width:100%; height:100%; object-fit:contain; background:#000;"></video>`;
-      }
-
-      videoContainer.innerHTML = html;
-      isVideoLoaded = true;
-    }
-
-    videoContainer.style.display = 'block';
-    if (videoPoster) videoPoster.style.display = 'none';
-    {% endif %}
-  }
-
-  // Backward compatibility
-  function switchImg(el, src) {
-    const idx = galleryMedia.findIndex(m => m.src === src);
-    if (idx !== -1) {
-      goToSlide(idx);
-    }
-  }
-
-  function switchVideo(el, videoUrl) {
-    const idx = galleryMedia.findIndex(m => m.type === 'video');
-    if (idx !== -1) {
-      goToSlide(idx);
-      loadAndPlayVideo();
-    }
-  }
-
-  // ── Lightbox with Swiping and Navigation ──
-  let lightboxIndex = 0;
-
-  function openLightbox(index) {
-    lightboxIndex = (typeof index === 'number') ? index : currentSlideIndex;
+  // Lightbox functions
+  function openLightbox() {
     const lightbox = document.getElementById('pd-lightbox');
-    if (!lightbox) return;
+    const content = document.getElementById('pd-lightbox-content');
+    const videoContainer = document.getElementById('pd-video-container');
+    const heroImg = document.getElementById('pd-hero-img');
 
-    renderLightboxSlide(lightboxIndex);
+    if (!lightbox || !content) return;
+
+    content.innerHTML = '';
+
+    // Check if video is currently displayed
+    if (videoContainer && videoContainer.style.display === 'block') {
+      const activeVideo = videoContainer.querySelector('iframe, video');
+      if (activeVideo) {
+        let clonedVideo = activeVideo.cloneNode(true);
+        clonedVideo.style.width = '80vw';
+        clonedVideo.style.height = '80vh';
+        clonedVideo.style.maxWidth = '100%';
+        clonedVideo.style.maxHeight = '100%';
+        clonedVideo.style.objectFit = 'contain';
+        if (clonedVideo.tagName.toLowerCase() === 'video') {
+          clonedVideo.controls = true;
+          clonedVideo.autoplay = true;
+        }
+        content.appendChild(clonedVideo);
+      }
+    } else if (heroImg) {
+      const img = document.createElement('img');
+      img.src = heroImg.src;
+      img.style.maxWidth = '90vw';
+      img.style.maxHeight = '90vh';
+      img.style.objectFit = 'contain';
+      img.style.borderRadius = 'var(--radius-sm)';
+      img.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+      content.appendChild(img);
+    }
 
     lightbox.style.display = 'flex';
     setTimeout(() => {
       lightbox.style.opacity = '1';
     }, 10);
-  }
-
-  function renderLightboxSlide(index) {
-    const content = document.getElementById('pd-lightbox-content');
-    const counter = document.getElementById('pd-lb-counter');
-    const prevBtn = document.getElementById('pd-lb-prev');
-    const nextBtn = document.getElementById('pd-lb-next');
-    if (!content) return;
-
-    content.innerHTML = '';
-    const item = galleryMedia[index];
-    if (!item) return;
-
-    if (item.type === 'video') {
-      const videoUrl = item.url;
-      const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-      const isVimeo = videoUrl.includes('vimeo.com');
-      let mediaEl;
-
-      if (isYoutube) {
-        let videoId = '';
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = videoUrl.match(regExp);
-        if (match && match[2].length === 11) videoId = match[2];
-        mediaEl = document.createElement('iframe');
-        mediaEl.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-        mediaEl.style.width = '80vw';
-        mediaEl.style.height = '80vh';
-        mediaEl.style.maxWidth = '1000px';
-        mediaEl.style.border = 'none';
-        mediaEl.allow = 'autoplay; encrypted-media';
-        mediaEl.allowFullscreen = true;
-      } else if (isVimeo) {
-        const match = videoUrl.match(/vimeo\.com\/(\d+)/);
-        let videoId = match ? match[1] : '';
-        mediaEl = document.createElement('iframe');
-        mediaEl.src = `https://player.vimeo.com/video/${videoId}?autoplay=1`;
-        mediaEl.style.width = '80vw';
-        mediaEl.style.height = '80vh';
-        mediaEl.style.maxWidth = '1000px';
-        mediaEl.style.border = 'none';
-        mediaEl.allow = 'autoplay; fullscreen';
-        mediaEl.allowFullscreen = true;
-      } else {
-        let src = videoUrl;
-        if (!videoUrl.includes('://') && !videoUrl.startsWith('/')) {
-          src = "/static/images/" + videoUrl;
-        }
-        mediaEl = document.createElement('video');
-        mediaEl.src = src;
-        mediaEl.controls = true;
-        mediaEl.autoplay = true;
-        mediaEl.playsInline = true;
-        mediaEl.style.maxWidth = '90vw';
-        mediaEl.style.maxHeight = '90vh';
-        mediaEl.style.objectFit = 'contain';
-      }
-      content.appendChild(mediaEl);
-    } else {
-      const img = document.createElement('img');
-      img.src = item.src;
-      img.alt = item.alt || '';
-      img.style.maxWidth = '90vw';
-      img.style.maxHeight = '90vh';
-      img.style.objectFit = 'contain';
-      img.style.borderRadius = '8px';
-      img.style.boxShadow = '0 10px 40px rgba(0,0,0,0.6)';
-      img.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-      content.appendChild(img);
-    }
-
-    if (counter) {
-      if (totalSlides > 1) {
-        counter.textContent = `${index + 1} / ${totalSlides}`;
-        counter.style.display = 'block';
-      } else {
-        counter.style.display = 'none';
-      }
-    }
-
-    if (prevBtn && nextBtn) {
-      prevBtn.style.display = totalSlides > 1 ? 'flex' : 'none';
-      nextBtn.style.display = totalSlides > 1 ? 'flex' : 'none';
-    }
-  }
-
-  function lightboxPrev(e) {
-    if (e) e.stopPropagation();
-    lightboxIndex = (lightboxIndex - 1 + totalSlides) % totalSlides;
-    renderLightboxSlide(lightboxIndex);
-  }
-
-  function lightboxNext(e) {
-    if (e) e.stopPropagation();
-    lightboxIndex = (lightboxIndex + 1) % totalSlides;
-    renderLightboxSlide(lightboxIndex);
   }
 
   function closeLightbox() {
@@ -2372,51 +1663,80 @@ Indian partners.{% endblock %}
       lightbox.style.display = 'none';
       const content = document.getElementById('pd-lightbox-content');
       if (content) content.innerHTML = '';
-      goToSlide(lightboxIndex, false);
     }, 300);
   }
 
   document.addEventListener('DOMContentLoaded', function() {
-    initGallerySlider();
-
     const lightbox = document.getElementById('pd-lightbox');
     if (lightbox) {
       lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox || e.target.id === 'pd-lightbox-content') {
+        if (e.target === lightbox) {
           closeLightbox();
         }
       });
+    }
+  });
 
-      // Touch swiping in lightbox
-      let lbTouchStartX = 0;
-      let lbTouchStartY = 0;
-      lightbox.addEventListener('touchstart', (e) => {
-        lbTouchStartX = e.touches[0].clientX;
-        lbTouchStartY = e.touches[0].clientY;
-      }, { passive: true });
-
-      lightbox.addEventListener('touchend', (e) => {
-        const diffX = e.changedTouches[0].clientX - lbTouchStartX;
-        const diffY = e.changedTouches[0].clientY - lbTouchStartY;
-        if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-          if (diffX < 0) {
-            lightboxNext();
-          } else {
-            lightboxPrev();
-          }
-        }
-      }, { passive: true });
+  // Thumbnail switcher
+  function switchImg(el, src) {
+    const videoContainer = document.getElementById('pd-video-container');
+    if (videoContainer) {
+      videoContainer.style.display = 'none';
+      videoContainer.innerHTML = '';
     }
 
-    // Keyboard arrow navigation
-    document.addEventListener('keydown', function(e) {
-      const lb = document.getElementById('pd-lightbox');
-      if (lb && lb.style.display === 'flex') {
-        if (e.key === 'ArrowLeft') lightboxPrev();
-        else if (e.key === 'ArrowRight') lightboxNext();
-        else if (e.key === 'Escape') closeLightbox();
+    const hero = document.getElementById('pd-hero-img');
+    hero.style.opacity = '0';
+    setTimeout(() => {
+      hero.src = src;
+      hero.style.opacity = '1';
+      document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }, 250);
+  }
+
+  function switchVideo(el, videoUrl) {
+    const videoContainer = document.getElementById('pd-video-container');
+    if (!videoContainer) return;
+
+    videoContainer.innerHTML = '';
+
+    const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+    const isVimeo = videoUrl.includes('vimeo.com');
+
+    let html = '';
+    if (isYoutube) {
+      let videoId = '';
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = videoUrl.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
       }
-    });
+      html = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" style="width:100%; height:100%; border:none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    } else if (isVimeo) {
+      const match = videoUrl.match(/vimeo\.com\/(\d+)/);
+      let videoId = match ? match[1] : '';
+      html = `<iframe src="https://player.vimeo.com/video/${videoId}?autoplay=1" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    } else {
+      let src = videoUrl;
+      if (!videoUrl.includes('://') && !videoUrl.startsWith('/')) {
+        src = "/static/images/" + videoUrl;
+      }
+      html = `<video src="${src}" controls autoplay style="width:100%; height:100%; object-fit:contain; background:#000;"></video>`;
+    }
+
+    videoContainer.innerHTML = html;
+    videoContainer.style.display = 'block';
+
+    document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    {% if not images and product.video_url %}
+      const videoThumb = document.querySelector('.video-thumb');
+      switchVideo(videoThumb, '{{ product.video_url|escape }}');
+    {% endif %}
   });
 
   // Qty stepper

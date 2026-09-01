@@ -304,28 +304,28 @@
                  onmouseout="this.style.color='inherit'">{{ product.name }}</a>
             </h2>
             <p class="product-desc">{{ product.description }}</p>
-            <div class="product-footer">
-              <div class="product-price-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid rgba(0,0,0,0.06); padding-top:12px;">
+              <div>
                 {% if product.discount_percent and product.discount_percent > 0 %}
                   {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
-                  <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                    <span style="font-size:1.15rem; font-weight:700; color:#e74c3c;">${{ sale_price }}</span>
-                    <span style="font-size:0.82rem; color:var(--text-muted); text-decoration:line-through;">${{ product.price }}</span>
-                    <span style="background:#e74c3c; color:white; font-size:0.65rem; font-weight:700; padding:2px 5px; border-radius:4px;">{{ product.discount_percent | int }}% OFF</span>
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:1.25rem; font-weight:700; color:#e74c3c;">${{ sale_price }}</span>
+                    <span style="font-size:0.9rem; color:var(--text-muted); text-decoration:line-through;">${{ product.price }}</span>
+                    <span style="background:#e74c3c; color:white; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px;">{{ product.discount_percent | int }}% OFF</span>
                   </div>
-                  <span class="price-unit">/ {{ product.unit }}</span>
+                  <span style="font-size:0.8rem; color:var(--text-muted);">/ {{ product.unit }}</span>
                 {% else %}
-                  <span class="price-val">${{ product.price }}</span>
-                  <span class="price-unit">/ {{ product.unit }}</span>
+                  <span style="font-size:1.25rem; font-weight:700; color:var(--green-dark);">${{ product.price }}</span>
+                  <span style="font-size:0.8rem; color:var(--text-muted);">/ {{ product.unit }}</span>
                 {% endif %}
               </div>
               <div>
                 {% if product.stocks > 10 %}
-                  <span class="stock-pill in-stock">In Stock</span>
+                  <span style="font-size:0.8rem; color:#2ecc71; font-weight:600;">In Stock</span>
                 {% elif product.stocks > 0 %}
-                  <span class="stock-pill low-stock">Low Stock</span>
+                  <span style="font-size:0.8rem; color:#e67e22; font-weight:600;">Low Stock</span>
                 {% else %}
-                  <span class="stock-pill out-of-stock">Out of Stock</span>
+                  <span style="font-size:0.8rem; color:#e74c3c; font-weight:600; text-transform:uppercase;">Out of Stock</span>
                 {% endif %}
               </div>
             </div>
