@@ -71,17 +71,256 @@ Indian partners.{% endblock %}
     justify-content: center;
     margin-bottom: 12px;
     position: relative;
+    touch-action: pan-y pinch-zoom;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
-  .pd-main-img img {
+  /* Media display stage */
+  .pd-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .pd-stage img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.25s ease;
+    pointer-events: none;
   }
 
-  .pd-main-img:hover img {
+  .pd-stage:hover img {
     transform: scale(1.02);
+  }
+
+  /* Slide transition keyframes */
+  @keyframes pdSlideInRight {
+    from {
+      opacity: 0.3;
+      transform: translateX(36px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pdSlideInLeft {
+    from {
+      opacity: 0.3;
+      transform: translateX(-36px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .pd-slide-next {
+    animation: pdSlideInRight 0.26s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .pd-slide-prev {
+    animation: pdSlideInLeft 0.26s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  /* Slider Navigation Arrows */
+  .pd-slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    color: var(--green-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 12;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .pd-main-img:hover .pd-slider-btn,
+  .pd-main-img:focus-within .pd-slider-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (max-width: 991px) {
+    /* Always visible on touch devices / mobile */
+    .pd-slider-btn {
+      opacity: 0.92;
+      pointer-events: auto;
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  .pd-slider-btn:hover {
+    background: #ffffff;
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    color: var(--green-primary);
+  }
+
+  .pd-slider-btn:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  .pd-slider-prev {
+    left: 10px;
+  }
+
+  .pd-slider-next {
+    right: 10px;
+  }
+
+  /* Media counter badge */
+  .pd-media-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(18, 38, 28, 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #ffffff;
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 12;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Mobile Pagination Dots */
+  .pd-gallery-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    z-index: 12;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  .pd-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(30, 50, 40, 0.25);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .pd-dot.active {
+    width: 20px;
+    border-radius: 10px;
+    background: var(--green-primary);
+    box-shadow: 0 2px 5px rgba(45, 106, 79, 0.35);
+  }
+
+  /* Mobile swipe gesture hint pill */
+  .pd-swipe-hint {
+    display: none;
+  }
+  @media (max-width: 768px) {
+    .pd-swipe-hint {
+      position: absolute;
+      bottom: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 0.68rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+      z-index: 11;
+      opacity: 0.85;
+      transition: opacity 0.5s ease;
+    }
+  }
+
+  /* Lightbox enhanced controls */
+  .pd-lb-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10001;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  .pd-lb-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.08);
+  }
+  .pd-lb-prev { left: 20px; }
+  .pd-lb-next { right: 20px; }
+  @media (max-width: 600px) {
+    .pd-lb-prev { left: 10px; }
+    .pd-lb-next { right: 10px; }
+    .pd-lb-btn { width: 40px; height: 40px; }
+  }
+  .pd-lb-counter {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10001;
   }
 
   .pd-thumbs {
@@ -1071,21 +1310,53 @@ Indian partners.{% endblock %}
 
     <!-- LEFT: Gallery -->
     <div class="pd-gallery">
-      <div class="pd-main-img" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #fff; cursor: zoom-in;" onclick="openLightbox()">
-        {% if images %}
-        <img id="pd-hero-img"
-          src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
-          alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.25s;" />
-        {% else %}
-        <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.25s; display: none;" />
-        {% endif %}
-        <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 5;"></div>
+      <div class="pd-main-img" id="pd-main-img-box" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #fff; cursor: zoom-in;" onclick="handleStageClick(event)">
+        
+        <!-- Media Stage Wrapper -->
+        <div class="pd-stage" id="pd-stage">
+          {% if images %}
+          <img id="pd-hero-img"
+            src="{% if '://' in images[0] %}{{ images[0] }}{% else %}{{ url_for('static', filename='images/' + images[0]) }}{% endif %}"
+            alt="{{ product.name }}" />
+          {% else %}
+          <img id="pd-hero-img" src="{{ url_for('static', filename='images/default.jpg') }}" alt="{{ product.name }}" style="display: none;" />
+          {% endif %}
+          <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 5;"></div>
+        </div>
+
+        <!-- Slider Navigation Arrows -->
+        <button type="button" class="pd-slider-btn pd-slider-prev" id="pd-btn-prev" aria-label="Previous media" onclick="event.stopPropagation(); prevMedia();">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button type="button" class="pd-slider-btn pd-slider-next" id="pd-btn-next" aria-label="Next media" onclick="event.stopPropagation(); nextMedia();">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- Media Counter Badge -->
+        <div class="pd-media-badge" id="pd-media-badge" style="display: none;">
+          <span id="pd-badge-icon">📷</span>
+          <span id="pd-badge-text">1 / 1</span>
+        </div>
+
+        <!-- Swipe Gesture Hint (fades out on interaction) -->
+        <div class="pd-swipe-hint" id="pd-swipe-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          <span>Swipe to view</span>
+        </div>
+
+        <!-- Pagination Dots -->
+        <div class="pd-gallery-dots" id="pd-gallery-dots" style="display: none;"></div>
       </div>
+
       {% if images|length > 1 or product.video_url %}
-      <div class="pd-thumbs" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+      <div class="pd-thumbs" id="pd-thumbs-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
         {% for img in images %}
-        <div class="pd-thumb {% if loop.first %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
-          onclick="switchImg(this, '{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}')">
+        <div class="pd-thumb {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" data-type="image" data-src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
+          onclick="goToMedia({{ loop.index0 }})">
           <img
             src="{% if '://' in img %}{{ img }}{% else %}{{ url_for('static', filename='images/' + img) }}{% endif %}"
             alt="" style="width: 100%; height: 100%; object-fit: cover;" />
@@ -1093,8 +1364,8 @@ Indian partners.{% endblock %}
         {% endfor %}
         
         {% if product.video_url %}
-        <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden; background: #1a1a1a;"
-          onclick="switchVideo(this, '{{ product.video_url|escape }}')">
+        <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" data-index="{{ images|length }}" data-type="video" data-video-url="{{ product.video_url|escape }}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden; background: #1a1a1a;"
+          onclick="goToMedia({{ images|length }})">
           <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
             <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </div>
@@ -1598,9 +1869,16 @@ Indian partners.{% endblock %}
       </form>
     </div>
   </div>
-  <!-- Lightbox Modal -->
-  <div id="pd-lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
-    <span style="position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; user-select: none; z-index: 10000;" onclick="closeLightbox()">&times;</span>
+  <!-- Lightbox Modal with Swipe & Navigation -->
+  <div id="pd-lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; touch-action: pan-y pinch-zoom; user-select: none;">
+    <div class="pd-lb-counter" id="pd-lb-counter">1 / 1</div>
+    <span style="position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; user-select: none; z-index: 10002;" onclick="closeLightbox()">&times;</span>
+    <button type="button" class="pd-lb-btn pd-lb-prev" id="pd-lb-prev" aria-label="Previous media" onclick="event.stopPropagation(); prevMediaLightbox();">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <button type="button" class="pd-lb-btn pd-lb-next" id="pd-lb-next" aria-label="Next media" onclick="event.stopPropagation(); nextMediaLightbox();">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
     <div id="pd-lightbox-content" style="max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
       <!-- Dynamic image or video will be injected here -->
     </div>
@@ -1611,95 +1889,182 @@ Indian partners.{% endblock %}
 
 {% block extra_js %}
 <script>
-  // Lightbox functions
-  function openLightbox() {
-    const lightbox = document.getElementById('pd-lightbox');
-    const content = document.getElementById('pd-lightbox-content');
-    const videoContainer = document.getElementById('pd-video-container');
-    const heroImg = document.getElementById('pd-hero-img');
+  /* ══════════════════════════════════════════════════════════════
+     PRODUCT DETAIL — UNIFIED SWIPEABLE MEDIA GALLERY & LIGHTBOX
+     ══════════════════════════════════════════════════════════════ */
 
-    if (!lightbox || !content) return;
+  let galleryMedia = [];
+  let currentMediaIdx = 0;
+  let preventLightboxOpen = false;
 
-    content.innerHTML = '';
-
-    // Check if video is currently displayed
-    if (videoContainer && videoContainer.style.display === 'block') {
-      const activeVideo = videoContainer.querySelector('iframe, video');
-      if (activeVideo) {
-        let clonedVideo = activeVideo.cloneNode(true);
-        clonedVideo.style.width = '80vw';
-        clonedVideo.style.height = '80vh';
-        clonedVideo.style.maxWidth = '100%';
-        clonedVideo.style.maxHeight = '100%';
-        clonedVideo.style.objectFit = 'contain';
-        if (clonedVideo.tagName.toLowerCase() === 'video') {
-          clonedVideo.controls = true;
-          clonedVideo.autoplay = true;
-        }
-        content.appendChild(clonedVideo);
-      }
-    } else if (heroImg) {
-      const img = document.createElement('img');
-      img.src = heroImg.src;
-      img.style.maxWidth = '90vw';
-      img.style.maxHeight = '90vh';
-      img.style.objectFit = 'contain';
-      img.style.borderRadius = 'var(--radius-sm)';
-      img.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-      content.appendChild(img);
-    }
-
-    lightbox.style.display = 'flex';
-    setTimeout(() => {
-      lightbox.style.opacity = '1';
-    }, 10);
-  }
-
-  function closeLightbox() {
-    const lightbox = document.getElementById('pd-lightbox');
-    if (!lightbox) return;
-    lightbox.style.opacity = '0';
-    setTimeout(() => {
-      lightbox.style.display = 'none';
-      const content = document.getElementById('pd-lightbox-content');
-      if (content) content.innerHTML = '';
-    }, 300);
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    const lightbox = document.getElementById('pd-lightbox');
-    if (lightbox) {
-      lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox) {
-          closeLightbox();
+  // Initialize media array from DOM thumbnails or fallback hero image
+  function initGalleryMedia() {
+    galleryMedia = [];
+    const thumbs = document.querySelectorAll('#pd-thumbs-container .pd-thumb');
+    
+    if (thumbs.length > 0) {
+      thumbs.forEach((t, i) => {
+        const type = t.dataset.type || (t.classList.contains('video-thumb') ? 'video' : 'image');
+        if (type === 'video') {
+          galleryMedia.push({
+            type: 'video',
+            videoUrl: t.dataset.videoUrl || '',
+            el: t
+          });
+        } else {
+          galleryMedia.push({
+            type: 'image',
+            src: t.dataset.src || (t.querySelector('img') ? t.querySelector('img').src : ''),
+            el: t
+          });
         }
       });
+    } else {
+      const heroImg = document.getElementById('pd-hero-img');
+      if (heroImg && heroImg.src) {
+        galleryMedia.push({
+          type: 'image',
+          src: heroImg.src,
+          el: null
+        });
+      }
     }
-  });
 
-  // Thumbnail switcher
-  function switchImg(el, src) {
-    const videoContainer = document.getElementById('pd-video-container');
-    if (videoContainer) {
-      videoContainer.style.display = 'none';
-      videoContainer.innerHTML = '';
-    }
-
-    const hero = document.getElementById('pd-hero-img');
-    hero.style.opacity = '0';
-    setTimeout(() => {
-      hero.src = src;
-      hero.style.opacity = '1';
-      document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
-      el.classList.add('active');
-    }, 250);
+    renderGalleryDots();
+    updateGalleryControls();
   }
 
-  function switchVideo(el, videoUrl) {
-    const videoContainer = document.getElementById('pd-video-container');
-    if (!videoContainer) return;
+  // Render pagination dots for mobile / touch devices
+  function renderGalleryDots() {
+    const dotsContainer = document.getElementById('pd-gallery-dots');
+    if (!dotsContainer) return;
+    dotsContainer.innerHTML = '';
 
-    videoContainer.innerHTML = '';
+    if (galleryMedia.length <= 1) {
+      dotsContainer.style.display = 'none';
+      return;
+    }
+
+    galleryMedia.forEach((item, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'pd-dot' + (i === currentMediaIdx ? ' active' : '');
+      dot.setAttribute('aria-label', `Slide ${i + 1}`);
+      dot.addEventListener('click', function(e) {
+        e.stopPropagation();
+        goToMedia(i);
+      });
+      dotsContainer.appendChild(dot);
+    });
+
+    dotsContainer.style.display = 'flex';
+  }
+
+  // Update badges, arrows, and counters
+  function updateGalleryControls() {
+    const badge = document.getElementById('pd-media-badge');
+    const badgeText = document.getElementById('pd-badge-text');
+    const badgeIcon = document.getElementById('pd-badge-icon');
+    const btnPrev = document.getElementById('pd-btn-prev');
+    const btnNext = document.getElementById('pd-btn-next');
+    const hint = document.getElementById('pd-swipe-hint');
+
+    const total = galleryMedia.length;
+    if (total <= 1) {
+      if (badge) badge.style.display = 'none';
+      if (btnPrev) btnPrev.style.display = 'none';
+      if (btnNext) btnNext.style.display = 'none';
+      if (hint) hint.style.display = 'none';
+      return;
+    }
+
+    if (badge && badgeText && badgeIcon) {
+      const curItem = galleryMedia[currentMediaIdx];
+      badgeIcon.textContent = curItem && curItem.type === 'video' ? '▶' : '📷';
+      badgeText.textContent = `${currentMediaIdx + 1} / ${total}`;
+      badge.style.display = 'inline-flex';
+    }
+
+    if (btnPrev) btnPrev.style.display = 'flex';
+    if (btnNext) btnNext.style.display = 'flex';
+
+    // Update dots active class
+    const dots = document.querySelectorAll('#pd-gallery-dots .pd-dot');
+    dots.forEach((dot, i) => {
+      if (i === currentMediaIdx) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
+  }
+
+  // Navigate to specific media index with slide animation
+  function goToMedia(index, direction) {
+    if (galleryMedia.length === 0) return;
+
+    // Fade out swipe hint on first interaction
+    const hint = document.getElementById('pd-swipe-hint');
+    if (hint) {
+      hint.style.opacity = '0';
+      setTimeout(() => { hint.style.display = 'none'; }, 400);
+    }
+
+    // Circular loop
+    currentMediaIdx = (index + galleryMedia.length) % galleryMedia.length;
+    const item = galleryMedia[currentMediaIdx];
+
+    const stage = document.getElementById('pd-stage');
+    const heroImg = document.getElementById('pd-hero-img');
+    const videoContainer = document.getElementById('pd-video-container');
+
+    // Trigger slide keyframe animation
+    if (stage) {
+      stage.classList.remove('pd-slide-next', 'pd-slide-prev');
+      void stage.offsetWidth; // force reflow
+      if (direction === 'prev') {
+        stage.classList.add('pd-slide-prev');
+      } else if (direction === 'next') {
+        stage.classList.add('pd-slide-next');
+      }
+    }
+
+    if (item.type === 'video') {
+      if (heroImg) heroImg.style.display = 'none';
+      renderVideoInContainer(videoContainer, item.videoUrl);
+      if (videoContainer) videoContainer.style.display = 'block';
+    } else {
+      if (videoContainer) {
+        videoContainer.style.display = 'none';
+        videoContainer.innerHTML = '';
+      }
+      if (heroImg) {
+        heroImg.src = item.src;
+        heroImg.style.display = 'block';
+      }
+    }
+
+    // Update thumbnail highlights & auto-scroll
+    document.querySelectorAll('#pd-thumbs-container .pd-thumb').forEach(t => t.classList.remove('active'));
+    if (item.el) {
+      item.el.classList.add('active');
+      item.el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    updateGalleryControls();
+  }
+
+  function nextMedia() {
+    goToMedia(currentMediaIdx + 1, 'next');
+  }
+
+  function prevMedia() {
+    goToMedia(currentMediaIdx - 1, 'prev');
+  }
+
+  // Render video player into target container
+  function renderVideoInContainer(container, videoUrl) {
+    if (!container) return;
+    container.innerHTML = '';
 
     const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
     const isVimeo = videoUrl.includes('vimeo.com');
@@ -1722,20 +2087,306 @@ Indian partners.{% endblock %}
       if (!videoUrl.includes('://') && !videoUrl.startsWith('/')) {
         src = "/static/images/" + videoUrl;
       }
-      html = `<video src="${src}" controls autoplay style="width:100%; height:100%; object-fit:contain; background:#000;"></video>`;
+      html = `<video src="${src}" controls autoplay playsinline style="width:100%; height:100%; object-fit:contain; background:#000;"></video>`;
     }
 
-    videoContainer.innerHTML = html;
-    videoContainer.style.display = 'block';
-
-    document.querySelectorAll('.pd-thumb').forEach(t => t.classList.remove('active'));
-    if (el) el.classList.add('active');
+    container.innerHTML = html;
   }
 
+  /* ── Touch & Swipe Gesture Recognition on Main Stage ── */
+  function initMainStageSwipe() {
+    const mainBox = document.getElementById('pd-main-img-box');
+    const stage = document.getElementById('pd-stage');
+    if (!mainBox) return;
+
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let startTime = 0;
+    let isTracking = false;
+    let isHorizontalGesture = false;
+
+    // Touch events for mobile screens
+    mainBox.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) return; // Allow standard pinch zoom
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      currentX = startX;
+      currentY = startY;
+      startTime = Date.now();
+      isTracking = true;
+      isHorizontalGesture = false;
+    }, { passive: true });
+
+    mainBox.addEventListener('touchmove', function(e) {
+      if (!isTracking || e.touches.length > 1) return;
+      currentX = e.touches[0].clientX;
+      currentY = e.touches[0].clientY;
+      const diffX = currentX - startX;
+      const diffY = currentY - startY;
+
+      if (!isHorizontalGesture) {
+        if (Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY)) {
+          isHorizontalGesture = true;
+        }
+      }
+
+      if (isHorizontalGesture) {
+        // Prevent window horizontal scroll/jitter while swiping
+        if (e.cancelable) e.preventDefault();
+        if (galleryMedia.length > 1 && stage) {
+          // Interactive visual follow drag
+          stage.style.transform = `translateX(${diffX * 0.38}px)`;
+          stage.style.transition = 'none';
+        }
+      }
+    }, { passive: false });
+
+    function onTouchEnd() {
+      if (!isTracking) return;
+      isTracking = false;
+
+      if (stage) {
+        stage.style.transition = 'transform 0.24s cubic-bezier(0.25, 1, 0.5, 1)';
+        stage.style.transform = '';
+      }
+
+      const diffX = currentX - startX;
+      const diffY = currentY - startY;
+      const elapsed = Date.now() - startTime;
+
+      // Detect deliberate swipe (quick flick or clear distance)
+      const isFlick = Math.abs(diffX) > 30 && elapsed < 320;
+      const isDistanceSwipe = Math.abs(diffX) > 50;
+
+      if (isHorizontalGesture && (isFlick || isDistanceSwipe) && galleryMedia.length > 1) {
+        preventLightboxOpen = true;
+        setTimeout(() => { preventLightboxOpen = false; }, 350);
+        if (diffX < 0) {
+          nextMedia();
+        } else {
+          prevMedia();
+        }
+      } else if (Math.abs(diffX) > 12 || Math.abs(diffY) > 12) {
+        // Slight drag or scroll movement: prevent lightbox from accidentally opening
+        preventLightboxOpen = true;
+        setTimeout(() => { preventLightboxOpen = false; }, 350);
+      }
+    }
+
+    mainBox.addEventListener('touchend', onTouchEnd, { passive: true });
+    mainBox.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    // Pointer events for desktop drag testing
+    let isPointerDown = false;
+    mainBox.addEventListener('pointerdown', function(e) {
+      if (e.pointerType === 'touch') return; // Handled by touch events
+      if (e.button !== 0) return; // Only main button
+      startX = e.clientX;
+      startY = e.clientY;
+      currentX = startX;
+      currentY = startY;
+      startTime = Date.now();
+      isPointerDown = true;
+      isHorizontalGesture = false;
+    });
+
+    window.addEventListener('pointermove', function(e) {
+      if (!isPointerDown) return;
+      currentX = e.clientX;
+      currentY = e.clientY;
+      const diffX = currentX - startX;
+      const diffY = currentY - startY;
+
+      if (!isHorizontalGesture && Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+        isHorizontalGesture = true;
+      }
+      if (isHorizontalGesture && galleryMedia.length > 1 && stage) {
+        stage.style.transform = `translateX(${diffX * 0.35}px)`;
+        stage.style.transition = 'none';
+      }
+    });
+
+    window.addEventListener('pointerup', function(e) {
+      if (!isPointerDown) return;
+      isPointerDown = false;
+      if (stage) {
+        stage.style.transition = 'transform 0.24s ease';
+        stage.style.transform = '';
+      }
+      const diffX = currentX - startX;
+      if (isHorizontalGesture && Math.abs(diffX) > 40 && galleryMedia.length > 1) {
+        preventLightboxOpen = true;
+        setTimeout(() => { preventLightboxOpen = false; }, 350);
+        if (diffX < 0) nextMedia();
+        else prevMedia();
+      }
+    });
+  }
+
+  // Stage click: only open lightbox if not swiping
+  function handleStageClick(e) {
+    if (preventLightboxOpen) return;
+    if (e.target.closest('.pd-slider-btn') || e.target.closest('.pd-gallery-dots')) return;
+    openLightbox();
+  }
+
+  /* ── Lightbox Functions & Lightbox Swipe ── */
+  function openLightbox() {
+    const lightbox = document.getElementById('pd-lightbox');
+    if (!lightbox) return;
+
+    renderLightboxContent();
+    lightbox.style.display = 'flex';
+    setTimeout(() => {
+      lightbox.style.opacity = '1';
+    }, 10);
+  }
+
+  function renderLightboxContent() {
+    const content = document.getElementById('pd-lightbox-content');
+    const counter = document.getElementById('pd-lb-counter');
+    const prevBtn = document.getElementById('pd-lb-prev');
+    const nextBtn = document.getElementById('pd-lb-next');
+
+    if (!content || galleryMedia.length === 0) return;
+    content.innerHTML = '';
+
+    const curItem = galleryMedia[currentMediaIdx];
+
+    if (counter) {
+      counter.textContent = `${currentMediaIdx + 1} / ${galleryMedia.length}`;
+      counter.style.display = galleryMedia.length > 1 ? 'block' : 'none';
+    }
+    if (prevBtn) prevBtn.style.display = galleryMedia.length > 1 ? 'flex' : 'none';
+    if (nextBtn) nextBtn.style.display = galleryMedia.length > 1 ? 'flex' : 'none';
+
+    if (curItem.type === 'video') {
+      const videoDiv = document.createElement('div');
+      videoDiv.style.width = '85vw';
+      videoDiv.style.height = '75vh';
+      videoDiv.style.maxWidth = '1100px';
+      videoDiv.style.maxHeight = '700px';
+      renderVideoInContainer(videoDiv, curItem.videoUrl);
+      content.appendChild(videoDiv);
+    } else {
+      const img = document.createElement('img');
+      img.src = curItem.src;
+      img.style.maxWidth = '90vw';
+      img.style.maxHeight = '90vh';
+      img.style.objectFit = 'contain';
+      img.style.borderRadius = 'var(--radius-sm)';
+      img.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+      content.appendChild(img);
+    }
+  }
+
+  function nextMediaLightbox() {
+    goToMedia(currentMediaIdx + 1, 'next');
+    renderLightboxContent();
+  }
+
+  function prevMediaLightbox() {
+    goToMedia(currentMediaIdx - 1, 'prev');
+    renderLightboxContent();
+  }
+
+  function closeLightbox() {
+    const lightbox = document.getElementById('pd-lightbox');
+    if (!lightbox) return;
+    lightbox.style.opacity = '0';
+    setTimeout(() => {
+      lightbox.style.display = 'none';
+      const content = document.getElementById('pd-lightbox-content');
+      if (content) content.innerHTML = '';
+    }, 300);
+  }
+
+  // Lightbox swipe gesture support
+  function initLightboxSwipe() {
+    const lightbox = document.getElementById('pd-lightbox');
+    if (!lightbox) return;
+
+    let lbStartX = 0;
+    let lbStartY = 0;
+    let lbCurrentX = 0;
+    let lbStartTime = 0;
+    let isLbTracking = false;
+
+    lightbox.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) return;
+      lbStartX = e.touches[0].clientX;
+      lbStartY = e.touches[0].clientY;
+      lbCurrentX = lbStartX;
+      lbStartTime = Date.now();
+      isLbTracking = true;
+    }, { passive: true });
+
+    lightbox.addEventListener('touchmove', function(e) {
+      if (!isLbTracking) return;
+      lbCurrentX = e.touches[0].clientX;
+    }, { passive: true });
+
+    lightbox.addEventListener('touchend', function(e) {
+      if (!isLbTracking) return;
+      isLbTracking = false;
+      const diffX = lbCurrentX - lbStartX;
+      const elapsed = Date.now() - lbStartTime;
+
+      if ((Math.abs(diffX) > 40 && elapsed < 350) || Math.abs(diffX) > 60) {
+        if (diffX < 0) nextMediaLightbox();
+        else prevMediaLightbox();
+      }
+    }, { passive: true });
+
+    // Keyboard navigation (Esc to close, Left/Right arrows to navigate)
+    document.addEventListener('keydown', function(e) {
+      if (lightbox.style.display === 'flex') {
+        if (e.key === 'ArrowRight') nextMediaLightbox();
+        else if (e.key === 'ArrowLeft') prevMediaLightbox();
+        else if (e.key === 'Escape') closeLightbox();
+      }
+    });
+
+    // Close on background backdrop click
+    lightbox.addEventListener('click', function(e) {
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+  }
+
+  // Backwards compatibility wrappers
+  function switchImg(el, src) {
+    const idx = galleryMedia.findIndex(m => m.src === src || m.el === el);
+    if (idx !== -1) {
+      goToMedia(idx);
+    } else {
+      const hero = document.getElementById('pd-hero-img');
+      if (hero) hero.src = src;
+    }
+  }
+
+  function switchVideo(el, videoUrl) {
+    const idx = galleryMedia.findIndex(m => m.type === 'video');
+    if (idx !== -1) {
+      goToMedia(idx);
+    } else {
+      const videoContainer = document.getElementById('pd-video-container');
+      renderVideoInContainer(videoContainer, videoUrl);
+    }
+  }
+
+  /* ── DOM Init ── */
   document.addEventListener("DOMContentLoaded", function() {
+    initGalleryMedia();
+    initMainStageSwipe();
+    initLightboxSwipe();
+
     {% if not images and product.video_url %}
-      const videoThumb = document.querySelector('.video-thumb');
-      switchVideo(videoThumb, '{{ product.video_url|escape }}');
+      const vidIdx = galleryMedia.findIndex(m => m.type === 'video');
+      if (vidIdx !== -1) goToMedia(vidIdx);
     {% endif %}
   });
 
@@ -1776,20 +2427,20 @@ Indian partners.{% endblock %}
 
   // Make Offer Modal control
   function openOfferModal() {
-    // Populate defaults based on current selection
-    const priceText = document.querySelector('.pd-price-val').innerText.replace(/[^\d.]/g, '');
+    const priceEl = document.querySelector('.pd-price-val');
+    const priceText = priceEl ? priceEl.innerText.replace(/[^\d.]/g, '') : '0';
     const currentQty = document.getElementById('pd-qty').value;
     
     document.getElementById('mo-proposed-price').value = priceText;
     document.getElementById('mo-proposed-qty').value = currentQty;
     
     document.getElementById('makeOfferModal').classList.add('open');
-    document.body.style.overflow = 'hidden'; // prevent page scroll
+    document.body.style.overflow = 'hidden';
   }
 
   function closeOfferModal() {
     document.getElementById('makeOfferModal').classList.remove('open');
-    document.body.style.overflow = ''; // restore scroll
+    document.body.style.overflow = '';
   }
 </script>
 {% endblock %}
