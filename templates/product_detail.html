@@ -46,19 +46,82 @@ Indian partners.{% endblock %}
   @media (max-width: 991px) {
     .pd-grid {
       grid-template-columns: 1fr;
-      gap: 36px;
+      gap: 32px;
     }
     .pd-gallery {
       position: static !important;
     }
     .pd-page {
-      padding: 105px 16px 60px;
+      padding: 110px 16px 60px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .pd-page {
+      padding: 115px 14px 40px !important;
+      overflow-x: hidden !important;
+      max-width: 100% !important;
+    }
+    .pd-main-img {
+      aspect-ratio: 1 / 1 !important;
+      max-height: 400px !important;
+      background: #ffffff !important;
+    }
+    .pd-slide {
+      background: #ffffff !important;
+    }
+    .pd-slide img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      background: #ffffff !important;
+    }
+    .pd-title {
+      font-size: 1.45rem !important;
+      line-height: 1.25 !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+    }
+    .pd-breadcrumb {
+      flex-wrap: wrap !important;
+      font-size: 0.75rem !important;
+      gap: 4px !important;
+      margin-bottom: 16px !important;
+    }
+    .pd-seller-card {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+      padding: 12px 14px !important;
+    }
+    .pd-seller-left {
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+    .pd-seller-name {
+      font-size: 0.82rem !important;
+      word-break: break-word !important;
+    }
+    .pd-seller-actions {
+      width: 100% !important;
+    }
+    .btn-seller-msg {
+      width: 100% !important;
+      text-align: center !important;
+      display: block !important;
+    }
+    .pd-thumbs {
+      padding: 4px 0 8px !important;
+    }
+    .pd-thumb {
+      width: 54px !important;
+      height: 54px !important;
     }
   }
 
   @media (max-width: 500px) {
     .pd-page {
-      padding: 95px 12px 40px;
+      padding: 105px 12px 40px !important;
     }
     .pd-specs-grid {
       grid-template-columns: 1fr;
@@ -1681,7 +1744,7 @@ Indian partners.{% endblock %}
       <div class="section-tag">Recommendations</div>
       <h2>Similar &amp; Related Products</h2>
     </div>
-    <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+    <div class="products-grid">
       {% for prod in related_products %}
       <article class="product-card">
         <a href="{{ url_for('product_detail', id=prod.id) }}"
