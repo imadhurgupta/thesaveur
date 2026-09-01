@@ -1338,7 +1338,12 @@ Indian partners.{% endblock %}
 
         <!-- Media Counter Badge -->
         <div class="pd-media-badge" id="pd-media-badge" style="display: none;">
-          <span id="pd-badge-icon">📷</span>
+          <span id="pd-badge-icon" style="display: inline-flex; align-items: center;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </span>
           <span id="pd-badge-text">1 / 1</span>
         </div>
 
@@ -1979,7 +1984,10 @@ Indian partners.{% endblock %}
 
     if (badge && badgeText && badgeIcon) {
       const curItem = galleryMedia[currentMediaIdx];
-      badgeIcon.textContent = curItem && curItem.type === 'video' ? '▶' : '📷';
+      const isVideo = curItem && curItem.type === 'video';
+      const cameraIconSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
+      const videoIconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block; vertical-align:-1px;"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>`;
+      badgeIcon.innerHTML = isVideo ? videoIconSvg : cameraIconSvg;
       badgeText.textContent = `${currentMediaIdx + 1} / ${total}`;
       badge.style.display = 'inline-flex';
     }
@@ -2256,8 +2264,13 @@ Indian partners.{% endblock %}
     const curItem = galleryMedia[currentMediaIdx];
 
     if (counter) {
-      counter.textContent = `${currentMediaIdx + 1} / ${galleryMedia.length}`;
-      counter.style.display = galleryMedia.length > 1 ? 'block' : 'none';
+      const isVideo = curItem && curItem.type === 'video';
+      const iconSvg = isVideo 
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block; vertical-align:-1px; margin-right:5px;"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>`
+        : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; margin-right:5px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
+      counter.innerHTML = `${iconSvg}${currentMediaIdx + 1} / ${galleryMedia.length}`;
+      counter.style.display = galleryMedia.length > 1 ? 'inline-flex' : 'none';
+      counter.style.alignItems = 'center';
     }
     if (prevBtn) prevBtn.style.display = galleryMedia.length > 1 ? 'flex' : 'none';
     if (nextBtn) nextBtn.style.display = galleryMedia.length > 1 ? 'flex' : 'none';
