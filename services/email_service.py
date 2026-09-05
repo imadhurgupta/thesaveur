@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.header import Header
-from email.utils import formatdate, make_msgid, formataddr
+from email.utils import formatdate, make_msgid, formataddr, parseaddr
 from flask import request, has_request_context
 from database import get_db
 from services.couriers_service import generate_tracking_url, get_courier_metadata
@@ -19,40 +19,45 @@ def _strip_html(html_str):
     return re.sub(r'\s+', ' ', clean).strip()
 
 
-def _build_smtp_headers(msg, subject, receiver_email, smtp_sender):
+def _get_smtp_credentials():
+    """Retrieve and sanitize SMTP credentials."""
+    smtp_host = os.environ.get('SMTP_HOST') or os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+    smtp_port = os.environ.get('SMTP_PORT', '587')
+    smtp_user = os.environ.get('SMTP_USER', '').strip()
+    smtp_password = os.environ.get('SMTP_PASSWORD', '').strip()
+    raw_sender = os.environ.get('SMTP_SENDER', smtp_user).strip()
+
+    parsed_name, parsed_email = parseaddr(raw_sender)
+    sender_email = parsed_email if parsed_email else (smtp_user if smtp_user else raw_sender)
+    sender_name = parsed_name if parsed_name else "The Saveur"
+
+    return smtp_host, smtp_port, smtp_user, smtp_password, sender_email, sender_name
+
+
+def _build_smtp_headers(msg, subject, receiver_email, sender_email, sender_name):
     """Set standard RFC-compliant email headers to maximize inbox delivery."""
     msg['Subject'] = Header(subject, 'utf-8')
-    msg['From'] = formataddr(('The Saveur', smtp_sender))
+    msg['From'] = formataddr((sender_name, sender_email))
     msg['To'] = receiver_email
-    msg['Reply-To'] = smtp_sender
+    msg['Reply-To'] = sender_email
     msg['Date'] = formatdate(localtime=True)
     msg['Message-ID'] = make_msgid(domain='thesaveur.com')
     msg['Auto-Submitted'] = 'auto-generated'
     msg['X-Auto-Response-Suppress'] = 'All'
 
 
-def _get_smtp_credentials():
-    """Retrieve SMTP settings supporting both SMTP_HOST and SMTP_SERVER env keys."""
-    smtp_host = os.environ.get('SMTP_HOST') or os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-    smtp_port = os.environ.get('SMTP_PORT', '587')
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_password = os.environ.get('SMTP_PASSWORD')
-    smtp_sender = os.environ.get('SMTP_SENDER', smtp_user)
-    return smtp_host, smtp_port, smtp_user, smtp_password, smtp_sender
-
-
 def send_custom_html_email(receiver_email, subject, html_body, plain_body=None):
     """General custom HTML email sending function via SMTP with plain-text fallback."""
-    smtp_host, smtp_port, smtp_user, smtp_password, smtp_sender = _get_smtp_credentials()
+    smtp_host, smtp_port, smtp_user, smtp_password, sender_email, sender_name = _get_smtp_credentials()
 
-    if not all([smtp_host, smtp_port, smtp_user, smtp_password]):
+    if not all([smtp_host, smtp_port, smtp_user, smtp_password, sender_email]):
         print(f"[SMTP] SMTP variables not fully set. Skip sending '{subject}'.")
         return False
 
     try:
         port = int(smtp_port)
         msg = MIMEMultipart('alternative')
-        _build_smtp_headers(msg, subject, receiver_email, smtp_sender)
+        _build_smtp_headers(msg, subject, receiver_email, sender_email, sender_name)
         
         # 1. Plain text fallback (reduces spam score)
         text_content = plain_body or _strip_html(html_body)
@@ -69,7 +74,7 @@ def send_custom_html_email(receiver_email, subject, html_body, plain_body=None):
             server.starttls()
             server.login(smtp_user, smtp_password)
 
-        server.sendmail(smtp_sender, receiver_email, msg.as_string())
+        server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
         print(f"[SMTP] Successfully sent custom email '{subject}' to {receiver_email}")
         return True
@@ -82,9 +87,9 @@ def send_otp_email(receiver_email, otp, purpose='reset'):
     """Dispatch OTP email for verification or password reset with high inbox deliverability."""
     print(f"[OTP DISPATCH] Generated {purpose} OTP for {receiver_email}: {otp}")
 
-    smtp_host, smtp_port, smtp_user, smtp_password, smtp_sender = _get_smtp_credentials()
+    smtp_host, smtp_port, smtp_user, smtp_password, sender_email, sender_name = _get_smtp_credentials()
 
-    if not all([smtp_host, smtp_port, smtp_user, smtp_password]):
+    if not all([smtp_host, smtp_port, smtp_user, smtp_password, sender_email]):
         print(f"[SMTP] Not fully configured. (Required: SMTP_HOST/SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD). Local OTP is: {otp}")
         return False
 
@@ -121,7 +126,7 @@ https://thesaveur.com
     try:
         port = int(smtp_port)
         msg = MIMEMultipart('alternative')
-        _build_smtp_headers(msg, subject, receiver_email, smtp_sender)
+        _build_smtp_headers(msg, subject, receiver_email, sender_email, sender_name)
         msg['X-Priority'] = '1'  # Mark high priority transactional OTP
         
         # 1. Plain text version
@@ -152,7 +157,7 @@ https://thesaveur.com
             server.starttls()
             server.login(smtp_user, smtp_password)
 
-        server.sendmail(smtp_sender, receiver_email, msg.as_string())
+        server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
         print(f"[SMTP] Successfully sent {purpose} OTP email to {receiver_email}")
         return True
