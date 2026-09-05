@@ -1,18 +1,38 @@
 import os
 import smtplib
+import re
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.header import Header
+from email.utils import formatdate, make_msgid, formataddr
 from flask import request, has_request_context
 from database import get_db
 from services.couriers_service import generate_tracking_url, get_courier_metadata
 from services.email_templates import get_email_template
 
 
-def send_custom_html_email(receiver_email, subject, html_body):
-    """General custom HTML email sending function via SMTP."""
+def _strip_html(html_str):
+    """Simple helper to create a clean plain-text fallback from HTML."""
+    clean = re.sub(r'<[^>]+>', ' ', html_str)
+    return re.sub(r'\s+', ' ', clean).strip()
+
+
+def _build_smtp_headers(msg, subject, receiver_email, smtp_sender):
+    """Set standard RFC-compliant email headers to maximize inbox delivery."""
+    msg['Subject'] = Header(subject, 'utf-8')
+    msg['From'] = formataddr(('The Saveur', smtp_sender))
+    msg['To'] = receiver_email
+    msg['Reply-To'] = smtp_sender
+    msg['Date'] = formatdate(localtime=True)
+    msg['Message-ID'] = make_msgid(domain='thesaveur.com')
+    msg['Auto-Submitted'] = 'auto-generated'
+    msg['X-Auto-Response-Suppress'] = 'All'
+
+
+def send_custom_html_email(receiver_email, subject, html_body, plain_body=None):
+    """General custom HTML email sending function via SMTP with plain-text fallback."""
     smtp_host = os.environ.get('SMTP_HOST')
     smtp_port = os.environ.get('SMTP_PORT')
     smtp_user = os.environ.get('SMTP_USER')
@@ -26,15 +46,17 @@ def send_custom_html_email(receiver_email, subject, html_body):
     try:
         port = int(smtp_port)
         msg = MIMEMultipart('related')
-        msg['Subject'] = Header(subject, 'utf-8')
-        msg['From'] = smtp_sender
-        msg['To'] = receiver_email
+        _build_smtp_headers(msg, subject, receiver_email, smtp_sender)
         
         msg_alternative = MIMEMultipart('alternative')
         msg.attach(msg_alternative)
         
-        part = MIMEText(html_body, 'html', 'utf-8')
-        msg_alternative.attach(part)
+        # 1. Plain text fallback (reduces spam score)
+        text_content = plain_body or _strip_html(html_body)
+        msg_alternative.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        
+        # 2. Rich HTML part
+        msg_alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
         
         # Attach inlined logo
         try:
@@ -67,7 +89,7 @@ def send_custom_html_email(receiver_email, subject, html_body):
 
 
 def send_otp_email(receiver_email, otp, purpose='reset'):
-    """Dispatch OTP email for verification or password reset."""
+    """Dispatch OTP email for verification or password reset with high inbox deliverability."""
     print(f"[OTP DISPATCH] Generated {purpose} OTP for {receiver_email}: {otp}")
 
     smtp_host = os.environ.get('SMTP_HOST')
@@ -81,31 +103,47 @@ def send_otp_email(receiver_email, otp, purpose='reset'):
         return False
 
     if purpose == 'signup':
-        subject = "Verify Your Email – The Saveur"
+        subject = f"{otp} is your verification code – The Saveur"
         heading = "Verify Your Email Address"
         body_text = ("You're almost there! Enter the 6-digit code below to verify your email address "
                      "and complete your account registration. This OTP is valid for 10 minutes.")
     elif purpose == 'admin_login':
-        subject = "Admin Login OTP – The Saveur"
+        subject = f"{otp} is your admin login code – The Saveur"
         heading = "Admin Login Verification"
         body_text = ("An administrator login attempt was detected for your account. Enter the 6-digit code "
                      "below to verify your identity and complete the login. This OTP is valid for 10 minutes.")
     else:
-        subject = "Password Reset OTP – The Saveur"
+        subject = f"{otp} is your password reset code – The Saveur"
         heading = "Password Reset Request"
         body_text = ("We received a request to reset your password. Use the verification code below "
                      "to proceed with the password reset process. This OTP is valid for 10 minutes.")
 
+    plain_text = f"""Hello,
+
+{body_text}
+
+Your Verification Code: {otp}
+
+(This code will expire in 10 minutes. Please do not share this OTP with anyone.)
+
+If you did not request this code, you can safely ignore this email.
+
+— The Saveur Team
+https://thesaveur.com
+"""
+
     try:
         port = int(smtp_port)
         msg = MIMEMultipart('related')
-        msg['Subject'] = Header(subject, 'utf-8')
-        msg['From'] = smtp_sender
-        msg['To'] = receiver_email
+        _build_smtp_headers(msg, subject, receiver_email, smtp_sender)
         
         msg_alternative = MIMEMultipart('alternative')
         msg.attach(msg_alternative)
         
+        # 1. Plain text version
+        msg_alternative.attach(MIMEText(plain_text, 'plain', 'utf-8'))
+        
+        # 2. HTML version
         body_content = f"""
         <p style="color: #3d3d3d; font-size: 15px;">Hello,</p>
         <p style="color: #3d3d3d; font-size: 15px;">{body_text}</p>
@@ -114,12 +152,12 @@ def send_otp_email(receiver_email, otp, purpose='reset'):
             <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #C8860A; font-family: monospace;">{otp}</span>
         </div>
         
-        <p style="color: #3d3d3d; font-size: 15px;">If you did not request this, please ignore this email or contact support if you have concerns.</p>
+        <p style="color: #6b6b6b; font-size: 13px;">This code is valid for 10 minutes. For security, never share this OTP with anyone.</p>
+        <p style="color: #6b6b6b; font-size: 13px;">If you did not request this, please ignore this email or contact support if you have concerns.</p>
         """
         
         html_body = get_email_template(heading, body_content)
-        part = MIMEText(html_body, 'html', 'utf-8')
-        msg_alternative.attach(part)
+        msg_alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
         
         try:
             logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'images', 'logo.jpg')
