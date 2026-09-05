@@ -188,6 +188,11 @@ def init_db():
             promo_code TEXT DEFAULT '',
             order_number TEXT DEFAULT '',
             shipping_charge {REAL} DEFAULT 0.0,
+            courier_partner TEXT DEFAULT '',
+            tracking_number TEXT DEFAULT '',
+            tracking_url TEXT DEFAULT '',
+            estimated_delivery_date TEXT DEFAULT '',
+            shipped_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )""",
@@ -269,6 +274,16 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
+
+        f"""CREATE TABLE IF NOT EXISTS custom_couriers (
+            id {PK},
+            name TEXT NOT NULL UNIQUE,
+            code TEXT NOT NULL UNIQUE,
+            url_pattern TEXT,
+            sample_format TEXT,
+            color TEXT DEFAULT '#16a34a',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
 
     for stmt in create_stmts:
@@ -318,6 +333,11 @@ def init_db():
         "ALTER TABLE orders ADD COLUMN paypal_order_id TEXT",
         "ALTER TABLE orders ADD COLUMN paypal_payment_id TEXT",
         "ALTER TABLE orders ADD COLUMN shipping_charge REAL DEFAULT 0.0",
+        "ALTER TABLE orders ADD COLUMN courier_partner TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN tracking_number TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN tracking_url TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN estimated_delivery_date TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN shipped_at TIMESTAMP",
         "ALTER TABLE order_items ADD COLUMN original_price REAL DEFAULT 0",
         "ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0",
     ]

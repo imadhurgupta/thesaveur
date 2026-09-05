@@ -1,0 +1,105 @@
+<header class="dashboard-header">
+
+    <div class="dashboard-title">
+
+      <h1>Admin Dashboard</h1>
+
+      <p>Manage products, carousel slides, categories, and customer orders.</p>
+
+    </div>
+
+    <div style="font-size: 0.9rem; background: rgba(0,0,0,0.04); padding: 8px 18px; border-radius: var(--radius-pill); font-weight: 500;">
+
+      Logged in as: <strong>{{ session.get('user_name', 'Admin') }}</strong>
+
+    </div>
+
+  </header>
+
+
+
+  <!-- Stats Grid -->
+
+  <section class="stats-grid" aria-label="System Statistics">
+
+    <!-- Products -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon products">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><polygon points="12 22.08 12 12 3 6.92 3 17.08 12 22.08"/><polygon points="12 12 21 6.92 21 17.08 12 22.08"/><polygon points="12 2 21 6.92 12 12 3 6.92 12 2"/><line x1="12" y1="22.08" x2="12" y2="12"/><line x1="3" y1="6.92" x2="12" y2="12"/><line x1="21" y1="6.92" x2="12" y2="12"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Products</h3>
+
+        <div class="stat-number">{{ total_products }}</div>
+
+      </div>
+
+    </div>
+
+    <!-- Total Stock -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon stocks">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2.18" ry="2.18"/><rect x="2" y="14" width="20" height="8" rx="2.18" ry="2.18"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Total Stock</h3>
+
+        <div class="stat-number">{{ total_stocks }}</div>
+
+      </div>
+
+    </div>
+
+    <!-- Total Orders -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon pending" style="background: rgba(52, 152, 219, 0.1); color: #3498db;">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Total Orders</h3>
+
+        <div class="stat-number">{{ orders|length }}</div>
+
+      </div>
+
+    </div>
+
+    <!-- Users -->
+
+    <div class="stat-card">
+
+      <div class="stat-icon users">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+
+      </div>
+
+      <div class="stat-info">
+
+        <h3>Registered Users</h3>
+
+        <div class="stat-number">{{ total_users }}</div>
+
+      </div>
+
+    </div>
+
+  </section>

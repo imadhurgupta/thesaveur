@@ -1,0 +1,82 @@
+<!-- Bulk & Custom Enquiry Component -->
+<section class="enquiry-section" id="enquiry" aria-label="Quick Enquiry">
+  <div class="container">
+    <div class="enquiry-inner">
+
+      <!-- Left: Text -->
+      <div class="enquiry-text reveal-left">
+        <span class="section-tag">Bulk Orders</span>
+        <h2>Partner with The Saveur for Bulk & Custom Orders</h2>
+        <p>
+          Whether you are a retailer, business owner, corporate buyer, or ordering custom merchandise, we offer bespoke
+          bulk packaging, wholesale pricing, and custom options.
+        </p>
+        <div class="enquiry-perks">
+          <div class="enquiry-perk">
+            <span class="perk-check">✓</span>
+            <span>Flexible Minimum Order Quantities</span>
+          </div>
+          <div class="enquiry-perk">
+            <span class="perk-check">✓</span>
+            <span>Highly Competitive Direct Pricing</span>
+          </div>
+          <div class="enquiry-perk">
+            <span class="perk-check">✓</span>
+            <span>Custom Labeling & White-Labeling Services</span>
+          </div>
+          <div class="enquiry-perk">
+            <span class="perk-check">✓</span>
+            <span>Fast Pan-India Delivery with Real-Time Tracking</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Form -->
+      <div class="enquiry-form-card reveal-right">
+        <h3>Request a Custom Quote</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:24px;">Send us your requirements and our
+          team will get back within 24 hours.</p>
+        <form action="{{ url_for('submit_enquiry') }}" method="POST" id="home-enquiry-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="home-name">Your Name *</label>
+              <input type="text" id="home-name" name="name" placeholder="John Doe" required />
+            </div>
+            <div class="form-group">
+              <label for="home-email">Email Address *</label>
+              <input type="email" id="home-email" name="email" placeholder="you@example.com" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="home-phone">Phone Number</label>
+              <input type="tel" id="home-phone" name="phone" placeholder="+91 98765 43210" />
+            </div>
+            <div class="form-group">
+              <label for="home-product">Product Interest</label>
+              <select id="home-product" name="product_interest">
+                <option value="">Select a category…</option>
+                <option>Consumer Electronics</option>
+                <option>Fashion & Apparel</option>
+                <option>Home & Living Decor</option>
+                <option>Gourmet Food Selection</option>
+                <option>Beauty & Wellness Products</option>
+                <option>Bulk Custom Order</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="home-message">Message *</label>
+            <textarea id="home-message" name="message"
+              placeholder="Specify quantity (e.g. 50kg, 500kg) and any special requirements..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;"
+            id="home-submit-btn">
+            <i data-lucide="send" style="margin-right:8px; width:16px; height:16px;"></i> Send Enquiry Request
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>

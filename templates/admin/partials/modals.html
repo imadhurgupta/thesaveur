@@ -1,0 +1,811 @@
+<div id="product-modal" class="modal-overlay" style="display: none !important;">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('product-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="prod-modal-title">Add New Product</h2>
+
+    
+
+    <form class="modal-form" id="prod-modal-form" method="POST" action="" enctype="multipart/form-data">
+
+      <!-- Name -->
+
+      <div class="form-group">
+
+        <label for="prod-name">Product Name *</label>
+
+        <input type="text" id="prod-name" name="name" required placeholder="e.g. Cardamom Powder" />
+
+      </div>
+
+      
+
+      <!-- Category, Sub Category & Unit -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label for="prod-category">Category *</label>
+          <select id="prod-category" name="category" required onchange="updateSubcategoryDropdown(this.value, 'prod-subcategory')">
+            {% for cat in categories %}
+              <option value="{{ cat.name }}">{{ cat.display_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="prod-subcategory">Sub Category</label>
+          <select id="prod-subcategory" name="sub_category">
+            <option value="">-- No Sub Category --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="prod-unit">Unit Size *</label>
+          <input type="text" id="prod-unit" name="unit" required placeholder="e.g. 200g, 1kg" />
+        </div>
+      </div>
+
+
+
+      <!-- Price, Discount, GST Rate, Stocks & Shipping -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label for="prod-price">Price ($) *</label>
+          <input type="number" id="prod-price" name="price" required step="0.01" min="0" placeholder="e.g. 150.00" />
+        </div>
+        <div class="form-group">
+          <label for="prod-discount-percent">Discount (%)</label>
+          <input type="number" id="prod-discount-percent" name="discount_percent" min="0" max="100" step="0.1" placeholder="e.g. 10" value="0" />
+        </div>
+        <div class="form-group">
+          <label for="prod-gst-rate">GST Rate (%)</label>
+          <input type="number" id="prod-gst-rate" name="gst_rate" min="0" max="100" step="0.1" placeholder="e.g. 18" value="0.0" />
+        </div>
+        <div class="form-group">
+          <label for="prod-stocks">Stocks *</label>
+          <input type="number" id="prod-stocks" name="stocks" required min="0" placeholder="e.g. 100" />
+        </div>
+        <div class="form-group">
+          <label for="prod-shipping-charge">Shipping ($)</label>
+          <input type="number" id="prod-shipping-charge" name="shipping_charge" min="0" step="0.01" placeholder="e.g. 15.00" value="0.0" />
+        </div>
+      </div>
+
+
+
+      <!-- Image Manager -->
+
+      <div class="form-group">
+
+        <label>Product Images *</label>
+
+        
+
+        <!-- Tab buttons for upload source -->
+
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+
+          <button type="button" class="btn btn-outline btn-sm active" id="btn-tab-local" onclick="setImageTab('local')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="laptop" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Local Files</button>
+
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tab-drive" onclick="setImageTab('drive')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="hard-drive" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Google Drive</button>
+
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tab-onedrive" onclick="setImageTab('onedrive')" style="padding:6px 12px; font-size:0.8rem;"><i data-lucide="cloud" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> OneDrive</button>
+
+        </div>
+
+
+
+        <!-- Local upload input -->
+
+        <div id="tab-input-local" style="display:block;">
+
+          <label for="prod-local-images" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:8px; width:100%; border:2px dashed var(--green-primary); border-radius:10px; cursor:pointer; background:rgba(45,122,60,0.04); transition:background 0.2s;" onmouseover="this.style.background='rgba(45,122,60,0.09)'" onmouseout="this.style.background='rgba(45,122,60,0.04)'">
+            <i data-lucide="upload-cloud" style="width:28px; height:28px; color:var(--green-primary); pointer-events:none;"></i>
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark); pointer-events:none;">Click to Choose Files</span>
+            <span style="font-size:0.75rem; color:var(--text-muted); pointer-events:none;">PNG, JPG, JPEG, WEBP — multiple files allowed</span>
+            <input type="file" id="prod-local-images" name="local_images" multiple accept="image/*"
+              style="position:absolute; opacity:0; width:0; height:0; pointer-events:none;"
+              onchange="handleLocalFiles(this.files)" />
+          </label>
+
+          <div id="prod-file-chosen" style="font-size:0.78rem; color:#2d7a3c; margin-top:6px; font-weight:600; min-height:18px;"></div>
+
+          <div style="margin-top:10px; background:#f0faf2; border:1px solid #b6e2c2; border-radius:8px; padding:10px 14px; font-size:0.75rem; color:#2d6a3f; display:flex; gap:20px; flex-wrap:wrap;">
+            <span>📐 <strong>Recommended:</strong> 2048×2048 px (1:1 square, zoom-optimized)</span>
+            <span>📏 <strong>Variable:</strong> any aspect ratio accepted</span>
+            <span>💾 <strong>Max size:</strong> 15 MB per image</span>
+            <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
+          </div>
+        </div>
+
+
+
+        <!-- Google Drive button -->
+
+        <div id="tab-input-drive" style="display:none;">
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+
+            <div style="display:flex; gap:8px;">
+
+              <input type="text" id="gdrive-paste-url" placeholder="Paste shared Google Drive file URL here..." style="flex:1; padding:10px; border:1px solid rgba(0,0,0,0.15); border-radius:4px; font-size:0.85rem;" />
+
+              <button type="button" class="btn btn-primary" onclick="resolveGoogleDriveUrl()" style="padding:10px 16px; font-size:0.85rem; height:fit-content; align-self:center;">Resolve</button>
+
+            </div>
+
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR</div>
+
+            <button type="button" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; padding:12px; gap:8px;" onclick="openGooglePickerAPI()">
+
+              <i data-lucide="hard-drive" style="width:20px; height:20px; color:#0F9D58"></i>
+
+              Browse via Google Drive API
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- OneDrive button -->
+
+        <div id="tab-input-onedrive" style="display:none;">
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+
+            <div style="display:flex; gap:8px;">
+
+              <input type="text" id="onedrive-paste-url" placeholder="Paste shared OneDrive link (1drv.ms or live.com)..." style="flex:1; padding:10px; border:1px solid rgba(0,0,0,0.15); border-radius:4px; font-size:0.85rem;" />
+
+              <button type="button" class="btn btn-primary" onclick="resolveOneDriveUrl()" style="padding:10px 16px; font-size:0.85rem; height:fit-content; align-self:center;">Resolve</button>
+
+            </div>
+
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR</div>
+
+            <button type="button" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; padding:12px; gap:8px;" onclick="openOneDrivePickerSDK()">
+
+              <i data-lucide="cloud" style="width:20px; height:20px; color:#0078d4"></i>
+
+              Browse via OneDrive SDK
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- Selected / Current Images Gallery -->
+
+        <div style="margin-top:16px;">
+
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">Selected Images</div>
+
+          <div id="selected-images-gallery" style="display:flex; flex-wrap:wrap; gap:8px; min-height:50px; padding:8px; border:1px dashed rgba(0,0,0,0.1); border-radius:var(--radius-sm); background:rgba(0,0,0,0.01);">
+
+            <div style="color:var(--text-muted); font-size:0.8rem; margin:auto; font-style:italic;" id="gallery-empty-msg">No images selected yet</div>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- Hidden input for remote/manually set filenames -->
+
+        <input type="hidden" id="prod-remote-images" name="remote_images" />
+
+        
+
+        <!-- Keep original images field hidden for compatibility -->
+
+        <input type="hidden" id="prod-image" name="images" />
+
+      </div>
+
+
+
+      <!-- Description -->
+
+      <div class="form-group">
+
+        <label for="prod-description">Description</label>
+
+        <textarea id="prod-description" name="description" rows="3" placeholder="Describe the product details, source, flavor profile..."></textarea>
+
+      </div>
+
+
+
+      <!-- Bestseller checkbox -->
+
+      <div class="checkbox-group">
+
+        <input type="checkbox" id="prod-bestseller" name="is_bestseller" value="1" />
+
+        <label for="prod-bestseller">Mark as Best Seller</label>
+
+      </div>
+
+
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('product-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm" id="prod-submit-btn">
+
+          <span>Save Product</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: CREATE PROMO CODE
+     ══════════════════════════════════════════════════════ -->
+<div id="promo-modal" class="modal-overlay">
+  <div class="modal-card">
+    <button type="button" class="modal-close" onclick="closeModal('promo-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+    <h2 class="modal-title">Create Promo Code</h2>
+    
+    <form class="modal-form" action="{{ url_for('admin_add_promo') }}" method="POST">
+      <!-- Code -->
+      <div class="form-group">
+        <label for="promo-code-input">Promo Code *</label>
+        <input type="text" id="promo-code-input" name="code" required placeholder="e.g. SAVE20" style="text-transform:uppercase;" />
+      </div>
+
+      <!-- Type & Value -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label for="promo-discount-type">Discount Type *</label>
+          <select id="promo-discount-type" name="discount_type" required>
+            <option value="percent">Percent (%)</option>
+            <option value="value">Flat Amount ($)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="promo-discount-value">Discount Value *</label>
+          <input type="number" id="promo-discount-value" name="discount_value" required step="0.01" min="0.01" placeholder="e.g. 20 or 150.00" />
+        </div>
+      </div>
+
+      <!-- Min Order & Max Uses -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="form-group">
+          <label for="promo-min-order">Min Order Amount ($)</label>
+          <input type="number" id="promo-min-order" name="min_order_amount" step="0.01" min="0" value="0.00" placeholder="e.g. 500" />
+        </div>
+        <div class="form-group">
+          <label for="promo-max-uses">Max Uses (0 for unlimited)</label>
+          <input type="number" id="promo-max-uses" name="max_uses" min="0" value="0" placeholder="e.g. 100" />
+        </div>
+      </div>
+
+      <!-- Expiry Date -->
+      <div class="form-group">
+        <label for="promo-expiry">Expiry Date & Time (Optional)</label>
+        <input type="datetime-local" id="promo-expiry" name="expires_at" />
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('promo-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Create Promo Code</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: CLOUD DRIVE FILE PICKER
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="cloud-picker-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('cloud-picker-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="cloud-picker-title">Select from Google Drive</h2>
+
+    
+
+    <div style="display:flex; gap:16px; margin-bottom:16px;">
+
+      <!-- Sidebar locations -->
+
+      <div style="width:140px; border-right:1px solid rgba(0,0,0,0.08); padding-right:12px; display:flex; flex-direction:column; gap:8px;">
+
+        <div style="font-weight:700; font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">Locations</div>
+
+        <button type="button" class="btn btn-sm" style="text-align:left; justify-content:flex-start; width:100%; font-size:0.82rem; background:rgba(0,0,0,0.04);" id="cloud-sidebar-root"><i data-lucide="folder" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> My Drive</button>
+
+        <button type="button" class="btn btn-sm" style="text-align:left; justify-content:flex-start; width:100%; font-size:0.82rem; background:none; color:var(--text-muted);" disabled><i data-lucide="users" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> Shared with me</button>
+
+        <button type="button" class="btn btn-sm" style="text-align:left; justify-content:flex-start; width:100%; font-size:0.82rem; background:none; color:var(--text-muted);" disabled><i data-lucide="clock" style="width:14px; height:14px; vertical-align:middle; margin-right:6px;"></i> Recent</button>
+
+      </div>
+
+
+
+      <!-- File explorer grid -->
+
+      <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.02); padding:6px 12px; border-radius:4px; font-size:0.82rem;">
+
+          <span style="color:var(--text-muted);" id="cloud-path">My Drive > Product Images</span>
+
+          <span style="font-weight:600; color:var(--green-primary);" id="selected-cloud-count">0 items selected</span>
+
+        </div>
+
+
+
+        <div id="cloud-file-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-height:260px; overflow-y:auto; padding:4px;">
+
+          <!-- Grid items filled by JS -->
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- Actions -->
+
+    <div class="modal-actions" style="border-top:1px solid rgba(0,0,0,0.06); padding-top:16px; margin-top:16px;">
+
+      <button class="btn btn-outline btn-sm" onclick="closeModal('cloud-picker-modal')">Cancel</button>
+
+      <button class="btn btn-primary btn-sm" onclick="confirmCloudSelection()">Select Images</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: ADD/EDIT CAROUSEL SLIDE
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="slide-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('slide-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="slide-modal-title">Add Carousel Slide</h2>
+
+    
+
+    <form class="modal-form" id="slide-modal-form" method="POST" action="" enctype="multipart/form-data" spellcheck="false">
+
+      <!-- Badge Text & Icon -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="slide-badge-text">Badge Text</label>
+
+          <input type="text" id="slide-badge-text" name="badge_text" placeholder="e.g. Direct from the Source" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="slide-badge-icon">Badge Icon (Lucide)</label>
+
+          <input type="hidden" id="slide-badge-icon" name="badge_icon" value="leaf" />
+          <div class="custom-select-wrapper">
+            <div class="custom-select-trigger" onclick="toggleCustomSelect(event)">
+              <span class="selected-icon-container"><i data-lucide="leaf"></i></span>
+              <span class="selected-text-container">Leaf</span>
+              <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+            </div>
+            <div class="custom-select-options">
+              <div class="custom-select-option" data-value="leaf" onclick="selectCustomOption(this)">
+                <i data-lucide="leaf"></i> Leaf
+              </div>
+              <div class="custom-select-option" data-value="star" onclick="selectCustomOption(this)">
+                <i data-lucide="star"></i> Star
+              </div>
+              <div class="custom-select-option" data-value="sparkles" onclick="selectCustomOption(this)">
+                <i data-lucide="sparkles"></i> Sparkles
+              </div>
+              <div class="custom-select-option" data-value="coffee" onclick="selectCustomOption(this)">
+                <i data-lucide="coffee"></i> Coffee
+              </div>
+              <div class="custom-select-option" data-value="package" onclick="selectCustomOption(this)">
+                <i data-lucide="package"></i> Package
+              </div>
+              <div class="custom-select-option" data-value="globe" onclick="selectCustomOption(this)">
+                <i data-lucide="globe"></i> Globe
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Title -->
+
+      <div class="form-group">
+
+        <label for="slide-title">Slide Title *</label>
+
+        <textarea id="slide-title" name="title" rows="2" required placeholder="Use \n for line breaks, e.g. Nature's Finest\nTea & Spices"></textarea>
+
+      </div>
+
+
+
+      <!-- Description -->
+
+      <div class="form-group">
+
+        <label for="slide-description">Description</label>
+
+        <textarea id="slide-description" name="description" rows="3" placeholder="Brief subtitle text under the main heading..."></textarea>
+
+      </div>
+
+
+
+      <!-- Button Text & Button Link -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="slide-button-text">Button Text</label>
+
+          <input type="text" id="slide-button-text" name="button_text" placeholder="e.g. Explore Products" />
+
+        </div>
+
+        <div class="form-group">
+          <label for="slide-button-link">Button Link</label>
+          <select id="slide-button-link" name="button_link" spellcheck="false">
+            <option value="/products">All Products (/products)</option>
+            <option value="/products?category=Tea">Tea Products (/products?category=Tea)</option>
+            <option value="/products?category=Spice">Spice Products (/products?category=Spice)</option>
+            <option value="/about">About Us (/about)</option>
+            <option value="/contact">Contact Us (/contact)</option>
+            <option value="/cart">Cart Page (/cart)</option>
+            <option value="/">Home Page (/)</option>
+          </select>
+        </div>
+
+      </div>
+
+
+
+      <!-- Order -->
+
+      <div class="form-group">
+
+        <label for="slide-order">Display Order</label>
+
+        <input type="number" id="slide-order" name="slide_order" min="0" placeholder="e.g. 0, 1, 2" />
+
+      </div>
+
+
+
+      <!-- Image selection -->
+      <div class="form-group">
+
+        <label>Slide Image</label>
+        <div style="margin-bottom:10px; background:#f0f5ff; border:1px solid #b3c6f7; border-radius:8px; padding:10px 14px; font-size:0.75rem; color:#1a3a80; display:flex; gap:20px; flex-wrap:wrap;">
+          <span>📐 <strong>Recommended:</strong> 2880×1200 px (up to 3200px wide for ultra-wide)</span>
+          <span>📏 <strong>Ratio:</strong> 16:5 widescreen banner</span>
+          <span>💾 <strong>Max size:</strong> 15 MB</span>
+          <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Upload a local file <strong>OR</strong> enter a remote URL/filename below. Local file takes priority if both are provided.</div>
+
+        <input type="file" id="slide-local-images" name="local_images" accept="image/*" style="padding:4px; font-size:0.85rem;"
+          onchange="if(this.files.length > 0){ document.getElementById('slide-remote-images').value=''; document.getElementById('slide-file-chosen').textContent='Selected: '+this.files[0].name; } else { document.getElementById('slide-file-chosen').textContent=''; }" />
+
+        <div id="slide-file-chosen" style="font-size:0.75rem; color:#2d7a3c; margin-top:4px; font-weight:600;"></div>
+
+        <div style="margin:8px 0; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-align:center;">OR</div>
+
+        <input type="text" id="slide-remote-images" name="remote_images" placeholder="URL or filename (e.g. hero_tea_garden.png)" style="font-size:0.85rem; padding:8px 10px;"
+          oninput="if(this.value){ document.getElementById('slide-local-images').value=''; document.getElementById('slide-file-chosen').textContent=''; }" />
+
+      </div>
+
+
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('slide-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+
+          <span>Save Slide</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: ADD/EDIT CATEGORY
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="category-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('category-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="cat-modal-title">Add Category</h2>
+
+    
+
+    <form class="modal-form" id="cat-modal-form" method="POST" action="" enctype="multipart/form-data">
+
+      <!-- Technical Name & Display Name -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="cat-name">Category Name (Technical Slug) *</label>
+
+          <input type="text" id="cat-name" name="name" required placeholder="e.g. Tea, Spice (Single-word)" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="cat-display-name">Display Name *</label>
+
+          <input type="text" id="cat-display-name" name="display_name" required placeholder="e.g. Premium Teas" />
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Description -->
+
+      <div class="form-group">
+
+        <label for="cat-description">Description</label>
+
+        <textarea id="cat-description" name="description" rows="3" placeholder="Brief summary of category products..."></textarea>
+
+      </div>
+
+
+
+      <!-- Order -->
+
+      <div class="form-group">
+
+        <label for="cat-order">Display Order</label>
+
+        <input type="number" id="cat-order" name="display_order" min="0" placeholder="e.g. 0, 1, 2" />
+
+      </div>
+
+
+
+      <!-- Image selection -->
+
+      <div class="form-group">
+
+        <label>Category Image</label>
+        <div style="margin-bottom:10px; background:#fff8f0; border:1px solid #f5d0a9; border-radius:8px; padding:10px 14px; font-size:0.75rem; color:#7a3b00; display:flex; gap:20px; flex-wrap:wrap;">
+          <span>📐 <strong>Recommended:</strong> 1600×900 px (16:9 ratio)</span>
+          <span>📏 <strong>Max resolution:</strong> 1600×900 px</span>
+          <span>💾 <strong>Max size:</strong> 15 MB</span>
+          <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Upload a local file <strong>OR</strong> enter a remote URL/filename below. Local file takes priority if both are provided.</div>
+
+        <input type="file" id="cat-local-images" name="local_images" accept="image/*" style="padding:4px; font-size:0.85rem;" 
+          onchange="if(this.files.length > 0){ document.getElementById('cat-remote-images').value=''; document.getElementById('cat-file-chosen').textContent='Selected: '+this.files[0].name; } else { document.getElementById('cat-file-chosen').textContent=''; }" />
+
+        <div id="cat-file-chosen" style="font-size:0.75rem; color:#2d7a3c; margin-top:4px; font-weight:600;"></div>
+
+        <div style="margin:8px 0; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-align:center;">OR</div>
+
+        <input type="text" id="cat-remote-images" name="remote_images" placeholder="URL or filename (e.g. Tea.jpg)" style="font-size:0.85rem; padding:8px 10px;"
+          oninput="if(this.value){ document.getElementById('cat-local-images').value=''; document.getElementById('cat-file-chosen').textContent=''; }" />
+
+      </div>
+
+
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('category-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+
+          <span>Save Category</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+
+     MODAL: ADD/EDIT SUBCATEGORY
+
+     ══════════════════════════════════════════════════════ -->
+
+<div id="subcategory-modal" class="modal-overlay">
+
+  <div class="modal-card">
+
+    <button type="button" class="modal-close" onclick="closeModal('subcategory-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+
+    <h2 class="modal-title" id="subcat-modal-title">Add Sub Category</h2>
+
+    <form class="modal-form" id="subcat-modal-form" method="POST" action="">
+
+      <!-- Parent Category & Name (Technical) -->
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+        <div class="form-group">
+
+          <label for="subcat-category-name">Parent Category *</label>
+
+          <select id="subcat-category-name" name="category_name" required>
+
+            {% for cat in categories %}
+
+              <option value="{{ cat.name }}">{{ cat.display_name }}</option>
+
+            {% endfor %}
+
+          </select>
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="subcat-name">Sub Category Name (Technical Slug) *</label>
+
+          <input type="text" id="subcat-name" name="name" required placeholder="e.g. Green Tea, Ground Spice (Single-word)" />
+
+        </div>
+
+      </div>
+
+      <!-- Display Name & Order -->
+
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-top:12px;">
+
+        <div class="form-group">
+
+          <label for="subcat-display-name">Display Name *</label>
+
+          <input type="text" id="subcat-display-name" name="display_name" required placeholder="e.g. Premium Green Teas" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="subcat-order">Display Order</label>
+
+          <input type="number" id="subcat-order" name="display_order" min="0" placeholder="e.g. 0, 1, 2" />
+
+        </div>
+
+      </div>
+
+      <!-- Description -->
+
+      <div class="form-group" style="margin-top:12px;">
+
+        <label for="subcat-description">Description</label>
+
+        <textarea id="subcat-description" name="description" rows="3" placeholder="Brief summary of subcategory products..."></textarea>
+
+      </div>
+
+      <!-- Modal Footer -->
+
+      <div class="modal-actions" style="margin-top:20px;">
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('subcategory-modal')">Cancel</button>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+
+          <span>Save Sub Category</span>
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+<!-- Shipping Modal -->
+<div id="shipping-modal" class="modal-overlay">
+  <div class="modal-card">
+    <button type="button" class="modal-close" onclick="closeModal('shipping-modal')" aria-label="Close"><i data-lucide="x"></i></button>
+    <h2 class="modal-title" id="shipping-modal-title">Add Shipping Rate</h2>
+    
+    <form class="modal-form" id="shipping-modal-form" method="POST" action="">
+      <!-- State Name -->
+      <div class="form-group">
+        <label for="ship-state">State / Location *</label>
+        <input type="text" id="ship-state" name="state" required placeholder="e.g. Delhi, Maharashtra" />
+      </div>
+      
+      <!-- Base Charge -->
+      <div class="form-group">
+        <label for="ship-charge">Base Shipping Fee ($) *</label>
+        <input type="number" id="ship-charge" name="charge" required min="0" step="0.01" placeholder="e.g. 50.00" />
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:28px;">
+        <button type="button" class="btn btn-outline" onclick="closeModal('shipping-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Rate</button>
+      </div>
+    </form>
+  </div>
+</div>

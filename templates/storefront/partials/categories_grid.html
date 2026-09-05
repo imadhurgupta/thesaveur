@@ -1,0 +1,29 @@
+<!-- Curated Categories Grid Component -->
+<section class="category-section" id="categories" aria-label="Shop by Category">
+  <div class="container">
+    <div class="text-center section-header reveal">
+      <span class="section-tag">Premium Collection</span>
+      <h2 class="section-title">Shop by Category</h2>
+      <p class="section-subtitle">
+        Discover our curated selection of premium products across multiple categories.
+      </p>
+    </div>
+
+    <div class="category-grid">
+      {% for cat in categories %}
+      <a href="{{ url_for('products', category=cat.name|lower) }}"
+        class="category-card reveal stagger-{{ loop.index }}">
+        <div class="category-card-bg"
+          style="background-image: url('{% if cat.image_filename and '://' in cat.image_filename %}{{ cat.image_filename }}{% elif cat.image_filename %}{{ url_for('static', filename='images/' + cat.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}');">
+        </div>
+        <div class="category-card-overlay"></div>
+        <div class="category-card-content">
+          <h3>{{ cat.display_name }}</h3>
+          <p>{{ cat.description }}</p>
+          <span class="btn-link">Explore Collection <i data-lucide="arrow-right"></i></span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>

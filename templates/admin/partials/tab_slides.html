@@ -1,0 +1,143 @@
+<section id="carousel-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Carousel Slides</h2>
+
+        <button class="btn btn-primary btn-sm" onclick="openAddSlideModal()"><i data-lucide="plus"></i> Add New Slide</button>
+
+      </div>
+
+
+
+      {% if carousel_slides %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>Image</th>
+
+              <th>Badge</th>
+
+              <th>Title</th>
+
+              <th>Button</th>
+
+              <th>Order</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for slide in carousel_slides %}
+
+            <tr>
+
+              <td>
+
+                <img src="{% if slide.image_filename and '://' in slide.image_filename %}{{ slide.image_filename }}{% elif slide.image_filename %}{{ url_for('static', filename='images/' + slide.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}" class="prod-thumb" alt="Slide image" onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'" />
+
+              </td>
+
+              <td>
+
+                {% if slide.badge_text %}
+
+                  <span class="badge tea"><i data-lucide="{{ slide.badge_icon or 'leaf' }}" style="width:12px; height:12px; vertical-align:middle; margin-right:4px;"></i>{{ slide.badge_text }}</span>
+
+                {% else %}
+
+                  <span style="color:var(--text-muted); font-style:italic;">None</span>
+
+                {% endif %}
+
+              </td>
+
+              <td><strong>{{ slide.title | replace('\n', ' ') }}</strong></td>
+
+              <td>
+
+                <span class="badge bestseller">{{ slide.button_text }}</span> -> <code style="font-size:0.8rem; color:var(--text-muted);">{{ slide.button_link }}</code>
+
+              </td>
+
+              <td>{{ slide.slide_order }}</td>
+
+              <td>
+
+                <div class="action-btn-group">
+
+                  <button class="action-btn edit edit-slide-btn"
+
+                          data-id="{{ slide.id }}"
+
+                          data-badge-text="{{ slide.badge_text|escape }}"
+
+                          data-badge-icon="{{ slide.badge_icon|escape }}"
+
+                          data-title="{{ slide.title|replace('\n', '\\n')|escape }}"
+
+                          data-description="{{ slide.description|replace('\n', '\\n')|escape }}"
+
+                          data-button-text="{{ slide.button_text|escape }}"
+
+                          data-button-link="{{ slide.button_link|escape }}"
+
+                          data-order="{{ slide.slide_order }}"
+
+                          data-image="{{ slide.image_filename|escape }}"
+
+                          title="Edit slide">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+
+                  </button>
+
+                  <form action="/admin/delete-slide/{{ slide.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this slide?');" style="display:inline;">
+
+                    <button type="submit" class="action-btn delete" title="Delete slide">
+
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No slides found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>

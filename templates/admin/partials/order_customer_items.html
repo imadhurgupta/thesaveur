@@ -1,0 +1,95 @@
+<!-- LEFT COLUMN (Items & Price) -->
+    <div>
+      <!-- Ordered Items -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </div>
+          <h2>Ordered Items ({{ items|length }})</h2>
+        </div>
+        <div class="od-card-body">
+          <div class="od-items-container">
+            {% for item in items %}
+            {% set orig_pr = item.original_price if (item.original_price and item.original_price > 0) else item.price %}
+            {% set disc_pct = item.discount_percent if item.discount_percent else 0.0 %}
+            <div class="od-item-row">
+              <img class="od-item-thumb"
+                src="{% if item.image_filename and '://' in item.image_filename %}{{ item.image_filename }}{% elif item.image_filename %}{{ url_for('static', filename='images/' + item.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}"
+                alt="{{ item.product_name }}"
+                onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'" />
+              <div class="od-item-info">
+                <div class="od-item-name">{{ item.product_name }}</div>
+                <div class="od-item-sku">Unit Specifications: {{ item.unit or '—' }}</div>
+                <div class="od-item-qty">
+                  Quantity: {{ item.quantity }} ×
+                  {% if disc_pct > 0 %}
+                    <span style="text-decoration: line-through; color: #94a3b8; font-size: 0.8rem;">${{ orig_pr }}</span>
+                    <span style="color: #10b981; font-weight: 600;">${{ item.price }}</span>
+                    <span style="background: rgba(16,185,129,0.08); color: #059669; font-size: 0.72rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-left: 4px;">{{ disc_pct | int }}% OFF</span>
+                  {% else %}
+                    ${{ item.price }}
+                  {% endif %}
+                </div>
+              </div>
+              <div class="od-item-price">
+                <div class="unit">Subtotal</div>
+                <div class="total">${{ (item.quantity * item.price) | round(2) }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Price Breakdown -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h2>Financial Breakdown</h2>
+        </div>
+        <div class="od-card-body">
+          {% set subtotal = namespace(val=0) %}
+          {% set item_discounts = namespace(val=0) %}
+          {% for item in items %}
+            {% set orig_pr = item.original_price if (item.original_price and item.original_price > 0) else item.price %}
+            {% set subtotal.val = subtotal.val + (item.quantity * orig_pr) %}
+            {% set item_discounts.val = item_discounts.val + (item.quantity * (orig_pr - item.price)) %}
+          {% endfor %}
+          <div class="od-price-row">
+            <span>Items Subtotal ({{ items|length }} item{{ 's' if items|length != 1 }})</span>
+            <span>${{ subtotal.val | round(2) }}</span>
+          </div>
+          {% if item_discounts.val > 0 %}
+          <div class="od-price-row">
+            <span>Product Discount</span>
+            <span style="color:#059669; font-weight:600;">−${{ item_discounts.val | round(2) }}</span>
+          </div>
+          {% endif %}
+          {% if order.promo_code %}
+          <div class="od-price-row">
+            <span>Coupon Code (<span style="color:#059669; font-weight:700;">{{ order.promo_code }}</span>)</span>
+            <span style="color:#059669; font-weight:600;">−${{ order.discount_amount | round(2) }}</span>
+          </div>
+          {% endif %}
+          <div class="od-price-row">
+            <span>Shipping &amp; Logistics</span>
+            {% if order.shipping_charge and order.shipping_charge > 0 %}
+            <span style="font-weight:600;">${{ "%.2f"|format(order.shipping_charge) }}</span>
+            {% else %}
+            <span style="color:#059669; font-weight:600;">Free / Comp</span>
+            {% endif %}
+          </div>
+          <div class="od-price-row">
+            <span>Taxes &amp; Duties (GST)</span>
+            <span>Inclusive</span>
+          </div>
+          <div class="od-price-row total">
+            <span>Total Value</span>
+            <span class="amt">${{ order.total_amount }}</span>
+          </div>
+        </div>
+      </div>
+    </div>

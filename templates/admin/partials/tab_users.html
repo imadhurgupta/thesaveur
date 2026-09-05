@@ -1,0 +1,83 @@
+<section id="users-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Registered Users</h2>
+
+      </div>
+
+
+
+      {% if users %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>ID</th>
+
+              <th>Full Name</th>
+
+              <th>Email</th>
+
+              <th>Role</th>
+
+              <th>Date Joined</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for usr in users %}
+
+            <tr>
+
+              <td>#{{ usr.id }}</td>
+
+              <td><strong>{{ usr.full_name }}</strong></td>
+
+              <td>{{ usr.email }}</td>
+
+              <td>
+
+                <span class="badge {{ 'admin' if usr.is_admin else 'user' }}">
+
+                  {{ 'Administrator' if usr.is_admin else 'Customer' }}
+
+                </span>
+
+              </td>
+
+              <td>{{ (usr.created_at|string).split()[0] if usr.created_at else '' }}</td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No users found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>

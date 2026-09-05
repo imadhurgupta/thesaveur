@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details &ndash; The Saveur{% endblock %}
+
+{% block extra_head %}
+{% include "admin/partials/order_detail_styles.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="order-detail-page">
+  <!-- Top Bar & Main Header -->
+  {% include "admin/partials/order_detail_header.html" %}
+
+  <!-- Main Grid Layout -->
+  <div class="od-grid">
+    <!-- Left Column: Ordered Items, Quantities & Financial Calculation -->
+    {% include "admin/partials/order_customer_items.html" %}
+
+    <!-- Right Column: Status Timeline, Multi-Courier Dispatch & Delivery Address -->
+    {% include "admin/partials/order_shipping_card.html" %}
+  </div><!-- /od-grid -->
+</div>
+
+<!-- Modal: Courier Partner Directory Manager -->
+{% include "admin/partials/courier_manage_modal.html" %}
+
+<!-- Scripts -->
+{% include "admin/partials/order_detail_scripts.html" %}
+{% endblock %}

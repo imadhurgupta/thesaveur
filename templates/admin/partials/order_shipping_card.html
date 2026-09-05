@@ -1,0 +1,313 @@
+<!-- RIGHT COLUMN (Status & Customer) -->
+    <div>
+      <!-- Order Status & Multi-Courier Fulfillment Console -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h2>Multi-Courier Shipping &amp; Logistics</h2>
+        </div>
+        <div class="od-card-body">
+          <!-- Status Timeline Container -->
+          <div class="od-timeline" id="timeline-container" style="margin-bottom: 16px;">
+            {% set steps = [('Processing', 'circle'), ('Shipped', 'truck'), ('Delivered', 'check-circle')] %}
+            {% set status_order = {'Processing': 0, 'Shipped': 1, 'Delivered': 2, 'Cancelled': 99} %}
+            {% set current_idx = status_order.get(order.status, 0) %}
+
+            {% if order.status == 'Cancelled' %}
+            <div class="od-timeline-step" data-step-label="Cancelled">
+              <div class="od-timeline-dot cancelled">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              <div class="od-timeline-text">
+                <div class="od-timeline-title">Cancelled</div>
+                <div class="od-timeline-sub">Order was cancelled</div>
+              </div>
+            </div>
+            {% else %}
+              {% for label, icon in steps %}
+              {% set step_idx = loop.index0 %}
+              <div class="od-timeline-step" data-step-label="{{ label }}" data-step-index="{{ step_idx }}">
+                <div class="od-timeline-dot {% if step_idx < current_idx %}done{% elif step_idx == current_idx %}active{% endif %}">
+                  {% if step_idx < current_idx %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+                  {% elif step_idx == current_idx %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="3"/></svg>
+                  {% else %}
+                  <span style="color:#64748b; font-size:0.65rem; font-weight:700;">{{ loop.index }}</span>
+                  {% endif %}
+                </div>
+                <div class="od-timeline-text">
+                  <div class="od-timeline-title" style="{% if step_idx > current_idx %}opacity:0.4;{% endif %}">{{ label }}</div>
+                  <div class="od-timeline-sub">
+                    {% if step_idx < current_idx %}Completed
+                    {% elif step_idx == current_idx %}In progress
+                    {% else %}Pending{% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- Order Status & Courier Dispatch Form -->
+          <div>
+            <form id="tracking-dispatch-form" onsubmit="saveTrackingAndStatus(event)">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                
+                <!-- Courier Partner Dropdown -->
+                <div class="od-form-group">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+                    <label class="od-form-label" for="courier-select" style="margin-bottom:0;">Courier Partner</label>
+                    <div style="display:inline-flex; align-items:center; gap:8px;">
+                      <button type="button" id="btn-edit-selected-courier" onclick="editCurrentSelectedCourier()" style="display:none; background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; align-items:center; gap:3px;" title="Edit this custom courier's name &amp; tracking URL">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <span>Edit Partner</span>
+                      </button>
+                      <button type="button" onclick="openCourierPanel('add')" style="background:none; border:none; color:#10b981; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:3px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>Add New</span>
+                      </button>
+                      <button type="button" onclick="openManageCouriersModal()" style="background:none; border:none; color:#64748b; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:3px;" title="Manage all saved custom couriers">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <span>Manage</span>
+                      </button>
+                    </div>
+                  </div>
+                  <select id="courier-select" name="courier_partner" class="od-form-control" onchange="onCourierChange()">
+                    <option value="">-- Choose Courier --</option>
+                    {% set courier_codes = [] %}
+                    {% for c in couriers %}
+                      {% set _ = courier_codes.append(c.code.lower()) %}
+                      <option value="{{ c.code }}" 
+                              data-id="{{ c.id or '' }}" 
+                              data-name="{{ c.name }}" 
+                              data-format="{{ c.sample_format }}" 
+                              data-url="{{ c.url_pattern or '' }}" 
+                              data-custom="{% if c.is_custom %}true{% else %}false{% endif %}"
+                              data-db-custom="{% if c.is_db_custom %}true{% else %}false{% endif %}"
+                              {% if (order.courier_partner and order.courier_partner.lower() == c.code) or (courier_meta and courier_meta.code == c.code) %}selected{% endif %}>
+                        {{ c.name }} {% if c.is_db_custom %}(Custom Partner){% endif %}
+                      </option>
+                    {% endfor %}
+                    <option value="__custom__" {% if order.courier_partner and (order.courier_partner.lower() not in courier_codes or courier_meta.code == 'custom') %}selected{% endif %}>
+                      + Add Custom / Other Courier...
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Order Status Dropdown -->
+                <div class="od-form-group">
+                  <label class="od-form-label" for="status-select">Order Status</label>
+                  <select id="status-select" name="status" class="od-form-control">
+                    <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+                    <option value="Shipped"    {% if order.status == 'Shipped'    %}selected{% endif %}>Shipped</option>
+                    <option value="Delivered"  {% if order.status == 'Delivered'  %}selected{% endif %}>Delivered</option>
+                    <option value="Cancelled"  {% if order.status == 'Cancelled'  %}selected{% endif %}>Cancelled</option>
+                  </select>
+                </div>
+
+              </div>
+
+              <!-- Collapsible Custom Courier Box (Supports Add & Edit) -->
+              <div id="custom-courier-box" style="display:none; background:#f0fdf4; border:1.5px dashed #86efac; border-radius:10px; padding:12px 14px; margin-bottom:12px; transition:all 0.2s;">
+                <input type="hidden" id="custom-courier-mode" value="add" />
+                <input type="hidden" id="custom-courier-id" value="" />
+                <input type="hidden" id="custom-courier-code" value="" />
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span id="custom-courier-box-title" style="font-size:0.75rem; font-weight:700; color:#166534; text-transform:uppercase; letter-spacing:0.04em; display:inline-flex; align-items:center; gap:5px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    Custom Courier Details
+                  </span>
+                  <div style="display:inline-flex; align-items:center; gap:8px;">
+                    <span id="courier-mode-badge" style="display:none; background:#dbeafe; color:#1d4ed8; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Edit Mode</span>
+                    <button type="button" onclick="closeCourierPanel()" style="background:none; border:none; color:#15803d; font-size:0.75rem; font-weight:600; cursor:pointer;">✕ Close</button>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;">
+                  <div class="od-form-group" style="margin-bottom:0;">
+                    <label class="od-form-label" for="custom-courier-name" style="color:#166534;">Courier Name *</label>
+                    <input type="text" id="custom-courier-name" name="custom_courier_name" class="od-form-control" 
+                           placeholder="e.g. ST Courier, Trackon, Professional" 
+                           oninput="onCustomCourierInput()" 
+                           value="{% if courier_meta and (courier_meta.is_custom or courier_meta.code == 'custom') and order.courier_partner %}{{ order.courier_partner }}{% endif %}" />
+                  </div>
+                  <div class="od-form-group" style="margin-bottom:0;">
+                    <label class="od-form-label" for="custom-courier-url" style="color:#166534;">Tracking URL Pattern</label>
+                    <input type="text" id="custom-courier-url" name="custom_tracking_url" class="od-form-control" 
+                           placeholder="e.g. https://trackon.in/track?awb={awb}" 
+                           oninput="updateTrackingPreview()" 
+                           value="{% if courier_meta and (courier_meta.is_custom or courier_meta.code == 'custom') and order.tracking_url %}{{ order.tracking_url }}{% endif %}" />
+                  </div>
+                </div>
+
+                <!-- Action Button Toolbar -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:0.75rem;">
+                  <!-- Add Mode Options -->
+                  <div id="courier-add-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:6px;">
+                    <label style="display:inline-flex; align-items:center; gap:6px; color:#166534; cursor:pointer; font-weight:500;">
+                      <input type="checkbox" id="save-courier-permanently" name="save_courier_permanently" value="1" checked style="accent-color:#16a34a; width:14px; height:14px;" />
+                      <span>Save to courier list for future orders</span>
+                    </label>
+                    <button type="button" id="btn-save-custom-courier" onclick="saveNewCourierDirectly()" style="background:#16a34a; color:#fff; border:none; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                      <span>Save Partner</span>
+                    </button>
+                  </div>
+
+                  <!-- Edit Mode Options -->
+                  <div id="courier-edit-actions" style="display:none; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:6px;">
+                    <span style="color:#1e40af; font-size:0.72rem; font-weight:600;">Editing saved courier partner details.</span>
+                    <div style="display:inline-flex; align-items:center; gap:6px;">
+                      <button type="button" id="btn-delete-custom-courier" onclick="deleteSelectedCourierDirectly()" style="background:#ef4444; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <span>Delete</span>
+                      </button>
+                      <button type="button" id="btn-update-custom-courier" onclick="updateCourierDirectly()" style="background:#2563eb; color:#fff; border:none; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        <span>Update Partner</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <small style="display:block; color:#15803d; font-size:0.7rem; margin-top:8px; opacity:0.85;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="vertical-align:middle; margin-right:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  Tip: Use <code>{awb}</code> or <code>{tracking_number}</code> in the URL to auto-insert the tracking ID.
+                </small>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <!-- AWB / Tracking ID -->
+                <div class="od-form-group">
+                  <label class="od-form-label" for="awb-input">Tracking / AWB Number</label>
+                  <input type="text" id="awb-input" name="tracking_number" class="od-form-control" 
+                         placeholder="e.g. 140123456789" value="{{ order.tracking_number or '' }}" 
+                         oninput="updateTrackingPreview()" />
+                  <small id="awb-help" style="display:block; font-size:0.7rem; color:#94a3b8; margin-top:2px;">
+                    {{ courier_meta.sample_format if courier_meta else 'Enter courier tracking ID' }}
+                  </small>
+                </div>
+
+                <!-- Estimated Delivery Date (EDD) -->
+                <div class="od-form-group">
+                  <label class="od-form-label" for="edd-input">Estimated Delivery (EDD)</label>
+                  <input type="date" id="edd-input" name="estimated_delivery_date" class="od-form-control" 
+                         value="{{ order.estimated_delivery_date or '' }}" />
+                </div>
+              </div>
+
+              <!-- Live Tracking URL Preview -->
+              <div class="tracking-preview-card" id="tracking-preview-block" style="{% if not (order.tracking_number or official_tracking_url) %}display:none;{% endif %}">
+                <div class="tracking-preview-header">
+                  <span>Official Live Tracking Link:</span>
+                  <span id="preview-courier-name" style="color:#059669; font-weight:700;">{{ courier_meta.name if courier_meta else 'Auto-Generated' }}</span>
+                </div>
+                <div>
+                  <a id="preview-url-link" href="{{ official_tracking_url or '#' }}" target="_blank" rel="noopener" class="tracking-preview-link">
+                    <span id="preview-url-text">{{ official_tracking_url or 'Enter tracking number to generate link' }}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Actions Row -->
+              <div style="display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap;">
+                <button type="submit" class="btn-dispatch" id="dispatch-btn" style="flex:1;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+                  Update &amp; Dispatch Order
+                </button>
+                <button type="button" class="btn-danger" onclick="cancelOrder()" title="Cancel this order">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+
+        </div>
+      </div>
+
+
+      <!-- Customer & Shipping details side-by-side card -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <h2>Customer &amp; Delivery Details</h2>
+        </div>
+        <div class="od-card-body" style="padding:14px 16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; height:100%;">
+            <!-- Customer info block -->
+            <div style="display:flex; flex-direction:column;">
+              <p style="font-size:0.75rem; color:#64748b; font-weight:700; margin:0 0 6px 0; text-transform:uppercase; letter-spacing:0.04em;">Customer Profile</p>
+              <ul class="od-info-list" style="flex:1;">
+                <li>
+                  <span class="od-info-label">Name</span>
+                  <span class="od-info-value" style="word-break:break-all;">{{ order.contact_name if order.contact_name else order.user_name }}</span>
+                </li>
+                <li>
+                  <span class="od-info-label">Email</span>
+                  <span class="od-info-value">
+                    <a href="mailto:{{ order.contact_email if order.contact_email else order.user_email }}" style="color:#059669; text-decoration:none; word-break:break-all;">
+                      {{ order.contact_email if order.contact_email else order.user_email }}
+                    </a>
+                  </span>
+                </li>
+                {% if order.contact_phone %}
+                <li>
+                  <span class="od-info-label">Phone</span>
+                  <span class="od-info-value">{{ order.contact_phone }}</span>
+                </li>
+                {% endif %}
+                {% if order.contact_phone %}
+                {% set clean_phone = order.contact_phone | replace(' ', '') | replace('+', '') | replace('-', '') %}
+                {% if clean_phone | length == 10 %}
+                  {% set wa_phone = '91' ~ clean_phone %}
+                {% else %}
+                  {% set wa_phone = clean_phone %}
+                {% endif %}
+                <li>
+                  <span class="od-info-label">WhatsApp</span>
+                  <span class="od-info-value">
+                    <a href="https://wa.me/{{ wa_phone }}?text=Hi%20{{ (order.contact_name if order.contact_name else order.user_name) | urlencode }}%2C%20regarding%20Order%20{{ (order.order_number if order.order_number else '#' ~ order.id) | urlencode }}%20from%20The%20Saveur..."
+                       target="_blank"
+                       style="display:inline-flex; align-items:center; gap:4px; color:#16a34a; font-size:0.78rem; text-decoration:none; font-weight:600;">
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      Open Chat
+                    </a>
+                  </span>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
+            <!-- Shipping address block -->
+            <div style="display:flex; flex-direction:column; border-left:1px solid rgba(0, 0, 0, 0.05); padding-left:16px;">
+              <p style="font-size:0.75rem; color:#64748b; font-weight:700; margin:0 0 6px 0; text-transform:uppercase; letter-spacing:0.04em;">Delivery Address</p>
+              <ul class="od-info-list" style="flex:1;">
+                <li>
+                  <span class="od-info-label">Address</span>
+                  <span class="od-info-value" style="font-size:0.8rem; text-align:right;">{{ order.shipping_address }}</span>
+                </li>
+                <li>
+                  <span class="od-info-label">City</span>
+                  <span class="od-info-value" style="font-size:0.8rem;">{{ order.city }}, {{ order.state }} - {{ order.zip_code }}</span>
+                </li>
+              </ul>
+              <a href="https://maps.google.com/?q={{ order.shipping_address }},{{ order.city }},{{ order.state }},{{ order.zip_code }}"
+                 target="_blank" rel="noopener"
+                 style="display:inline-flex; align-items:center; gap:6px; margin-top:10px; font-size:0.78rem; color:#059669; font-weight:600; text-decoration:none; transition: color 0.2s;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                View on Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>

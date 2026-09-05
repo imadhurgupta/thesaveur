@@ -1,0 +1,60 @@
+<!-- Reusable Product Card Component -->
+{# Expects `product` variable #}
+<article class="product-card reveal" 
+         data-category="{{ product.category|lower }}" 
+         data-subcategory="{{ product.sub_category }}">
+  <a href="{{ url_for('product_detail', id=product.id) }}" style="display:block; text-decoration:none; color:inherit;">
+    <div class="product-img-wrap">
+      <img
+        src="{% if product.image_filename and '://' in product.image_filename %}{{ product.image_filename }}{% elif product.image_filename %}{{ url_for('static', filename='images/' + product.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}"
+        alt="{{ product.name }}"
+        loading="lazy"
+        onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'"
+      />
+      <div class="product-tags-left">
+        <span class="product-badge {{ product.category|lower }}">{{ product.category }}</span>
+      </div>
+      <div class="product-tags-right">
+        {% if product.is_bestseller %}
+        <span class="bestseller-tag">⭐ Best Seller</span>
+        {% endif %}
+        {% if product.discount_percent and product.discount_percent > 0 %}
+        <span class="product-badge sale" style="background:#e74c3c;">{{ product.discount_percent|int }}% OFF</span>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  <div class="product-body">
+    <h2 class="product-name">
+      <a href="{{ url_for('product_detail', id=product.id) }}" style="color:inherit; text-decoration:none; transition:color 0.2s;"
+         onmouseover="this.style.color='var(--green-primary)'"
+         onmouseout="this.style.color='inherit'">{{ product.name }}</a>
+    </h2>
+    <p class="product-desc">{{ product.description }}</p>
+    <div class="product-card-meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid rgba(0,0,0,0.06); padding-top:12px;">
+      <div>
+        {% if product.discount_percent and product.discount_percent > 0 %}
+          {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:1.25rem; font-weight:700; color:#e74c3c;">${{ sale_price }}</span>
+            <span style="font-size:0.9rem; color:var(--text-muted); text-decoration:line-through;">${{ product.price }}</span>
+            <span style="background:#e74c3c; color:white; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px;">{{ product.discount_percent | int }}% OFF</span>
+          </div>
+          <span style="font-size:0.8rem; color:var(--text-muted);">/ {{ product.unit }}</span>
+        {% else %}
+          <span style="font-size:1.25rem; font-weight:700; color:var(--green-dark);">${{ product.price }}</span>
+          <span style="font-size:0.8rem; color:var(--text-muted);">/ {{ product.unit }}</span>
+        {% endif %}
+      </div>
+      <div>
+        {% if product.stocks > 10 %}
+          <span style="font-size:0.8rem; color:#2ecc71; font-weight:600;">In Stock</span>
+        {% elif product.stocks > 0 %}
+          <span style="font-size:0.8rem; color:#e67e22; font-weight:600;">Low Stock</span>
+        {% else %}
+          <span style="font-size:0.8rem; color:#e74c3c; font-weight:600; text-transform:uppercase;">Out of Stock</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</article>

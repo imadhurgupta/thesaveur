@@ -1,0 +1,91 @@
+<!-- Product Gallery Component (Unified Touch & Lightbox) -->
+<div class="pd-gallery">
+  <div class="pd-main-img" id="pd-main-img-box" style="position: relative; overflow: hidden; border-radius: var(--radius-md); background: #fff; cursor: zoom-in;" onclick="handleStageClick(event)">
+    
+    <!-- Media Stage Wrapper -->
+    <div class="pd-stage" id="pd-stage">
+      {% if images and images[0] %}
+      <img id="pd-hero-img"
+        src="{% if images[0] and '://' in images[0] %}{{ images[0] }}{% elif images[0] %}{{ url_for('static', filename='images/' + images[0]) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}"
+        alt="{{ product.name }}"
+        onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'" />
+      {% else %}
+      <img id="pd-hero-img" src="{{ url_for('static', filename='images/logo.jpg') }}" alt="{{ product.name }}" />
+      {% endif %}
+      <div id="pd-video-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 5;"></div>
+    </div>
+
+    <!-- Slider Navigation Arrows -->
+    <button type="button" class="pd-slider-btn pd-slider-prev" id="pd-btn-prev" aria-label="Previous media" onclick="event.stopPropagation(); prevMedia();">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <button type="button" class="pd-slider-btn pd-slider-next" id="pd-btn-next" aria-label="Next media" onclick="event.stopPropagation(); nextMedia();">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+
+    <!-- Media Counter Badge -->
+    <div class="pd-media-badge" id="pd-media-badge" style="display: none;">
+      <span id="pd-badge-icon" style="display: inline-flex; align-items: center;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px;">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+      </span>
+      <span id="pd-badge-text">1 / 1</span>
+    </div>
+
+    <!-- Swipe Gesture Hint (fades out on interaction) -->
+    <div class="pd-swipe-hint" id="pd-swipe-hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      <span>Swipe to view</span>
+    </div>
+
+    <!-- Pagination Dots -->
+    <div class="pd-gallery-dots" id="pd-gallery-dots" style="display: none;"></div>
+  </div>
+
+  {% if images|length > 1 or product.video_url %}
+  <div class="pd-thumbs" id="pd-thumbs-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+    {% for img in images %}
+    <div class="pd-thumb {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" data-type="image" data-src="{% if img and '://' in img %}{{ img }}{% elif img %}{{ url_for('static', filename='images/' + img) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden;"
+      onclick="goToMedia({{ loop.index0 }})">
+      <img
+        src="{% if img and '://' in img %}{{ img }}{% elif img %}{{ url_for('static', filename='images/' + img) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}"
+        alt="" style="width: 100%; height: 100%; object-fit: cover;"
+        onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'" />
+    </div>
+    {% endfor %}
+    
+    {% if product.video_url %}
+    <div class="pd-thumb video-thumb {% if not images %}active{% endif %}" data-index="{{ images|length }}" data-type="video" data-video-url="{{ product.video_url|escape }}" style="position: relative; cursor: pointer; border-radius: var(--radius-sm); border: 2px solid transparent; width: 60px; height: 60px; overflow: hidden; background: #1a1a1a;"
+      onclick="goToMedia({{ images|length }})">
+      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; z-index: 2;">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </div>
+      {% if 'youtube.com' in product.video_url or 'youtu.be' in product.video_url %}
+        {% set yt_id = '' %}
+        {% if 'watch?v=' in product.video_url %}
+          {% set yt_id = product.video_url.split('watch?v=')[1].split('&')[0] %}
+        {% elif 'youtu.be/' in product.video_url %}
+          {% set yt_id = product.video_url.split('youtu.be/')[1].split('?')[0] %}
+        {% endif %}
+        {% if yt_id %}
+          <img src="https://img.youtube.com/vi/{{ yt_id }}/hqdefault.jpg" alt="Video Preview" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;" />
+        {% else %}
+          <div style="width: 100%; height: 100%; background: #222;"></div>
+        {% endif %}
+      {% elif 'vimeo.com' in product.video_url %}
+        <div style="width: 100%; height: 100%; background: #222;"></div>
+      {% else %}
+        {% set local_video_src = product.video_url if product.video_url and ('://' in product.video_url or product.video_url.startswith('/')) else (url_for('static', filename='images/' + product.video_url) if product.video_url else '') %}
+        <video src="{{ local_video_src }}#t=0.5" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7; pointer-events: none;"></video>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

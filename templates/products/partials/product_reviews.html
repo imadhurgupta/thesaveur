@@ -1,0 +1,137 @@
+<!-- Reviews & Ratings Section Component -->
+<section class="pd-reviews reveal" id="customer-reviews-section" aria-label="Customer Reviews">
+  <div class="pd-section-head">
+    <div class="section-tag">Customer Feedback</div>
+    <h2>Reviews &amp; Ratings</h2>
+  </div>
+
+  <div class="pd-reviews-grid">
+    <!-- Rating Summary -->
+    <div class="pd-rating-box">
+      <h3>Overall Rating</h3>
+      <div style="display:flex; align-items:baseline; gap:10px;">
+        <span class="pd-big-rating">{{ avg_rating }}</span>
+        <span style="color:var(--text-muted); font-weight:600;">/ 5</span>
+      </div>
+      <div class="pd-rating-stars">
+        {% for i in range(1,6) %}
+        <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f"
+          stroke-width="2" width="20" height="20">
+          <polygon
+            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+        {% endfor %}
+      </div>
+      <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Based on {{ total_reviews }} review{{
+        's' if total_reviews != 1 }}</p>
+      {% for stars in [5,4,3,2,1] %}
+      {% set cnt = rating_breakdown[stars] %}
+      {% set pct = (cnt / total_reviews * 100) if total_reviews > 0 else 0 %}
+      <div class="pd-bar-row">
+        <span style="width:48px; font-weight:600; color:var(--text-mid);">{{ stars }}★</span>
+        <div class="pd-bar-bg">
+          <div class="pd-bar-fill" style="width:{{ pct }}%;"></div>
+        </div>
+        <span style="width:24px; text-align:right; color:var(--text-muted);">{{ cnt }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Write Review / Login -->
+    {% if session.get('user_id') %}
+    <div class="pd-write-box">
+      <h3>Share Your Experience</h3>
+      <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:20px;">Have you tried this product? Tell
+        others what you think!</p>
+      <form action="{{ url_for('add_review', id=product.id) }}" method="POST" enctype="multipart/form-data"
+        onsubmit="return validateReviewForm()">
+        <p style="font-size:.85rem; color:var(--text-mid); margin-bottom:16px;">Posting as <strong>{{
+            session.get('user_name') }}</strong> <span class="pd-verified">Verified</span></p>
+        <div class="pd-form-group">
+          <label class="pd-form-label">Your Rating</label>
+          <div class="pd-star-input">
+            <input type="radio" id="s5" name="rating" value="5" required><label for="s5">★</label>
+            <input type="radio" id="s4" name="rating" value="4"><label for="s4">★</label>
+            <input type="radio" id="s3" name="rating" value="3"><label for="s3">★</label>
+            <input type="radio" id="s2" name="rating" value="2"><label for="s2">★</label>
+            <input type="radio" id="s1" name="rating" value="1"><label for="s1">★</label>
+          </div>
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label" for="review-comment">Your Comments</label>
+          <textarea id="review-comment" name="comment" rows="4" placeholder="Write your review…"
+            class="pd-form-textarea" required></textarea>
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label" for="review-image">Add Photo (Optional, Max 15 MB)</label>
+          <input type="file" id="review-image" name="review_image" accept="image/*" class="pd-form-file"
+            onchange="checkReviewImageSize(this)" />
+          <div style="margin-top:6px; background:#fafaf5; border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:0.72rem; color:#666; display:flex; gap:16px; flex-wrap:wrap;">
+            <span>📐 <strong>Any size:</strong> no resolution limit</span>
+            <span>💾 <strong>Max file size:</strong> 15 MB</span>
+            <span>🎨 <strong>Formats:</strong> JPG, PNG, WEBP</span>
+          </div>
+          <span id="review-image-error"
+            style="color:#e74c3c; font-size:0.75rem; display:none; margin-top:4px; font-weight:600;">Image size
+            exceeds the maximum limit of 15 MB.</span>
+        </div>
+        <button type="submit" class="pd-submit-btn">Submit Review</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="pd-write-box pd-login-box">
+      <div class="pd-login-icon">🔒</div>
+      <h3 style="margin:0;">Login to Review</h3>
+      <p style="font-size:.88rem; color:var(--text-muted); margin:0; max-width:280px;">You must be logged in to share
+        your experience with this product.</p>
+      <a href="{{ url_for('login', next=request.path) }}" class="pd-submit-btn"
+        style="text-decoration:none; text-align:center; display:block; margin-top:4px;">
+        Log In
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Reviews List -->
+  <h3 style="font-family:'Playfair Display',serif; font-size:1.35rem; color:var(--green-dark); margin-bottom:20px;">
+    Customer Reviews ({{ total_reviews }})
+  </h3>
+  {% if reviews %}
+  {% for rev in reviews %}
+  <div class="pd-review-card">
+    <div class="pd-review-top">
+      <div>
+        <div class="pd-reviewer">
+          {{ rev.user_name }}
+          <span class="pd-verified">Verified Buyer</span>
+        </div>
+        <div class="pd-review-stars">
+          {% for i in range(1,6) %}
+          <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if rev.rating >= i else 'none' }}" stroke="#f1c40f"
+            stroke-width="2" width="13" height="13">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          {% endfor %}
+        </div>
+      </div>
+      <span class="pd-review-date">{{ (rev.created_at|string).split(' ')[0] if rev.created_at else '' }}</span>
+    </div>
+    <p class="pd-review-text">{{ rev.comment }}</p>
+    {% if rev.image_filename %}
+    <a href="{{ url_for('static', filename='images/' + rev.image_filename) }}" target="_blank"
+      title="View full size image">
+      <img src="{{ url_for('static', filename='images/' + rev.image_filename) }}" alt="Review Photo"
+        class="pd-review-img" />
+    </a>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div
+    style="text-align:center; padding:48px; border:1px dashed rgba(0,0,0,.12); border-radius:16px; color:var(--text-muted); background:#fff;">
+    <div style="font-size:2rem; margin-bottom:10px;">⭐</div>
+    <p>No reviews yet. Be the first to share your thoughts!</p>
+  </div>
+  {% endif %}
+</section>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard &ndash; The Saveur{% endblock %}
+
+{% block extra_head %}
+{% include "admin/partials/dashboard_styles.html" %}
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-container">
+  <!-- Top Header & KPI Stats -->
+  {% include "admin/partials/header_stats.html" %}
+
+  <!-- Tab Buttons Navigation -->
+  {% include "admin/partials/tabs_nav.html" %}
+
+  <!-- ────── Tab 1: Products Content ────── -->
+  {% include "admin/partials/tab_products.html" %}
+
+  <!-- ────── Tab 2: Carousel Slides Content ────── -->
+  {% include "admin/partials/tab_slides.html" %}
+
+  <!-- ────── Tab 3: Categories & Subcategories Content ────── -->
+  {% include "admin/partials/tab_categories.html" %}
+
+  <!-- ────── Tab 4: Registered Users Content ────── -->
+  {% include "admin/partials/tab_users.html" %}
+
+  <!-- ────── Tab 5: Promo Codes Content ────── -->
+  {% include "admin/partials/tab_promos.html" %}
+
+  <!-- ────── Tab 6: Shipping Configuration Content ────── -->
+  {% include "admin/partials/tab_shipping.html" %}
+
+  <!-- ────── Tab 7: Proposals & Bulk Enquiries Content ────── -->
+  {% include "admin/partials/tab_enquiries.html" %}
+
+  <!-- ────── Tab 8: Customer Orders Content ────── -->
+  {% include "admin/partials/tab_orders.html" %}
+
+  <!-- ────── Tab 9: System Settings & Backup Content ────── -->
+  {% include "admin/partials/tab_settings.html" %}
+
+  <!-- ────── Admin Action Modals ────── -->
+  {% include "admin/partials/modals.html" %}
+</main>
+{% endblock %}
+
+{% block extra_js %}
+{% include "admin/partials/scripts.html" %}
+{% endblock %}

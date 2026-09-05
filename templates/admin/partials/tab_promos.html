@@ -1,0 +1,82 @@
+<section id="promos-tab" class="tab-content">
+    <div class="card-container">
+      <div class="section-action-header">
+        <h2>Promo Codes</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('promo-modal')"><i data-lucide="plus"></i> Add New Promo Code</button>
+      </div>
+
+      {% if promo_codes %}
+      <div class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Min Order</th>
+              <th>Max Uses</th>
+              <th>Uses Count</th>
+              <th>Expiry</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for promo in promo_codes %}
+            <tr>
+              <td><strong style="font-size:1.1rem; color:var(--green-primary); letter-spacing: 0.5px;">{{ promo.code }}</strong></td>
+              <td>
+                <strong>
+                  {% if promo.discount_type == 'percent' %}
+                    {{ promo.discount_value }}%
+                  {% else %}
+                    ${{ promo.discount_value }}
+                  {% endif %}
+                </strong>
+              </td>
+              <td>${{ promo.min_order_amount if promo.min_order_amount else '0.00' }}</td>
+              <td>{{ promo.max_uses if promo.max_uses > 0 else 'Unlimited' }}</td>
+              <td><strong>{{ promo.used_count }}</strong></td>
+              <td>
+                {% if promo.expires_at %}
+                  <span style="font-size:0.85rem;">{{ promo.expires_at.replace('T', ' ') }}</span>
+                {% else %}
+                  <span style="color:var(--text-muted); font-style:italic;">Never Expires</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge {{ 'active' if promo.is_active else 'inactive' }}" style="background: {% if promo.is_active %}rgba(46,204,113,0.1); color:#2ecc71;{% else %}rgba(127,140,141,0.1); color:#7f8c8d;{% endif %}; font-weight:600;">
+                  {{ 'Active' if promo.is_active else 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-btn-group">
+                  <!-- Toggle status -->
+                  <form action="{{ url_for('admin_toggle_promo', id=promo.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="action-btn edit" title="{% if promo.is_active %}Deactivate{% else %}Activate{% endif %}" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px;">
+                      {% if promo.is_active %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      {% else %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+                      {% endif %}
+                    </button>
+                  </form>
+                  <!-- Delete -->
+                  <form action="{{ url_for('admin_delete_promo', id=promo.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this promo code?');" style="display:inline;">
+                    <button type="submit" class="action-btn delete" title="Delete Promo Code" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        No promo codes found. Click "Add New Promo Code" to get started.
+      </div>
+      {% endif %}
+    </div>
+  </section>

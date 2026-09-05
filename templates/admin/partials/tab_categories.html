@@ -1,0 +1,170 @@
+<section id="categories-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Categories</h2>
+
+        <button class="btn btn-primary btn-sm" onclick="openAddCategoryModal()"><i data-lucide="plus"></i> Add New Category</button>
+
+      </div>
+
+
+
+      {% if categories %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th>Image</th>
+
+              <th>Name (URL Slug)</th>
+
+              <th>Display Name</th>
+
+              <th>Description</th>
+
+              <th>Order</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for cat in categories %}
+
+            <tr>
+
+              <td>
+
+                <img src="{% if cat.image_filename and '://' in cat.image_filename %}{{ cat.image_filename }}{% elif cat.image_filename %}{{ url_for('static', filename='images/' + cat.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}" class="prod-thumb" alt="Category image" onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'" />
+
+              </td>
+
+              <td><code style="font-size:0.85rem; background:rgba(0,0,0,0.04); padding:2px 6px; border-radius:4px;">{{ cat.name }}</code></td>
+
+              <td><strong>{{ cat.display_name }}</strong></td>
+
+              <td style="max-width:320px; font-size:0.85rem; line-height:1.4;">{{ cat.description }}</td>
+
+              <td>{{ cat.display_order }}</td>
+
+              <td>
+
+                <div class="action-btn-group">
+
+                  <button class="action-btn edit edit-category-btn"
+
+                          data-id="{{ cat.id }}"
+
+                          data-name="{{ cat.name|escape }}"
+
+                          data-display-name="{{ cat.display_name|escape }}"
+
+                          data-description="{{ cat.description|escape }}"
+
+                          data-order="{{ cat.display_order }}"
+
+                          data-image="{{ cat.image_filename|escape }}"
+
+                          title="Edit category">
+
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+
+                  </button>
+
+                  <form action="/admin/delete-category/{{ cat.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this category? (Note: Products in this category will not be deleted, but they will no longer be filterable)');" style="display:inline;">
+
+                    <button type="submit" class="action-btn delete" title="Delete category">
+
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No categories found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+    <!-- Sub Categories Section -->
+    <div class="card-container" style="margin-top:24px;">
+      <div class="section-action-header">
+        <h2>Sub Categories</h2>
+        <button class="btn btn-primary btn-sm" onclick="openAddSubcategoryModal()"><i data-lucide="plus"></i> Add New Sub Category</button>
+      </div>
+
+      {% if subcategories %}
+      <div class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Parent Category</th>
+              <th>Name (URL Slug)</th>
+              <th>Display Name</th>
+              <th>Description</th>
+              <th>Order</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in subcategories %}
+            <tr>
+              <td><span class="badge badge-pending">{{ sub.parent_category_name }}</span></td>
+              <td><code style="font-size:0.85rem; background:rgba(0,0,0,0.04); padding:2px 6px; border-radius:4px;">{{ sub.name }}</code></td>
+              <td><strong>{{ sub.display_name }}</strong></td>
+              <td style="max-width:320px; font-size:0.85rem; line-height:1.4;">{{ sub.description }}</td>
+              <td>{{ sub.display_order }}</td>
+              <td>
+                <div class="action-btn-group">
+                  <form action="/admin/delete-subcategory/{{ sub.id }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this subcategory?');" style="display:inline;">
+                    <button type="submit" class="action-btn delete" title="Delete subcategory">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        No sub categories found.
+      </div>
+      {% endif %}
+    </div>
+
+  </section>

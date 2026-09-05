@@ -1,0 +1,660 @@
+<script>
+  const ORDER_ID = {{ order.id }};
+  const ORDER_NUMBER = '{{ order.order_number if order.order_number else '#' ~ order.id }}';
+
+  const COURIER_URL_MAP = Object.assign({
+    'delhivery': 'https://www.delhivery.com/track/package/{awb}',
+    'bluedart': 'https://www.bluedart.com/tracking?track={awb}',
+    'dtdc': 'https://www.dtdc.in/tracking/tracking_results.asp?Ttype=awb_no&strCnno={awb}',
+    'indiapost': 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx',
+    'xpressbees': 'https://www.xpressbees.com/track?isawb=Yes&trackid={awb}',
+    'shadowfax': 'https://tracker.shadowfax.in/#/track?awb={awb}',
+    'ekart': 'https://ekartlogistics.com/shipmenttrack/{awb}',
+    'amazon': 'https://track.amazon.in/tracking/{awb}',
+    'fedex': 'https://www.fedex.com/fedextrack/?trknbr={awb}',
+    'dhl': 'https://www.dhl.com/in-en/home/tracking/tracking-express.html?submit=1&tracking-id={awb}',
+    'custom': '{awb}'
+  }, {{ courier_url_map | tojson if courier_url_map else '{}' }});
+
+  function openCourierPanel(mode = 'add', courierData = null) {
+    const box = document.getElementById('custom-courier-box');
+    const titleEl = document.getElementById('custom-courier-box-title');
+    const badgeEl = document.getElementById('courier-mode-badge');
+    const modeInp = document.getElementById('custom-courier-mode');
+    const idInp   = document.getElementById('custom-courier-id');
+    const codeInp = document.getElementById('custom-courier-code');
+    const nameInp = document.getElementById('custom-courier-name');
+    const urlInp  = document.getElementById('custom-courier-url');
+    const addActions = document.getElementById('courier-add-actions');
+    const editActions = document.getElementById('courier-edit-actions');
+    const courierSelect = document.getElementById('courier-select');
+
+    if (!box) return;
+
+    if (mode === 'edit' && courierData) {
+      modeInp.value = 'edit';
+      idInp.value = courierData.id || '';
+      codeInp.value = courierData.code || '';
+      if (nameInp) nameInp.value = courierData.name || '';
+      if (urlInp) urlInp.value = courierData.url_pattern || '';
+
+      titleEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit Courier: ${escapeHtml(courierData.name)}`;
+      if (badgeEl) {
+        badgeEl.style.display = 'inline-block';
+        badgeEl.textContent = 'Edit Mode';
+      }
+      if (addActions) addActions.style.display = 'none';
+      if (editActions) editActions.style.display = 'flex';
+      box.style.display = 'block';
+      box.style.background = '#eff6ff';
+      box.style.borderColor = '#93c5fd';
+      if (nameInp) setTimeout(() => nameInp.focus(), 50);
+    } else {
+      modeInp.value = 'add';
+      idInp.value = '';
+      codeInp.value = '';
+      if (nameInp) nameInp.value = '';
+      if (urlInp) urlInp.value = '';
+
+      titleEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Add Custom Courier`;
+      if (badgeEl) badgeEl.style.display = 'none';
+      if (addActions) addActions.style.display = 'flex';
+      if (editActions) editActions.style.display = 'none';
+      box.style.display = 'block';
+      box.style.background = '#f0fdf4';
+      box.style.borderColor = '#86efac';
+
+      if (courierSelect.value !== '__custom__' && courierSelect.value !== 'custom') {
+        courierSelect.value = '__custom__';
+      }
+      if (nameInp) setTimeout(() => nameInp.focus(), 50);
+    }
+
+    updateTrackingPreview();
+  }
+
+  function closeCourierPanel() {
+    const box = document.getElementById('custom-courier-box');
+    const courierSelect = document.getElementById('courier-select');
+    if (box) box.style.display = 'none';
+    if (courierSelect.value === '__custom__') {
+      courierSelect.value = '';
+    }
+    updateTrackingPreview();
+  }
+
+  function toggleCustomCourierPanel(show, clearFields = false) {
+    if (show) {
+      openCourierPanel('add');
+    } else {
+      closeCourierPanel();
+    }
+  }
+
+  function editCurrentSelectedCourier() {
+    const select = document.getElementById('courier-select');
+    const opt = select.options[select.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    openCourierPanel('edit', {
+      id: opt.dataset.id || '',
+      code: opt.value,
+      name: opt.dataset.name || opt.textContent.replace('(Custom Partner)', '').replace('(Custom)', '').trim(),
+      url_pattern: opt.dataset.url || '',
+      sample_format: opt.dataset.format || ''
+    });
+  }
+
+  function onCourierChange() {
+    const courierSelect = document.getElementById('courier-select');
+    const val           = courierSelect.value;
+    const selectedOpt   = courierSelect.options[courierSelect.selectedIndex];
+    const helpEl        = document.getElementById('awb-help');
+    const editBtn       = document.getElementById('btn-edit-selected-courier');
+    
+    // Show edit button if it's a DB custom courier
+    if (selectedOpt && selectedOpt.dataset.dbCustom === 'true') {
+      if (editBtn) editBtn.style.display = 'inline-flex';
+    } else {
+      if (editBtn) editBtn.style.display = 'none';
+    }
+
+    if (val === '__custom__' || val === 'custom') {
+      openCourierPanel('add');
+      helpEl.textContent = 'Enter custom courier tracking number or reference ID';
+    } else {
+      const box = document.getElementById('custom-courier-box');
+      if (box && document.getElementById('custom-courier-mode')?.value === 'add') {
+        box.style.display = 'none';
+      }
+
+      if (selectedOpt && selectedOpt.dataset.format) {
+        helpEl.textContent = selectedOpt.dataset.format;
+      } else {
+        helpEl.textContent = 'Enter courier tracking ID';
+      }
+    }
+    updateTrackingPreview();
+  }
+
+  function onCustomCourierInput() {
+    updateTrackingPreview();
+  }
+
+  function saveNewCourierDirectly() {
+    const nameInput = document.getElementById('custom-courier-name');
+    const urlInput  = document.getElementById('custom-courier-url');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const urlPattern = urlInput ? urlInput.value.trim() : '';
+    const btn = document.getElementById('btn-save-custom-courier');
+
+    if (!name) {
+      showToast('error', 'Please enter a courier name first.');
+      if (nameInput) nameInput.focus();
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Saving...';
+    }
+
+    fetch('/api/admin/couriers/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        url_pattern: urlPattern || '{awb}',
+        sample_format: 'Enter tracking ID'
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Save Partner</span>';
+      }
+      if (data.success && data.courier) {
+        const c = data.courier;
+        COURIER_URL_MAP[c.code] = c.url_pattern;
+        COURIER_URL_MAP[c.name] = c.url_pattern;
+
+        const select = document.getElementById('courier-select');
+        let opt = Array.from(select.options).find(o => o.value.toLowerCase() === c.code.toLowerCase() || (c.id && o.dataset.id == c.id));
+        if (!opt) {
+          opt = document.createElement('option');
+          opt.value = c.code;
+          opt.dataset.id = c.id;
+          opt.dataset.name = c.name;
+          opt.textContent = `${c.name} (Custom Partner)`;
+          opt.dataset.format = c.sample_format;
+          opt.dataset.url = c.url_pattern;
+          opt.dataset.dbCustom = 'true';
+          opt.dataset.custom = 'true';
+          const customOpt = select.querySelector('option[value="__custom__"]');
+          if (customOpt) {
+            select.insertBefore(opt, customOpt);
+          } else {
+            select.appendChild(opt);
+          }
+        } else {
+          opt.dataset.id = c.id;
+          opt.dataset.name = c.name;
+          opt.dataset.url = c.url_pattern;
+          opt.dataset.format = c.sample_format;
+          opt.dataset.dbCustom = 'true';
+          opt.textContent = `${c.name} (Custom Partner)`;
+        }
+        select.value = c.code;
+        closeCourierPanel();
+        onCourierChange();
+        showToast('success', `Courier partner "${c.name}" saved!`);
+      } else {
+        showToast('error', data.error || 'Failed to save courier partner.');
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Save Partner</span>';
+      }
+      showToast('error', 'Network error while saving courier partner.');
+    });
+  }
+
+  function updateCourierDirectly() {
+    const id = document.getElementById('custom-courier-id').value;
+    const code = document.getElementById('custom-courier-code').value;
+    const nameInput = document.getElementById('custom-courier-name');
+    const urlInput  = document.getElementById('custom-courier-url');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const urlPattern = urlInput ? urlInput.value.trim() : '';
+    const btn = document.getElementById('btn-update-custom-courier');
+
+    if (!name) {
+      showToast('error', 'Courier name cannot be empty.');
+      if (nameInput) nameInput.focus();
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Updating...';
+    }
+
+    fetch('/api/admin/couriers/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: id || undefined,
+        code: code || undefined,
+        name: name,
+        url_pattern: urlPattern || '{awb}',
+        sample_format: 'Enter tracking ID'
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Update Partner</span>';
+      }
+      if (data.success && data.courier) {
+        const c = data.courier;
+        COURIER_URL_MAP[c.code] = c.url_pattern;
+        COURIER_URL_MAP[c.name] = c.url_pattern;
+
+        const select = document.getElementById('courier-select');
+        let opt = Array.from(select.options).find(o => (c.id && o.dataset.id == c.id) || o.value.toLowerCase() === (c.code || '').toLowerCase());
+        if (opt) {
+          opt.textContent = `${c.name} (Custom Partner)`;
+          opt.dataset.name = c.name;
+          opt.dataset.url = c.url_pattern;
+          opt.dataset.format = c.sample_format;
+          opt.dataset.dbCustom = 'true';
+        }
+        closeCourierPanel();
+        updateTrackingPreview();
+        showToast('success', `Courier partner "${c.name}" updated successfully!`);
+      } else {
+        showToast('error', data.error || 'Failed to update courier partner.');
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Update Partner</span>';
+      }
+      showToast('error', 'Network error while updating courier.');
+    });
+  }
+
+  function deleteSelectedCourierDirectly() {
+    const id = document.getElementById('custom-courier-id').value;
+    const code = document.getElementById('custom-courier-code').value;
+    const name = document.getElementById('custom-courier-name').value;
+
+    if (!confirm(`Are you sure you want to delete the courier partner "${name}"?`)) {
+      return;
+    }
+
+    const btn = document.getElementById('btn-delete-custom-courier');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Deleting...';
+    }
+
+    fetch('/api/admin/couriers/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id || undefined, code: code || undefined })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+      if (data.success) {
+        const select = document.getElementById('courier-select');
+        const opt = Array.from(select.options).find(o => (id && o.dataset.id == id) || (code && o.value === code));
+        if (opt) opt.remove();
+        if (code) delete COURIER_URL_MAP[code];
+        if (name) delete COURIER_URL_MAP[name];
+
+        select.value = '';
+        closeCourierPanel();
+        onCourierChange();
+        showToast('success', `Courier partner "${name}" removed.`);
+      } else {
+        showToast('error', data.error || 'Failed to delete courier.');
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+      showToast('error', 'Network error while deleting courier.');
+    });
+  }
+
+  // Manage Couriers Directory Modal
+  function openManageCouriersModal() {
+    const modal = document.getElementById('manage-couriers-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      loadCustomCouriersList();
+    }
+  }
+
+  function closeManageCouriersModal() {
+    const modal = document.getElementById('manage-couriers-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function openCourierPanelFromModal(mode, courier = null) {
+    closeManageCouriersModal();
+    if (mode === 'edit' && courier) {
+      const select = document.getElementById('courier-select');
+      if (select) select.value = courier.code;
+      openCourierPanel('edit', courier);
+    } else {
+      openCourierPanel('add');
+    }
+  }
+
+  function loadCustomCouriersList() {
+    const loading = document.getElementById('modal-couriers-loading');
+    const empty   = document.getElementById('modal-couriers-empty');
+    const list    = document.getElementById('modal-couriers-list');
+
+    if (loading) loading.style.display = 'block';
+    if (empty)   empty.style.display = 'none';
+    if (list)    list.style.display = 'none';
+
+    fetch('/api/admin/couriers/list')
+      .then(r => r.json())
+      .then(data => {
+        if (loading) loading.style.display = 'none';
+        if (data.success && data.couriers && data.couriers.length > 0) {
+          list.innerHTML = '';
+          data.couriers.forEach(c => {
+            const item = document.createElement('div');
+            item.style.cssText = 'background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; box-shadow:0 1px 2px rgba(0,0,0,0.03);';
+            item.innerHTML = `
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="font-weight:700; font-size:0.88rem; color:#0f172a;">${escapeHtml(c.name)}</span>
+                  <span style="background:#ecfdf5; color:#059669; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px;">${escapeHtml(c.code)}</span>
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; font-family:monospace; word-break:break-all;">
+                  ${escapeHtml(c.url_pattern || '{awb}')}
+                </div>
+              </div>
+              <div style="display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">
+                <button type="button" class="btn-modal-edit" style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; padding:5px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
+                <button type="button" class="btn-modal-delete" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; padding:5px 8px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            `;
+            item.querySelector('.btn-modal-edit').onclick = () => openCourierPanelFromModal('edit', c);
+            item.querySelector('.btn-modal-delete').onclick = () => deleteCourierFromModal(c.id, c.code, c.name);
+            list.appendChild(item);
+          });
+          list.style.display = 'flex';
+        } else {
+          if (empty) empty.style.display = 'block';
+        }
+      })
+      .catch(() => {
+        if (loading) loading.style.display = 'none';
+        if (empty) {
+          empty.style.display = 'block';
+          empty.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Failed to load couriers directory.</p>';
+        }
+      });
+  }
+
+  function deleteCourierFromModal(id, code, name) {
+    if (!confirm(`Delete custom courier partner "${name}"?`)) return;
+
+    fetch('/api/admin/couriers/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, code })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const select = document.getElementById('courier-select');
+        const opt = Array.from(select.options).find(o => (id && o.dataset.id == id) || (code && o.value === code));
+        if (opt) opt.remove();
+        if (code) delete COURIER_URL_MAP[code];
+        if (name) delete COURIER_URL_MAP[name];
+        loadCustomCouriersList();
+        showToast('success', `Deleted "${name}".`);
+      } else {
+        showToast('error', data.error || 'Failed to delete courier.');
+      }
+    })
+    .catch(() => {
+      showToast('error', 'Network error deleting courier.');
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function updateTrackingPreview() {
+    const courierSelect = document.getElementById('courier-select');
+    const courierCode   = courierSelect.value || 'custom';
+    const selectedOpt   = courierSelect.options[courierSelect.selectedIndex];
+    const awb           = document.getElementById('awb-input').value.trim();
+    const previewBlock  = document.getElementById('tracking-preview-block');
+    const previewName   = document.getElementById('preview-courier-name');
+    const previewLink   = document.getElementById('preview-url-link');
+    const previewText   = document.getElementById('preview-url-text');
+    const customNameInp = document.getElementById('custom-courier-name');
+    const customUrlInp  = document.getElementById('custom-courier-url');
+
+    if (!awb) {
+      previewBlock.style.display = 'none';
+      return;
+    }
+
+    let courierDisplayName = '';
+    let targetUrl = '';
+
+    if (courierCode === '__custom__' || courierCode === 'custom') {
+      courierDisplayName = (customNameInp && customNameInp.value.trim()) ? customNameInp.value.trim() : 'Custom Courier';
+      const customUrlPat = (customUrlInp && customUrlInp.value.trim()) ? customUrlInp.value.trim() : '';
+      if (customUrlPat) {
+        if (customUrlPat.includes('{awb}') || customUrlPat.includes('{tracking_number}')) {
+          targetUrl = customUrlPat.replace('{awb}', encodeURIComponent(awb)).replace('{tracking_number}', encodeURIComponent(awb));
+        } else if (customUrlPat.startsWith('http://') || customUrlPat.startsWith('https://')) {
+          targetUrl = customUrlPat;
+        } else {
+          targetUrl = 'https://' + customUrlPat;
+        }
+      } else {
+        targetUrl = awb.startsWith('http') ? awb : `Track via ${courierDisplayName}`;
+      }
+    } else {
+      courierDisplayName = (selectedOpt && selectedOpt.dataset.name) ? selectedOpt.dataset.name : (selectedOpt ? selectedOpt.text.replace('(Custom Partner)', '').replace('(Custom)', '').trim() : courierCode);
+      const pattern = (selectedOpt && selectedOpt.dataset.url) || COURIER_URL_MAP[courierCode] || COURIER_URL_MAP['custom'] || '{awb}';
+      if (pattern.includes('{awb}') || pattern.includes('{tracking_number}')) {
+        targetUrl = pattern.replace('{awb}', encodeURIComponent(awb)).replace('{tracking_number}', encodeURIComponent(awb));
+      } else {
+        targetUrl = pattern;
+      }
+    }
+
+    previewName.textContent = courierDisplayName;
+    previewBlock.style.display = 'block';
+    previewLink.href = (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) ? targetUrl : '#';
+    previewText.textContent = targetUrl;
+  }
+
+  function updateTimelineUI(status) {
+    const badge = document.getElementById('live-status-badge');
+    if (badge) {
+      badge.className = `od-status-badge ${status.toLowerCase()}`;
+      badge.innerHTML = `<span class="dot"></span>${status}`;
+    }
+
+    const timeline = document.getElementById('timeline-container');
+    if (!timeline) return;
+
+    if (status === 'Cancelled') {
+      timeline.innerHTML = `
+        <div class="od-timeline-step" data-step-label="Cancelled">
+          <div class="od-timeline-dot cancelled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div class="od-timeline-text">
+            <div class="od-timeline-title">Cancelled</div>
+            <div class="od-timeline-sub">Order was cancelled</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const steps = ['Processing', 'Shipped', 'Delivered'];
+    const currentIdx = steps.indexOf(status);
+    
+    let html = '';
+    steps.forEach((label, idx) => {
+      let dotContent = '';
+      let dotClass = '';
+      let opacityStyle = '';
+      let subText = '';
+      
+      if (idx < currentIdx) {
+        dotClass = 'done';
+        dotContent = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>';
+        subText = 'Completed';
+      } else if (idx === currentIdx) {
+        dotClass = 'active';
+        dotContent = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="3"/></svg>';
+        subText = 'In progress';
+      } else {
+        dotContent = `<span style="color:#64748b; font-size:0.65rem; font-weight:700;">${idx + 1}</span>`;
+        opacityStyle = 'opacity:0.4;';
+        subText = 'Pending';
+      }
+      
+      html += `
+        <div class="od-timeline-step" data-step-label="${label}" data-step-index="${idx}">
+          <div class="od-timeline-dot ${dotClass}">
+            ${dotContent}
+          </div>
+          <div class="od-timeline-text">
+            <div class="od-timeline-title" style="${opacityStyle}">${label}</div>
+            <div class="od-timeline-sub">${subText}</div>
+          </div>
+        </div>
+      `;
+    });
+    timeline.innerHTML = html;
+  }
+
+  function saveTrackingAndStatus(e) {
+    e.preventDefault();
+    const btn = document.getElementById('dispatch-btn');
+    const status = document.getElementById('status-select').value;
+    const courier_partner = document.getElementById('courier-select').value;
+    const tracking_number = document.getElementById('awb-input').value.trim();
+    const estimated_delivery_date = document.getElementById('edd-input').value;
+
+    const customNameInp = document.getElementById('custom-courier-name');
+    const customUrlInp  = document.getElementById('custom-courier-url');
+    const savePermanentInp = document.getElementById('save-courier-permanently');
+
+    const custom_courier_name = customNameInp ? customNameInp.value.trim() : '';
+    const tracking_url = customUrlInp ? customUrlInp.value.trim() : '';
+    const save_courier_permanently = savePermanentInp ? savePermanentInp.checked : false;
+
+    btn.disabled = true;
+    btn.innerHTML = 'Saving &amp; Updating…';
+
+    fetch(`/admin/update-order-status/${ORDER_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status,
+        courier_partner,
+        custom_courier_name,
+        tracking_number,
+        tracking_url,
+        estimated_delivery_date,
+        save_courier_permanently
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Update &amp; Dispatch Order`;
+      if (data.success) {
+        updateTimelineUI(status);
+        if (data.courier_name) {
+          const previewName = document.getElementById('preview-courier-name');
+          if (previewName) previewName.textContent = data.courier_name;
+        }
+        updateTrackingPreview();
+        showToast('success', `Order ${ORDER_NUMBER} updated successfully (Status: ${status})`);
+      } else {
+        showToast('error', data.error || 'Update failed');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Update &amp; Dispatch Order`;
+      showToast('error', 'Network error. Please try again.');
+    });
+  }
+
+  function cancelOrder() {
+    if (!confirm(`Are you sure you want to cancel Order ${ORDER_NUMBER}? This cannot be undone.`)) return;
+    document.getElementById('status-select').value = 'Cancelled';
+    
+    fetch(`/admin/update-order-status/${ORDER_ID}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Cancelled' })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        updateTimelineUI('Cancelled');
+        showToast('success', `Order ${ORDER_NUMBER} has been cancelled.`);
+      } else {
+        showToast('error', data.error || 'Cancel failed');
+      }
+    })
+    .catch(() => showToast('error', 'Network error.'));
+  }
+
+  // Restore Orders tab when returning to dashboard
+  if (window.performance && window.performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
+    sessionStorage.setItem('adminTab', 'orders');
+  }
+
+  // Initialize tracking preview on load
+  document.addEventListener('DOMContentLoaded', () => {
+    onCourierChange();
+    updateTrackingPreview();
+  });
+</script>

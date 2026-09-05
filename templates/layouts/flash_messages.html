@@ -1,0 +1,22 @@
+<!-- Flash Notification Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+  {% for category, message in messages %}
+  <div class="flash-msg {{ category }}" role="alert">
+    <span class="flash-icon">
+      {% if category == 'success' %}
+      <i data-lucide="check-circle" style="stroke: #10b981; width: 20px; height: 20px;"></i>
+      {% else %}
+      <i data-lucide="alert-circle" style="stroke: #ef4444; width: 20px; height: 20px;"></i>
+      {% endif %}
+    </span>
+    <span class="flash-text">{{ message }}</span>
+    <button class="flash-close" aria-label="Close alert" onclick="dismissToast(this.parentElement)">
+      <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>{% block title %}The Saveur – Premium Online Store{% endblock %}</title>
+  <meta name="description"
+    content="{% block meta_desc %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endblock %}" />
+
+  <!-- Favicons and Web Manifest -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32x32.png') }}" />
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16x16.png') }}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}" />
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}" />
+
+  <!-- Open Graph / Facebook SEO -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ request.url }}" />
+  <meta property="og:title"
+    content="{% block og_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
+  <meta property="og:description"
+    content="{% block og_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
+  <meta property="og:image"
+    content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
+
+  <!-- Twitter SEO -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="{{ request.url }}" />
+  <meta property="twitter:title"
+    content="{% block twitter_title %}{% if self.title() %}{{ self.title() }}{% else %}The Saveur – Premium Online Store{% endif %}{% endblock %}" />
+  <meta property="twitter:description"
+    content="{% block twitter_desc %}{% if self.meta_desc() %}{{ self.meta_desc() }}{% else %}The Saveur offers premium quality products sourced directly from trusted partners and delivered straight to your door. Explore our wide collection.{% endif %}{% endblock %}" />
+  <meta property="twitter:image"
+    content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}" />
+
+  <!-- Preconnect for Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Global Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Products Dropdown Styles -->
+  <style>
+    /* Desktop Products Hover Dropdown */
+    @media (min-width: 993px) {
+      .products-dropdown:hover #products-dropdown-menu {
+        display: flex !important;
+      }
+    }
+
+    #products-dropdown-menu::before {
+      content: '';
+      position: absolute;
+      top: -15px;
+      left: 0;
+      right: 0;
+      height: 15px;
+      background: transparent;
+    }
+
+    .nav-dropdown-submenu {
+      position: relative;
+    }
+
+    .nav-dropdown-submenu .submenu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      margin-top: -8px;
+      margin-left: 6px;
+      background: rgba(12, 30, 18, 0.98);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 8px;
+      min-width: 200px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      z-index: 201;
+      flex-direction: column;
+      gap: 4px;
+      animation: navDropdownSlide 0.2s ease;
+    }
+
+    .nav-dropdown-submenu .submenu::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: transparent;
+    }
+
+    .nav-dropdown-submenu:hover .submenu {
+      display: flex;
+    }
+
+    .nav-dropdown-submenu .submenu a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: rgba(255, 255, 255, 0.78) !important;
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none !important;
+      transition: all 0.2s;
+    }
+
+    .nav-dropdown-submenu .submenu a:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--white) !important;
+      padding-left: 18px;
+    }
+
+    .submenu-arrow-icon {
+      transition: transform 0.25s;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .nav-mobile-dropdown {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .nav-mobile-dropdown-toggle,
+    .nav-mobile-subdropdown-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      font-family: inherit;
+      font-size: 1.08rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-mobile-dropdown-toggle:hover,
+    .nav-mobile-subdropdown-toggle:hover {
+      color: var(--white);
+    }
+
+    .nav-mobile-dropdown-menu,
+    .nav-mobile-subdropdown-menu {
+      display: none;
+      flex-direction: column;
+      padding-left: 14px;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .nav-mobile-dropdown-menu a,
+    .nav-mobile-subdropdown-menu a {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.7) !important;
+      padding: 8px 0;
+      border-bottom: none !important;
+    }
+
+    .nav-mobile-dropdown-menu a:hover,
+    .nav-mobile-subdropdown-menu a:hover {
+      color: var(--amber-light) !important;
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -8px;
+      right: -10px;
+      background: #ef4444;
+      color: var(--white);
+      font-size: 0.7rem;
+      font-weight: 800;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      border: 2px solid rgba(12, 30, 18, 0.98);
+      animation: pulseBadge 2s infinite;
+    }
+
+    @keyframes pulseBadge {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .cart-badge-mobile {
+      position: absolute;
+      top: 10px;
+      left: 70px;
+      background: #ef4444;
+      color: var(--white);
+      font-size: 0.68rem;
+      font-weight: 800;
+      min-width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      border: 1px solid rgba(12, 30, 18, 0.98);
+    }
+  </style>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- Dynamic Island Header -->
+  {% include 'layouts/header.html' %}
+
+  <!-- Flash Messages -->
+  {% include 'layouts/flash_messages.html' %}
+
+  <!-- Main Content -->
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Global Footer -->
+  {% include 'layouts/footer.html' %}
+
+  <!-- Global JS -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    // Initialize Lucide vector icons
+    function initLucideIcons() {
+      if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+    }
+    initLucideIcons();
+    document.addEventListener('DOMContentLoaded', initLucideIcons);
+    window.addEventListener('load', initLucideIcons);
+    window.initLucideIcons = initLucideIcons;
+    window.refreshIcons = initLucideIcons;
+
+    // Mobile Products Dropdown Accordion
+    document.querySelectorAll('.nav-mobile-dropdown-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = btn.nextElementSibling;
+        const isVisible = menu.style.display === 'flex';
+        menu.style.display = isVisible ? 'none' : 'flex';
+        const arrow = btn.querySelector('.mobile-arrow-icon');
+        if (arrow) {
+          arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+      });
+    });
+
+    document.querySelectorAll('.nav-mobile-subdropdown-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = btn.nextElementSibling;
+        const isVisible = menu.style.display === 'flex';
+        menu.style.display = isVisible ? 'none' : 'flex';
+        const arrow = btn.querySelector('.mobile-subarrow-icon');
+        if (arrow) {
+          arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+      });
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+
+</body>
+
+</html>

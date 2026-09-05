@@ -1,0 +1,177 @@
+<section id="products-tab" class="tab-content">
+
+    <div class="card-container">
+
+      <div class="section-action-header">
+
+        <h2>Manage Products</h2>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <form id="bulk-delete-form" action="{{ url_for('admin_bulk_delete_products') }}" method="POST" onsubmit="return confirmBulkDelete(event)">
+            <button type="submit" id="bulk-delete-btn" class="btn btn-danger btn-sm" style="display: none; background: #e74c3c; border-color: #e74c3c; align-items: center; gap: 6px;" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align: middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Delete Selected (<span id="selected-count">0</span>)
+            </button>
+          </form>
+          <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary btn-sm">&#xff0b; Add New Product</a>
+        </div>
+
+      </div>
+
+
+
+      {% if products %}
+
+      <div class="table-wrapper">
+
+        <table class="admin-table">
+
+          <thead>
+
+            <tr>
+
+              <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-products" onclick="toggleSelectAllProducts(this)" style="cursor:pointer; width:16px; height:16px;"></th>
+
+              <th>Image</th>
+
+              <th>Product Name</th>
+
+              <th>Category</th>
+
+              <th>Price</th>
+
+              <th>GST Rate</th>
+
+              <th>Stock</th>
+
+              <th>Unit Size</th>
+
+              <th>Status</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {% for prod in products %}
+
+            <tr>
+
+              <td style="text-align: center;"><input type="checkbox" name="product_ids" value="{{ prod.id }}" form="bulk-delete-form" class="product-checkbox" onclick="updateBulkDeleteBtn()" style="cursor:pointer; width:16px; height:16px; accent-color: var(--green-primary);"></td>
+
+              <td>
+
+                <img src="{% if prod.image_filename and '://' in prod.image_filename %}{{ prod.image_filename }}{% elif prod.image_filename %}{{ url_for('static', filename='images/' + prod.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}" alt="" class="prod-thumb" onerror="this.src='{{ url_for('static', filename='images/logo.jpg') }}'" />
+
+              </td>
+
+              <td><strong><a href="{{ url_for('product_detail', id=prod.id) }}" target="_blank" style="color:inherit; text-decoration:none; border-bottom:1px dashed var(--green-primary);">{{ prod.name }} &#x2197;</a></strong></td>
+
+              <td>
+
+                <span class="badge {{ prod.category.lower() }}">
+
+                  {{ prod.category }}
+
+                </span>
+
+              </td>
+
+              <td>
+
+                <strong>${{ prod.price }}</strong>
+
+                {% if prod.discount_percent and prod.discount_percent > 0 %}
+
+                  <br><small style="color:#e74c3c; font-weight:600;">({{ prod.discount_percent|int }}% OFF)</small>
+
+                {% endif %}
+
+              </td>
+
+              <td>
+                <strong>{{ prod.gst_rate if prod.gst_rate is not none else '0.0' }}%</strong>
+              </td>
+
+              <td>
+
+                {% if prod.stocks > 10 %}
+
+                  <span style="color:#2ecc71; font-weight:600;">{{ prod.stocks }}</span>
+
+                {% elif prod.stocks > 0 %}
+
+                  <span style="color:#e67e22; font-weight:600;">{{ prod.stocks }} (Low)</span>
+
+                {% else %}
+
+                  <span style="color:#e74c3c; font-weight:600; text-transform:uppercase; font-size:0.75rem;">Out of Stock</span>
+
+                {% endif %}
+
+              </td>
+
+              <td>{{ prod.unit }}</td>
+
+              <td>
+
+                {% if prod.is_bestseller %}
+
+                  <span class="badge bestseller">Best Seller</span>
+
+                {% else %}
+
+                  <span style="color:var(--text-muted); font-size:0.85rem;">Normal</span>
+
+                {% endif %}
+
+              </td>
+
+              <td>
+
+                <div class="action-btn-group">
+
+                  <a href="{{ url_for('admin_edit_product', id=prod.id) }}" class="action-btn edit" title="Edit product">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </a>
+
+                  <form action="{{ url_for('admin_delete_product', id=prod.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');" style="display:inline;">
+
+                    <button type="submit" class="action-btn delete" title="Delete product">
+
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+      {% else %}
+
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+
+        No products found.
+
+      </div>
+
+      {% endif %}
+
+    </div>
+
+  </section>

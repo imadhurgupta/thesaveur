@@ -1,0 +1,222 @@
+<!-- Product Pricing & Actions Component -->
+<div class="pd-info">
+
+  <!-- Badges -->
+  <div class="pd-badges">
+    <span class="pd-badge cat">{{ product.category }}</span>
+    {% if product.is_bestseller %}
+    <span class="pd-badge bestseller">⭐ Bestseller</span>
+    {% endif %}
+    {% if product.discount_percent and product.discount_percent > 0 %}
+    <span class="pd-badge sale">{{ product.discount_percent|int }}% OFF</span>
+    {% endif %}
+  </div>
+
+  <!-- Title -->
+  <h1 class="pd-title" style="margin-bottom: 8px;">{{ product.name }}</h1>
+
+  <!-- Stars / Reviews Row -->
+  <div class="pd-stars-row">
+    <div class="pd-stars-list">
+      {% for i in range(1,6) %}
+      <svg viewBox="0 0 24 24" fill="{{ '#f1c40f' if avg_rating >= i else 'none' }}" stroke="#f1c40f"
+        stroke-width="2.2" width="14" height="14">
+        <polygon
+          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+      {% endfor %}
+    </div>
+    {% if total_reviews > 0 %}
+    <span class="pd-rating-num">{{ avg_rating }}</span>
+    <a href="#customer-reviews-section" class="pd-reviews-link"
+      onclick="document.getElementById('customer-reviews-section').scrollIntoView({behavior: 'smooth'}); return false;">
+      ({{ total_reviews }} review{{ 's' if total_reviews != 1 }})
+    </a>
+    {% else %}
+    <a href="#customer-reviews-section" class="pd-reviews-link"
+      onclick="document.getElementById('customer-reviews-section').scrollIntoView({behavior: 'smooth'}); return false;">
+      Be the first to review
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Seller/Store Info Badge -->
+  <div class="pd-seller-card">
+    <div class="pd-seller-left">
+      <div class="pd-seller-logo">
+        TS
+      </div>
+      <div>
+        <div class="pd-seller-name">The Saveur Store (5,000+ Happy Subscribers)</div>
+        <div class="pd-seller-meta">
+          99.8% positive feedback · <a href="{{ url_for('products') }}">Store Products</a>
+        </div>
+      </div>
+    </div>
+    <div class="pd-seller-actions">
+      <a href="#pd-enquiry-form-section" class="btn-seller-msg">Contact Seller</a>
+    </div>
+  </div>
+
+  <!-- Price Section -->
+  <div class="pd-price-sec">
+    {% if product.discount_percent and product.discount_percent > 0 %}
+    {% set sale_price = (product.price * (1 - product.discount_percent / 100)) | round(2) %}
+    <div class="pd-price-wrapper">
+      <span class="pd-price-val">${{ sale_price }}</span>
+      <span class="pd-price-or-offer">or Best Offer</span>
+    </div>
+    <div class="pd-was-price">
+      Was: <span style="text-decoration:line-through;">${{ product.price }}</span>
+      <span class="pd-save-pill">Save ${{ (product.price - sale_price)|round(2) }} ({{ product.discount_percent|int
+        }}% off)</span>
+    </div>
+    {% else %}
+    <div class="pd-price-wrapper">
+      <span class="pd-price-val">${{ product.price }}</span>
+      <span class="pd-price-or-offer">or Best Offer</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Item Specifications Grid -->
+  <div class="pd-specs-grid">
+    <div class="pd-spec-item">
+      <span class="pd-spec-label">Category:</span>
+      <span class="pd-spec-value">{{ product.category }}</span>
+    </div>
+    <div class="pd-spec-item">
+      <span class="pd-spec-label">Unit size:</span>
+      <span class="pd-spec-value">{{ product.unit }}</span>
+    </div>
+    <div class="pd-spec-item">
+      <span class="pd-spec-label">Availability:</span>
+      <span class="pd-spec-value">
+        {% if product.stocks > 10 %}In Stock{% elif product.stocks > 0 %}Low Stock{% else %}Out of Stock{% endif %}
+      </span>
+    </div>
+    <div class="pd-spec-item">
+      <span class="pd-spec-label">Shipping:</span>
+      <span class="pd-spec-value" style="color: #2e7d32;">
+        {% if product.shipping_charge == 0.0 or not product.shipping_charge %}
+        Free shipping
+        {% else %}
+        ${{ product.shipping_charge }} Shipping
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Breathe Easy Trust Badge -->
+  <div class="pd-breathe-easy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+    </svg>
+    <span>Breathe easy. Free shipping and returns.</span>
+  </div>
+
+  <!-- Quantity Selector & Actions -->
+  <div class="pd-ctas-block">
+    <!-- Quantity selection -->
+    <div class="pd-qty-selector">
+      <span>Quantity:</span>
+      <div class="pd-qty-input-wrap">
+        <button type="button" class="pd-qty-btn" onclick="changeQty(-1)" {% if product.stocks <=0 %}disabled{% endif %}>−</button>
+        <input class="pd-qty-input" id="pd-qty" type="number" value="1" min="1"
+          max="{{ product.stocks if product.stocks > 0 else 1 }}" readonly />
+        <button type="button" class="pd-qty-btn" onclick="changeQty(1)" {% if product.stocks <=0 %}disabled{% endif %}>+</button>
+      </div>
+      <span style="color: var(--text-muted); font-size: 0.82rem;">
+        {% if product.stocks > 0 %}{{ product.stocks }} units available{% else %}Out of stock{% endif %}
+      </span>
+    </div>
+
+    <!-- Call to Actions -->
+    <!-- Buy It Now -->
+    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="buy-form">
+      <input type="hidden" name="quantity" id="buy-qty" value="1">
+      <input type="hidden" name="buy_now" value="1">
+      <button type="submit" class="pd-btn-primary" {% if product.stocks <=0 %}disabled{% endif %}>
+        Buy It Now
+      </button>
+    </form>
+
+    <!-- Add to cart -->
+    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" id="atc-form">
+      <input type="hidden" name="quantity" id="atc-qty" value="1">
+      <button type="submit" class="pd-btn-secondary" {% if product.stocks <=0 %}disabled{% endif %}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" width="16" height="16">
+          <circle cx="9" cy="21" r="1" />
+          <circle cx="20" cy="21" r="1" />
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+        </svg>
+        Add to cart
+      </button>
+    </form>
+
+    <!-- Make Offer -->
+    <button type="button" class="pd-btn-tertiary" onclick="openOfferModal()">
+      Make offer
+    </button>
+
+    <!-- Add to Watchlist -->
+    <form action="{{ url_for('toggle_wishlist', product_id=product.id) }}" method="POST" style="display:contents;">
+      <button type="submit" class="pd-btn-watchlist {% if in_wishlist %}active{% endif %}"
+        title="{{ 'Remove from Watchlist' if in_wishlist else 'Add to Watchlist' }}">
+        <svg viewBox="0 0 24 24" fill="{{ '#e74c3c' if in_wishlist else 'none' }}" stroke="#e74c3c"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+        <span>{% if in_wishlist %}In Watchlist{% else %}Add to Watchlist{% endif %}</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Description -->
+  <div class="pd-desc-block" style="margin-top: 10px;">
+    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">About this item</h3>
+    <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-mid);">{{ product.description }}</p>
+  </div>
+
+  <!-- Custom Specifications Section -->
+  {% if specs %}
+  <div class="pd-custom-specs-block" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px; margin-bottom: 20px;">
+    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px;">Product Specifications</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      {% for spec in specs %}
+      <div style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px; display: flex; flex-direction: column;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{{ spec.key }}</span>
+        <span style="font-size: 0.9rem; color: var(--text-dark); margin-top: 2px;">{{ spec.value }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Bulk Enquiry Form Target Section -->
+  <div class="pd-enquiry" id="pd-enquiry-form-section" style="margin-top: 10px;">
+    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">Bulk Orders &amp; Queries</h3>
+    <p style="font-size: 0.82rem; margin-bottom: 12px; color: rgba(255,255,255,0.75);">Interested in {{ product.name
+      }} in wholesale quantities? Make an offer or query directly.</p>
+    <div class="pd-enquiry-btns">
+      <a href="https://wa.me/919500529076?text=Hi,%20I%20am%20interested%20in%20{{ product.name|urlencode }}%20in%20bulk."
+        target="_blank" rel="noopener" class="e-wa">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+          <path
+            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+        </svg>
+        WhatsApp
+      </a>
+      <a href="mailto:info@thesaveur.com?subject=Bulk%20Order%20-%20{{ product.name|urlencode }}" class="e-mail">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+        Email
+      </a>
+    </div>
+  </div>
+
+</div>

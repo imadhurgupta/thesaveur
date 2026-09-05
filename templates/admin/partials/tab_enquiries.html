@@ -1,0 +1,115 @@
+<section id="proposals-tab" class="tab-content">
+    <div class="card-container" style="padding: 0; display: flex; height: 600px; overflow: hidden; border-radius: 20px;">
+      
+      <!-- Left side: Message List -->
+      <div class="msg-inbox-list" style="width: 350px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: #fff;">
+        <div style="padding: 20px; border-bottom: 1px solid var(--border-color); background: var(--cream);">
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--green-dark); margin: 0;">Inbox ({{ enquiries|length }})</h2>
+        </div>
+        <div class="msg-cards-container" style="flex: 1; overflow-y: auto; padding: 8px;">
+          {% if enquiries %}
+            {% for enq in enquiries %}
+              {% set is_deal = 'PROPOSED DEAL' in enq.message %}
+              <div class="msg-card {% if loop.first %}active{% endif %}" 
+                   onclick="selectMessage(this)"
+                   data-id="{{ enq.id }}"
+                   data-name="{{ enq.name|escape }}"
+                   data-email="{{ enq.email|escape }}"
+                   data-phone="{{ enq.phone|escape }}"
+                   data-interest="{{ enq.product_interest|escape }}"
+                   data-date="{{ enq.created_at }}"
+                   data-message="{{ enq.message|escape }}"
+                   data-status="{{ enq.status }}"
+                   style="padding: 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                  <strong style="font-size: 0.88rem; color: var(--text-dark);">{{ enq.name }}</strong>
+                  <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">{{ (enq.created_at|string).split(' ')[0] if enq.created_at else '' }}</span>
+                    {% if enq.status == 'Accepted' %}
+                      <span style="font-size: 0.65rem; font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">Accepted</span>
+                    {% elif enq.status == 'Declined' %}
+                      <span style="font-size: 0.65rem; font-weight: 700; color: #c62828; background: #ffebee; padding: 2px 6px; border-radius: 4px;">Declined</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: {% if is_deal %}#b7590a{% else %}var(--green-primary){% endif %}; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                  {% if is_deal %}
+                    <span>💵 Deal Offer:</span>
+                  {% else %}
+                    <span>✉️ Query:</span>
+                  {% endif %}
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ enq.product_interest }}</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0;">
+                  {{ enq.message }}
+                </p>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.88rem;">
+              No messages or proposals received.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right side: Message Preview Detail -->
+      <div class="msg-inbox-detail" style="flex: 1; background: #fafaf9; display: flex; flex-direction: column; overflow-y: auto;">
+        {% if enquiries %}
+          <div id="msg-detail-view" style="padding: 32px; display: flex; flex-direction: column; gap: 24px; flex: 1;">
+            
+            <!-- Message Header -->
+            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 id="msg-detail-name" style="font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; color: var(--green-dark); margin-bottom: 8px;"></h3>
+                <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-mid); align-items: center; flex-wrap: wrap;">
+                  <span>Email: <a id="msg-detail-email" href="" style="color: var(--green-light); font-weight: 600;"></a></span>
+                  <span>Phone: <a id="msg-detail-phone" href="" style="color: var(--green-light); font-weight: 600;"></a></span>
+                  <span id="msg-detail-status" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 8px; text-transform: uppercase; margin-left: 8px;"></span>
+                </div>
+              </div>
+              <span id="msg-detail-date" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;"></span>
+            </div>
+
+            <!-- Product Interest Tag -->
+            <div>
+              <span class="mo-label">Subject / Product Interest</span>
+              <div id="msg-detail-interest" style="font-size: 0.95rem; font-weight: 700; color: var(--green-primary); margin-top: 4px;"></div>
+            </div>
+
+            <!-- Full Message Body -->
+            <div style="flex: 1;">
+              <span class="mo-label">Proposal Message Body</span>
+              <div id="msg-detail-body" style="font-size: 0.92rem; line-height: 1.65; color: var(--text-dark); background: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-top: 6px; white-space: pre-wrap;"></div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div style="display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px; flex-wrap: wrap;">
+              <a id="msg-action-email" href="" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700;">Reply via Email</a>
+              <a id="msg-action-wa" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #25d366; color: #fff; border-color: #25d366;">WhatsApp Chat</a>
+              
+              <!-- Accept / Decline Offer Buttons (dynamically toggled for deals) -->
+              <form id="msg-action-accept-form" action="" method="POST" style="display: none;">
+                <button type="submit" class="btn" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #2e7d32; border-color: #2e7d32; color: #fff; cursor: pointer; border: none;">Accept Offer</button>
+              </form>
+              <form id="msg-action-decline-form" action="" method="POST" style="display: none;">
+                <button type="submit" class="btn" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #d32f2f; border-color: #d32f2f; color: #fff; cursor: pointer; border: none;">Decline Offer</button>
+              </form>
+
+              <form id="msg-action-delete-form" action="" method="POST" onsubmit="return confirm('Are you sure you want to delete this enquiry/proposal?');" style="margin-left: auto;">
+                <button type="submit" class="btn btn-danger" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; background: #c0392b; border-color: #c0392b; color: #fff;">Delete Message</button>
+              </form>
+            </div>
+
+          </div>
+        {% else %}
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 48px; text-align: center; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 16px;">📥</div>
+            <h3>No Messages Selected</h3>
+            <p style="font-size: 0.88rem; max-width: 320px; margin-top: 8px;">Inbox is empty. Any queries or custom deal proposals from customers will appear here.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </section>
