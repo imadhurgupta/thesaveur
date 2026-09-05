@@ -1,6 +1,7 @@
 import os
 import jinja2
 from flask import Flask, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from core.config import SECRET_KEY, SESSION_COOKIE_NAME, UPLOAD_FOLDER
 from core.context_processors import register_context_processors
 from core.filters import register_filters
@@ -65,6 +66,9 @@ def create_app():
 
     # Enable seamless endpoint aliasing for all Jinja2 templates
     configure_endpoint_aliases(app)
+
+    # Trust standard reverse proxy headers (Nginx X-Forwarded-Proto, Host, For)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     return app
 

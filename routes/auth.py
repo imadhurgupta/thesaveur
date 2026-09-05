@@ -159,6 +159,11 @@ def logout():
     return redirect(url_for('home'))
 
 
+def _get_google_redirect_uri():
+    scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
+    return url_for('google_callback', _external=True, _scheme=scheme)
+
+
 @auth_bp.route('/login/google', endpoint='google_login')
 def google_login():
     if not GOOGLE_CLIENT_ID:
@@ -166,7 +171,7 @@ def google_login():
 
     state = secrets.token_hex(16)
     session['oauth_state'] = state
-    redirect_uri = url_for('google_callback', _external=True)
+    redirect_uri = _get_google_redirect_uri()
 
     params = {
         'client_id': GOOGLE_CLIENT_ID,
@@ -202,7 +207,7 @@ def google_callback():
         flash("Authentication failed: No authorization code received.", "error")
         return redirect(url_for('login'))
 
-    redirect_uri = url_for('google_callback', _external=True)
+    redirect_uri = _get_google_redirect_uri()
 
     try:
         token_url = "https://oauth2.googleapis.com/token"
