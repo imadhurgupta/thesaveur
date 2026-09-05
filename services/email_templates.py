@@ -29,10 +29,11 @@ def get_email_template(heading, body_content, banner_color_start="#2D5016", bann
             {body_content}
         </div>
 
-        <!-- Security / Transactional Footer -->
-        <div style="background-color: #FAF7F2; padding: 18px 24px; text-align: center; font-size: 12px; color: #777777; border-top: 1px solid #EAE6DF;">
-            <p style="margin: 0 0 6px 0;">This is an automated transactional security message from <strong>The Saveur</strong>.</p>
-            <p style="margin: 0; font-size: 11px; color: #999999;">&copy; {current_year} The Saveur &bull; <a href="https://thesaveur.com" style="color: #2D5016; text-decoration: none;">thesaveur.com</a></p>
+        <!-- Security & Transactional Compliance Footer -->
+        <div style="background-color: #FAF7F2; padding: 20px 24px; text-align: center; font-size: 12px; color: #666666; border-top: 1px solid #EAE6DF; line-height: 1.5;">
+            <p style="margin: 0 0 6px 0; font-weight: 600; color: #333333;">The Saveur &bull; Pure & Authentic Natural Products</p>
+            <p style="margin: 0 0 8px 0; font-size: 11px; color: #777777;">You received this automated security code for account verification on The Saveur. Never share your security code with anyone.</p>
+            <p style="margin: 0; font-size: 11px; color: #999999;">&copy; {current_year} The Saveur. All rights reserved. &bull; <a href="https://thesaveur.com" style="color: #2D5016; text-decoration: underline;">thesaveur.com</a></p>
         </div>
 
     </div>
