@@ -47,8 +47,8 @@
                 <span style="font-size:0.75rem; color:var(--text-muted);">{{ (ord.created_at|string).split()[0] if ord.created_at else '' }}</span>
                 {% if ord.courier_partner or ord.tracking_number %}
                 <div style="margin-top:4px;">
-                  <a href="{{ url_for('admin_order_detail', id=ord.id) }}" style="display:inline-flex; align-items:center; gap:3px; padding:2px 6px; background:rgba(16,185,129,0.1); color:#059669; border-radius:4px; font-size:0.72rem; font-weight:700; text-decoration:none;">
-                    🚚 {{ ord.courier_partner | title if ord.courier_partner else 'Shipped' }}
+                  <a href="{{ url_for('admin_order_detail', order_ref=ord.order_number if ord.order_number else ord.id) }}" style="display:inline-flex; align-items:center; gap:3px; padding:2px 6px; background:rgba(16,185,129,0.1); color:#059669; border-radius:4px; font-size:0.72rem; font-weight:700; text-decoration:none;">
+                    {{ ord.courier_partner | title if ord.courier_partner else 'Shipped' }}
                     {% if ord.tracking_number %}: {{ ord.tracking_number }}{% endif %}
                   </a>
                 </div>
@@ -85,7 +85,7 @@
               </td>
 
               <td>
-                <span class="badge {{ ord.status.lower().replace(' ', '-') }}" id="order-status-badge-{{ ord.id }}" style="
+                <span class="badge {{ ord.status.lower().replace(' ', '-') }}" id="order-status-badge-{{ ord.order_number if ord.order_number else ord.id }}" style="
                   {% if ord.status in ['Order Confirmed', 'Processing', 'Placed'] %}background:rgba(52,152,219,0.1); color:#2563eb;
                   {% elif ord.status == 'Shipped' %}background:rgba(230,126,34,0.1); color:#d97706;
                   {% elif ord.status == 'In Transit' %}background:rgba(124,58,237,0.1); color:#7c3aed;
@@ -98,8 +98,8 @@
 
               <td>
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                  <form action="{{ url_for('admin_update_order_status', id=ord.id) }}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
-                    <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, {{ ord.id }})">
+                  <form action="{{ url_for('admin_update_order_status', order_ref=ord.order_number if ord.order_number else ord.id) }}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
+                    <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, '{{ ord.order_number if ord.order_number else ord.id }}')">
                       <option value="Order Confirmed" {% if ord.status in ['Order Confirmed', 'Processing', 'Placed'] %}selected{% endif %}>Order Confirmed</option>
                       <option value="Shipped"          {% if ord.status == 'Shipped' %}selected{% endif %}>Shipped</option>
                       <option value="In Transit"        {% if ord.status == 'In Transit' %}selected{% endif %}>In Transit</option>
@@ -109,7 +109,7 @@
                     </select>
                   </form>
 
-                  <a href="{{ url_for('admin_order_detail', id=ord.id) }}"
+                  <a href="{{ url_for('admin_order_detail', order_ref=ord.order_number if ord.order_number else ord.id) }}"
 
                      title="View Order Details"
 

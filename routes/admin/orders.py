@@ -8,9 +8,9 @@ from services.email_service import queue_order_status_update_email
 admin_orders_bp = Blueprint('admin_orders_bp', __name__)
 
 
-@admin_orders_bp.route('/admin/update-order-status/<int:id>', methods=['POST'], endpoint='admin_update_order_status')
+@admin_orders_bp.route('/admin/update-order-status/<order_ref>', methods=['POST'], endpoint='admin_update_order_status')
 @admin_required
-def admin_update_order_status(id):
+def admin_update_order_status(order_ref):
     if request.is_json:
         data = request.json or {}
     else:
@@ -25,7 +25,16 @@ def admin_update_order_status(id):
     save_courier_permanently = data.get('save_courier_permanently', False)
 
     db = get_db()
-    current_order = db.execute("SELECT * FROM orders WHERE id = ?", (id,)).fetchone()
+    clean_ref = str(order_ref).lstrip('#').strip()
+    current_order = db.execute(
+        """
+        SELECT * FROM orders 
+        WHERE (order_number = ? OR id = ? OR order_number = ?)
+        LIMIT 1
+        """,
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+
     if not current_order:
         db.close()
         if request.is_json:
@@ -33,6 +42,7 @@ def admin_update_order_status(id):
         flash("Order not found.", "error")
         return redirect(url_for('admin_dashboard'))
 
+    order_id = current_order['id']
     VALID_STATUSES = ['Order Confirmed', 'Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered', 'Cancelled']
 
     # Fallback to existing values if not provided
@@ -88,19 +98,19 @@ def admin_update_order_status(id):
     old_status = current_order['status']
 
     # ── Stock Management on Status Change ─────────────────────────────────────
-    # 1. Reverse stock when cancelling an order BEFORE it has been shipped (e.g. from Processing / Placed / Order Confirmed)
+    # 1. Reverse stock when cancelling an order BEFORE it has been shipped
     if status == 'Cancelled' and old_status in ['Processing', 'Placed', 'Order Confirmed']:
-        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
+        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
         for item in order_items:
             db.execute("UPDATE products SET stocks = stocks + ? WHERE id = ?", (item['quantity'], item['product_id']))
-        print(f"[STOCK REVERSED] Order #{id} cancelled from '{old_status}'. Restored stock for {len(order_items)} items.")
+        print(f"[STOCK REVERSED] Order #{order_id} cancelled from '{old_status}'. Restored stock for {len(order_items)} items.")
 
     # 2. Re-deduct stock if an order was 'Cancelled' and is reactivated back to an active state
     elif old_status == 'Cancelled' and status in ['Processing', 'Placed', 'Order Confirmed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
-        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
+        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
         for item in order_items:
             db.execute("UPDATE products SET stocks = stocks - ? WHERE id = ?", (item['quantity'], item['product_id']))
-        print(f"[STOCK DEDUCTED] Order #{id} reactivated to '{status}'. Deducted stock for {len(order_items)} items.")
+        print(f"[STOCK DEDUCTED] Order #{order_id} reactivated to '{status}'. Deducted stock for {len(order_items)} items.")
 
     # Shipped timestamp
     shipped_clause = ""
@@ -118,14 +128,14 @@ def admin_update_order_status(id):
             {shipped_clause}
         WHERE id = ?
         """,
-        (status, final_courier, final_awb, final_tracking_url, final_edd, id)
+        (status, final_courier, final_awb, final_tracking_url, final_edd, order_id)
     )
     db.commit()
     db.close()
 
     # Send status email notification
     try:
-        queue_order_status_update_email(id, status, host_url=request.host_url)
+        queue_order_status_update_email(order_id, status, host_url=request.host_url)
     except Exception as mail_err:
         print(f"[MAIL ALERT ERROR] Failed to send status update email: {mail_err}")
 
@@ -141,19 +151,16 @@ def admin_update_order_status(id):
             'estimated_delivery_date': final_edd
         })
 
-    db2 = get_db()
-    o = db2.execute("SELECT order_number FROM orders WHERE id = ?", (id,)).fetchone()
-    db2.close()
-
-    label = o['order_number'] if o and o['order_number'] else f'#{id}'
+    label = current_order['order_number'] if current_order['order_number'] else f'#{order_id}'
     flash(f"Order {label} updated successfully.", "success")
-    return redirect(url_for('admin_order_detail', id=id))
+    return redirect(url_for('admin_order_detail', order_ref=current_order['order_number'] if current_order['order_number'] else order_id))
 
 
-@admin_orders_bp.route('/admin/orders/<int:id>', endpoint='admin_order_detail')
+@admin_orders_bp.route('/admin/orders/<order_ref>', endpoint='admin_order_detail')
 @admin_required
-def admin_order_detail(id):
+def admin_order_detail(order_ref):
     db = get_db()
+    clean_ref = str(order_ref).lstrip('#').strip()
     order = db.execute(
         """
         SELECT o.*,
@@ -161,14 +168,16 @@ def admin_order_detail(id):
                u.email      AS user_email
         FROM orders o
         JOIN users u ON o.user_id = u.id
-        WHERE o.id = ? AND o.status != 'Pending Payment'
+        WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
+          AND o.status != 'Pending Payment'
+        LIMIT 1
         """,
-        (id,)
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
     ).fetchone()
 
     if not order:
         db.close()
-        flash(f"Order #{id} not found or payment has not been completed.", "error")
+        flash(f"Order '{order_ref}' not found or payment has not been completed.", "error")
         return redirect(url_for('admin_dashboard'))
 
     items = db.execute(
@@ -185,7 +194,7 @@ def admin_order_detail(id):
         JOIN products p ON oi.product_id = p.id
         WHERE oi.order_id = ?
         """,
-        (id,)
+        (order['id'],)
     ).fetchall()
 
     db.close()
@@ -253,7 +262,7 @@ def admin_invoice(order_ref):
         'invoice.html',
         order=order,
         items=items,
-        back_url=url_for('admin_order_detail', id=order['id']),
+        back_url=url_for('admin_order_detail', order_ref=order['order_number'] if order['order_number'] else order['id']),
         back_label='Back to Order Detail',
         viewer='admin'
     )

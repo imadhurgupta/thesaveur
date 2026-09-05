@@ -1383,13 +1383,11 @@ function confirmBulkDelete(e) {
 
     const status = selectElement.value;
 
-    const badge = document.getElementById('order-status-badge-' + orderId);
+    const badge = document.getElementById('order-status-badge-' + orderId) || (selectElement.closest('tr') ? document.getElementById('order-status-badge-' + selectElement.closest('tr').id.replace('order-row-', '')) : null);
 
     selectElement.disabled = true;
 
-    
-
-    fetch('/admin/update-order-status/' + orderId, {
+    fetch('/admin/update-order-status/' + encodeURIComponent(orderId), {
 
       method: 'POST',
 
@@ -1686,15 +1684,15 @@ function confirmBulkDelete(e) {
 
         <td>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <form action="/admin/update-order-status/${ord.id}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
-              <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, ${ord.id})">
+            <form action="/admin/update-order-status/${ord.order_number || ord.id}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
+              <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, '${ord.order_number || ord.id}')">
                 <option value="Processing" ${ord.status === 'Processing' ? 'selected' : ''}>Processing</option>
                 <option value="Shipped" ${ord.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
                 <option value="Delivered" ${ord.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                 <option value="Cancelled" ${ord.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
               </select>
             </form>
-            <a href="/admin/orders/${ord.id}"
+            <a href="/admin/orders/${ord.order_number || ord.id}"
                title="View Order Details"
                style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; background:rgba(90,158,53,0.1); color:var(--green-primary); border:1px solid rgba(90,158,53,0.2); text-decoration:none; transition:background 0.2s;"
                onmouseover="this.style.background='rgba(90,158,53,0.2)'" onmouseout="this.style.background='rgba(90,158,53,0.1)'">
