@@ -137,14 +137,14 @@ def admin_order_detail(id):
                u.email      AS user_email
         FROM orders o
         JOIN users u ON o.user_id = u.id
-        WHERE o.id = ?
+        WHERE o.id = ? AND o.status != 'Pending Payment'
         """,
         (id,)
     ).fetchone()
 
     if not order:
         db.close()
-        flash(f"Order #{id} not found.", "error")
+        flash(f"Order #{id} not found or payment has not been completed.", "error")
         return redirect(url_for('admin_dashboard'))
 
     items = db.execute(
@@ -197,14 +197,14 @@ def admin_invoice(id):
                u.email     AS user_email
         FROM orders o
         JOIN users u ON o.user_id = u.id
-        WHERE o.id = ?
+        WHERE o.id = ? AND o.status != 'Pending Payment'
         """,
         (id,)
     ).fetchone()
 
     if not order:
         db.close()
-        flash(f"Order #{id} not found.", "error")
+        flash(f"Order #{id} not found or payment has not been completed.", "error")
         return redirect(url_for('admin_dashboard'))
 
     items = db.execute(

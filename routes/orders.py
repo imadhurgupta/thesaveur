@@ -13,7 +13,7 @@ def my_orders():
 
     db = get_db()
     orders_raw = db.execute(
-        "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC", 
+        "SELECT * FROM orders WHERE user_id = ? AND status != 'Pending Payment' ORDER BY created_at DESC", 
         (session['user_id'],)
     ).fetchall()
 
@@ -53,7 +53,7 @@ def track_order(order_id=None):
                 SELECT o.*, u.full_name as customer_name, u.email as customer_email, u.phone as customer_phone
                 FROM orders o
                 JOIN users u ON o.user_id = u.id
-                WHERE o.order_number = ? OR o.id = ? OR o.order_number = ?
+                WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?) AND o.status != 'Pending Payment'
                 LIMIT 1
                 """,
                 (ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
@@ -73,7 +73,7 @@ def track_order(order_id=None):
         SELECT o.*, u.full_name as customer_name, u.email as customer_email, u.phone as customer_phone
         FROM orders o
         JOIN users u ON o.user_id = u.id
-        WHERE o.id = ?
+        WHERE o.id = ? AND o.status != 'Pending Payment'
         """,
         (order_id,)
     ).fetchone()
@@ -127,7 +127,7 @@ def customer_invoice(id):
                u.email     AS user_email
         FROM orders o
         JOIN users u ON o.user_id = u.id
-        WHERE o.id = ? AND o.user_id = ?
+        WHERE o.id = ? AND o.user_id = ? AND o.status != 'Pending Payment'
         """,
         (id, session['user_id'])
     ).fetchone()
