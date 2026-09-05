@@ -6,9 +6,11 @@ from services.cache_service import redis_client, invalidate_cache
 from services.email_service import (
     send_custom_html_email, send_otp_email, send_login_alert_email,
     send_order_confirmation_email, send_order_shipped_email,
+    send_order_tracking_email, send_order_out_for_delivery_email,
     send_order_delivered_email, send_order_status_update_email,
     queue_otp_email, queue_login_alert_email, queue_order_confirmation_email,
-    queue_order_shipped_email, queue_order_delivered_email, queue_order_status_update_email
+    queue_order_shipped_email, queue_order_out_for_delivery_email,
+    queue_order_delivered_email, queue_order_status_update_email
 )
 from services.razorpay_service import get_razorpay_client
 from services.paypal_service import get_paypal_api_base, get_paypal_access_token
