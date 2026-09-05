@@ -33,15 +33,7 @@ def admin_update_order_status(id):
         flash("Order not found.", "error")
         return redirect(url_for('admin_dashboard'))
 
-    # If status not specified, retain current
-    if not status:
-        status = current_order['status']
-    elif status not in ['Processing', 'Shipped', 'Delivered', 'Cancelled']:
-        db.close()
-        if request.is_json:
-            return jsonify({'success': False, 'error': 'Invalid status'}), 400
-        flash("Invalid order status.", "error")
-        return redirect(url_for('admin_dashboard'))
+    VALID_STATUSES = ['Order Confirmed', 'Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered', 'Cancelled']
 
     # Fallback to existing values if not provided
     if courier_partner in ['__custom__', 'custom', ''] and custom_courier_name:
@@ -53,6 +45,21 @@ def admin_update_order_status(id):
 
     final_awb = tracking_number if tracking_number is not None else (current_order['tracking_number'] or '')
     final_edd = estimated_delivery_date if estimated_delivery_date is not None else (current_order['estimated_delivery_date'] or '')
+
+    # Auto-change status to 'Shipped' when courier partner & tracking number are provided
+    if final_courier and final_awb:
+        if not status or status in ['Processing', 'Order Confirmed', 'Placed', '']:
+            status = 'Shipped'
+
+    # If status not specified, retain current
+    if not status:
+        status = current_order['status']
+    elif status not in VALID_STATUSES:
+        db.close()
+        if request.is_json:
+            return jsonify({'success': False, 'error': 'Invalid status'}), 400
+        flash("Invalid order status.", "error")
+        return redirect(url_for('admin_dashboard'))
 
     # Save to custom_couriers table if requested
     if save_courier_permanently and custom_courier_name:
@@ -81,15 +88,15 @@ def admin_update_order_status(id):
     old_status = current_order['status']
 
     # ── Stock Management on Status Change ─────────────────────────────────────
-    # 1. Reverse stock when cancelling an order BEFORE it has been shipped (e.g. from Processing / Placed)
-    if status == 'Cancelled' and old_status in ['Processing', 'Placed']:
+    # 1. Reverse stock when cancelling an order BEFORE it has been shipped (e.g. from Processing / Placed / Order Confirmed)
+    if status == 'Cancelled' and old_status in ['Processing', 'Placed', 'Order Confirmed']:
         order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
         for item in order_items:
             db.execute("UPDATE products SET stocks = stocks + ? WHERE id = ?", (item['quantity'], item['product_id']))
         print(f"[STOCK REVERSED] Order #{id} cancelled from '{old_status}'. Restored stock for {len(order_items)} items.")
 
-    # 2. Re-deduct stock if an order was 'Cancelled' and is reactivated back to 'Processing' / 'Placed' / 'Shipped'
-    elif old_status == 'Cancelled' and status in ['Processing', 'Placed', 'Shipped']:
+    # 2. Re-deduct stock if an order was 'Cancelled' and is reactivated back to an active state
+    elif old_status == 'Cancelled' and status in ['Processing', 'Placed', 'Order Confirmed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
         order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
         for item in order_items:
             db.execute("UPDATE products SET stocks = stocks - ? WHERE id = ?", (item['quantity'], item['product_id']))
@@ -97,7 +104,7 @@ def admin_update_order_status(id):
 
     # Shipped timestamp
     shipped_clause = ""
-    if status == 'Shipped' and not current_order['shipped_at']:
+    if status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] and not current_order['shipped_at']:
         shipped_clause = ", shipped_at = CURRENT_TIMESTAMP"
 
     db.execute(

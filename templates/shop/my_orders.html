@@ -62,17 +62,29 @@
     letter-spacing: 0.05em;
   }
 
-  .order-status.processing {
+  .order-status.processing,
+  .order-status.order-confirmed,
+  .order-status.order_confirmed {
     background: rgba(52,152,219,0.1);
-    color: #3498db;
+    color: #2563eb;
   }
   .order-status.shipped {
     background: rgba(230,126,34,0.1);
-    color: #e67e22;
+    color: #d97706;
+  }
+  .order-status.in-transit,
+  .order-status.in_transit {
+    background: rgba(124,58,237,0.1);
+    color: #7c3aed;
+  }
+  .order-status.out-for-delivery,
+  .order-status.out_for_delivery {
+    background: rgba(13,148,136,0.1);
+    color: #0d9488;
   }
   .order-status.delivered {
-    background: rgba(46,204,113,0.1);
-    color: #2ecc71;
+    background: rgba(16,185,129,0.1);
+    color: #059669;
   }
   .order-status.cancelled {
     background: rgba(231,76,60,0.1);

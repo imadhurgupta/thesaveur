@@ -580,8 +580,8 @@
               <strong>Total Amount:</strong> ${{ order.total_amount }}
               <small style="color:#64748b; font-size:0.75rem;">(Includes ${{ "%.2f"|format(order.shipping_charge) if order.shipping_charge else "0.00" }} shipping)</small><br>
               <strong>Current Status:</strong> 
-              <span style="font-weight:700; color:{% if status=='Processing' %}#2563eb{% elif status=='Shipped' %}#d97706{% elif status=='Delivered' %}#059669{% else %}#dc2626{% endif %};">
-                {{ status }}
+              <span style="font-weight:700; color:{% if order.status in ['Order Confirmed', 'Processing', 'Placed'] %}#2563eb{% elif order.status=='Shipped' %}#d97706{% elif order.status=='In Transit' %}#7c3aed{% elif order.status=='Out for Delivery' %}#0d9488{% elif order.status=='Delivered' %}#059669{% else %}#dc2626{% endif %};">
+                {{ order.status }}
               </span>
             </p>
           </div>

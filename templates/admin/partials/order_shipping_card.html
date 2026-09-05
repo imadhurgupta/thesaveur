@@ -11,8 +11,8 @@
         <div class="od-card-body">
           <!-- Status Timeline Container -->
           <div class="od-timeline" id="timeline-container" style="margin-bottom: 16px;">
-            {% set steps = [('Processing', 'circle'), ('Shipped', 'truck'), ('Delivered', 'check-circle')] %}
-            {% set status_order = {'Processing': 0, 'Shipped': 1, 'Delivered': 2, 'Cancelled': 99} %}
+            {% set steps = [('Order Confirmed', 'check'), ('Shipped', 'truck'), ('In Transit', 'navigation'), ('Out for Delivery', 'package'), ('Delivered', 'check-circle')] %}
+            {% set status_order = {'Order Confirmed': 0, 'Processing': 0, 'Placed': 0, 'Shipped': 1, 'In Transit': 2, 'Out for Delivery': 3, 'Delivered': 4, 'Cancelled': 99} %}
             {% set current_idx = status_order.get(order.status, 0) %}
 
             {% if order.status == 'Cancelled' %}
@@ -101,10 +101,12 @@
                 <div class="od-form-group">
                   <label class="od-form-label" for="status-select">Order Status</label>
                   <select id="status-select" name="status" class="od-form-control">
-                    <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
-                    <option value="Shipped"    {% if order.status == 'Shipped'    %}selected{% endif %}>Shipped</option>
-                    <option value="Delivered"  {% if order.status == 'Delivered'  %}selected{% endif %}>Delivered</option>
-                    <option value="Cancelled"  {% if order.status == 'Cancelled'  %}selected{% endif %}>Cancelled</option>
+                    <option value="Order Confirmed" {% if order.status in ['Order Confirmed', 'Processing', 'Placed'] %}selected{% endif %}>Order Confirmed</option>
+                    <option value="Shipped"          {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                    <option value="In Transit"        {% if order.status == 'In Transit' %}selected{% endif %}>In Transit</option>
+                    <option value="Out for Delivery"  {% if order.status == 'Out for Delivery' %}selected{% endif %}>Out for Delivery</option>
+                    <option value="Delivered"        {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                    <option value="Cancelled"        {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
                   </select>
                 </div>
 

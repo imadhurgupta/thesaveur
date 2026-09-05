@@ -85,41 +85,28 @@
               </td>
 
               <td>
-
-                <span class="badge {{ ord.status.lower() }}" id="order-status-badge-{{ ord.id }}" style="background:
-
-                  {% if ord.status == 'Processing' %}rgba(52,152,219,0.1); color:#3498db;
-
-                  {% elif ord.status == 'Shipped' %}rgba(230,126,34,0.1); color:#e67e22;
-
-                  {% elif ord.status == 'Delivered' %}rgba(46,204,113,0.1); color:#2ecc71;
-
-                  {% else %}rgba(231,76,60,0.1); color:#e74c3c;{% endif %}; font-weight:600;">
-
+                <span class="badge {{ ord.status.lower().replace(' ', '-') }}" id="order-status-badge-{{ ord.id }}" style="
+                  {% if ord.status in ['Order Confirmed', 'Processing', 'Placed'] %}background:rgba(52,152,219,0.1); color:#2563eb;
+                  {% elif ord.status == 'Shipped' %}background:rgba(230,126,34,0.1); color:#d97706;
+                  {% elif ord.status == 'In Transit' %}background:rgba(124,58,237,0.1); color:#7c3aed;
+                  {% elif ord.status == 'Out for Delivery' %}background:rgba(13,148,136,0.1); color:#0d9488;
+                  {% elif ord.status == 'Delivered' %}background:rgba(16,185,129,0.1); color:#059669;
+                  {% else %}background:rgba(239,68,68,0.1); color:#dc2626;{% endif %}; font-weight:600; padding:4px 8px; border-radius:4px; font-size:0.75rem;">
                   {{ ord.status }}
-
                 </span>
-
               </td>
 
               <td>
-
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-
                   <form action="{{ url_for('admin_update_order_status', id=ord.id) }}" method="POST" style="display:flex; gap:6px; align-items:center;" onsubmit="event.preventDefault()">
-
                     <select name="status" style="padding:6px; font-size:0.8rem; border-radius:4px; border:1px solid rgba(0,0,0,0.15);" onchange="updateOrderStatusAjax(this, {{ ord.id }})">
-
-                      <option value="Processing" {% if ord.status == 'Processing' %}selected{% endif %}>Processing</option>
-
-                      <option value="Shipped" {% if ord.status == 'Shipped' %}selected{% endif %}>Shipped</option>
-
-                      <option value="Delivered" {% if ord.status == 'Delivered' %}selected{% endif %}>Delivered</option>
-
-                      <option value="Cancelled" {% if ord.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
-
+                      <option value="Order Confirmed" {% if ord.status in ['Order Confirmed', 'Processing', 'Placed'] %}selected{% endif %}>Order Confirmed</option>
+                      <option value="Shipped"          {% if ord.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                      <option value="In Transit"        {% if ord.status == 'In Transit' %}selected{% endif %}>In Transit</option>
+                      <option value="Out for Delivery"  {% if ord.status == 'Out for Delivery' %}selected{% endif %}>Out for Delivery</option>
+                      <option value="Delivered"        {% if ord.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                      <option value="Cancelled"        {% if ord.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
                     </select>
-
                   </form>
 
                   <a href="{{ url_for('admin_order_detail', id=ord.id) }}"

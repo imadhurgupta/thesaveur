@@ -158,10 +158,16 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
-    .inv-status-pill.processing { background: rgba(52,152,219,0.25); color: #cbe7fc; }
-    .inv-status-pill.shipped    { background: rgba(230,126,34,0.25); color: #ffe6c8; }
-    .inv-status-pill.delivered  { background: rgba(46,204,113,0.25); color: #c3f9d7; }
-    .inv-status-pill.cancelled  { background: rgba(231,76,60,0.25);  color: #ffd1cc; }
+    .inv-status-pill.processing,
+    .inv-status-pill.order-confirmed,
+    .inv-status-pill.order_confirmed { background: rgba(52,152,219,0.25); color: #cbe7fc; }
+    .inv-status-pill.shipped          { background: rgba(230,126,34,0.25); color: #ffe6c8; }
+    .inv-status-pill.in-transit,
+    .inv-status-pill.in_transit       { background: rgba(124,58,237,0.25); color: #e9d5ff; }
+    .inv-status-pill.out-for-delivery,
+    .inv-status-pill.out_for_delivery { background: rgba(13,148,136,0.25); color: #ccfbf1; }
+    .inv-status-pill.delivered        { background: rgba(46,204,113,0.25); color: #c3f9d7; }
+    .inv-status-pill.cancelled        { background: rgba(231,76,60,0.25);  color: #ffd1cc; }
 
     /* ── Meta Strip ───────────────────────────────────────────── */
     .inv-meta-strip {
@@ -574,7 +580,9 @@
         <div class="inv-meta-value" style="color:
           {%- if order.status == 'Delivered' -%}#27ae60
           {%- elif order.status == 'Shipped' -%}#d35400
-          {%- elif order.status == 'Processing' -%}#2980b9
+          {%- elif order.status == 'In Transit' -%}#7c3aed
+          {%- elif order.status == 'Out for Delivery' -%}#0d9488
+          {%- elif order.status in ['Order Confirmed', 'Processing', 'Placed'] -%}#2980b9
           {%- else -%}#c0392b{%- endif -%};">
           {{ order.status }}
         </div>

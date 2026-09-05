@@ -505,12 +505,19 @@
     previewBlock.style.display = 'block';
     previewLink.href = (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) ? targetUrl : '#';
     previewText.textContent = targetUrl;
+
+    // Auto-promote status to Shipped if currently at initial stage
+    const statusSelect = document.getElementById('status-select');
+    if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing')) {
+      statusSelect.value = 'Shipped';
+    }
   }
 
   function updateTimelineUI(status) {
     const badge = document.getElementById('live-status-badge');
     if (badge) {
-      badge.className = `od-status-badge ${status.toLowerCase()}`;
+      const cleanClass = status.toLowerCase().replace(/\s+/g, '-');
+      badge.className = `od-status-badge ${cleanClass}`;
       badge.innerHTML = `<span class="dot"></span>${status}`;
     }
 
@@ -532,8 +539,9 @@
       return;
     }
 
-    const steps = ['Processing', 'Shipped', 'Delivered'];
-    const currentIdx = steps.indexOf(status);
+    const steps = ['Order Confirmed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
+    let currentIdx = steps.indexOf(status);
+    if (currentIdx === -1 && status === 'Processing') currentIdx = 0;
     
     let html = '';
     steps.forEach((label, idx) => {

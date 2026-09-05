@@ -1,9 +1,23 @@
-<!-- 4-Stage Stepper Progress Component -->
+<!-- 5-Stage Stepper Progress Component: Order Confirmed -> Shipped -> In Transit -> Out for Delivery -> Delivered -->
 {% set status = order.status %}
+{% set status_weights = {
+    'Order Confirmed': 1,
+    'Processing': 1,
+    'Placed': 1,
+    'Shipped': 2,
+    'In Transit': 3,
+    'Out for Delivery': 4,
+    'Delivered': 5,
+    'Cancelled': 0
+} %}
+{% set current_level = status_weights.get(status, 1) %}
+
 {% set progress_pct = '0%' %}
-{% if status == 'Processing' %}{% set progress_pct = '33%' %}
-{% elif status == 'Shipped' %}{% set progress_pct = '66%' %}
-{% elif status == 'Delivered' %}{% set progress_pct = '100%' %}
+{% if current_level == 1 %}{% set progress_pct = '0%' %}
+{% elif current_level == 2 %}{% set progress_pct = '25%' %}
+{% elif current_level == 3 %}{% set progress_pct = '50%' %}
+{% elif current_level == 4 %}{% set progress_pct = '75%' %}
+{% elif current_level == 5 %}{% set progress_pct = '100%' %}
 {% endif %}
 
 <div class="stepper-section">
@@ -11,40 +25,65 @@
     <div class="stepper-bg-line"></div>
     <div class="stepper-fill-line" style="width: {{ progress_pct }};"></div>
 
-    <!-- Stage 1: Order Placed -->
-    <div class="step-node {% if status in ['Processing', 'Shipped', 'Delivered'] %}completed{% else %}active{% endif %}">
+    <!-- Stage 1: Order Confirmed -->
+    <div class="step-node {% if current_level > 1 %}completed{% elif current_level == 1 %}active{% endif %}">
       <div class="step-bubble">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        {% if current_level > 1 %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        {% endif %}
       </div>
-      <div class="step-title">Order Placed</div>
-      <div class="step-sub">Confirmed</div>
+      <div class="step-title">Order Confirmed</div>
+      <div class="step-sub">Order Verified</div>
     </div>
 
-    <!-- Stage 2: Processing / Packed -->
-    <div class="step-node {% if status in ['Shipped', 'Delivered'] %}completed{% elif status == 'Processing' %}active{% endif %}">
+    <!-- Stage 2: Shipped -->
+    <div class="step-node {% if current_level > 2 %}completed{% elif current_level == 2 %}active{% endif %}">
       <div class="step-bubble">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        {% if current_level > 2 %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        {% endif %}
       </div>
-      <div class="step-title">Processing</div>
-      <div class="step-sub">Quality Packed</div>
+      <div class="step-title">Shipped</div>
+      <div class="step-sub">Dispatched</div>
     </div>
 
-    <!-- Stage 3: Shipped / In Transit -->
-    <div class="step-node {% if status == 'Delivered' %}completed{% elif status == 'Shipped' %}active{% endif %}">
+    <!-- Stage 3: In Transit -->
+    <div class="step-node {% if current_level > 3 %}completed{% elif current_level == 3 %}active{% endif %}">
       <div class="step-bubble">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        {% if current_level > 3 %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        {% endif %}
       </div>
       <div class="step-title">In Transit</div>
-      <div class="step-sub">{% if order.courier_partner %}{{ courier_meta.name if courier_meta else order.courier_partner }}{% else %}Shipped{% endif %}</div>
+      <div class="step-sub">{% if order.courier_partner %}{{ courier_meta.name if courier_meta else order.courier_partner }}{% else %}Moving to Hub{% endif %}</div>
     </div>
 
-    <!-- Stage 4: Delivered -->
-    <div class="step-node {% if status == 'Delivered' %}completed active{% endif %}">
+    <!-- Stage 4: Out for Delivery -->
+    <div class="step-node {% if current_level > 4 %}completed{% elif current_level == 4 %}active{% endif %}">
       <div class="step-bubble">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        {% if current_level > 4 %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+        {% endif %}
+      </div>
+      <div class="step-title">Out for Delivery</div>
+      <div class="step-sub">Doorstep Delivery</div>
+    </div>
+
+    <!-- Stage 5: Delivered -->
+    <div class="step-node {% if current_level == 5 %}completed active{% endif %}">
+      <div class="step-bubble">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>
       <div class="step-title">Delivered</div>
-      <div class="step-sub">Package Handed Over</div>
+      <div class="step-sub">Package Received</div>
     </div>
   </div>
 </div>

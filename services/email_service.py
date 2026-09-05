@@ -129,10 +129,8 @@ https://thesaveur.com
         _build_smtp_headers(msg, subject, receiver_email, sender_email, sender_name)
         msg['X-Priority'] = '1'  # Mark high priority transactional OTP
         
-        # 1. Plain text version
         msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
         
-        # 2. HTML version
         body_content = f"""
         <p style="color: #3d3d3d; font-size: 15px; margin-top: 0;">Hello,</p>
         <p style="color: #3d3d3d; font-size: 15px; line-height: 1.6;">{body_text}</p>
@@ -146,7 +144,7 @@ https://thesaveur.com
         <p style="color: #6b6b6b; font-size: 13px; margin-top: 0;">&bull; For security reasons, never share this code with anyone.</p>
         """
         
-        html_body = get_email_template(heading, body_content)
+        html_body = get_email_template(heading, body_content, footer_note="This code was requested for security verification on The Saveur. Never share your OTP with anyone.")
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         if port == 465:
@@ -183,7 +181,7 @@ def send_login_alert_email(user_email, user_name):
 
 def send_order_confirmation_email(user_email, user_name, order_number, total_amount, shipping_address, items):
     """Send order booking confirmation with invoice summary."""
-    subject = f"Order Placed Successfully – #{order_number} | The Saveur"
+    subject = f"Order Confirmed! – #{order_number} | The Saveur"
     items_rows = ""
     for item in items:
         subtotal = item['quantity'] * item['price']
@@ -197,9 +195,14 @@ def send_order_confirmation_email(user_email, user_name, order_number, total_amo
         """
     body_content = f"""
     <p style="color: #3d3d3d; font-size: 15px;">Hello {user_name},</p>
-    <p style="color: #3d3d3d; font-size: 15px;">Your order #{order_number} has been received and is currently being processed. Here are the invoice details:</p>
+    <p style="color: #3d3d3d; font-size: 15px; line-height: 1.5;">Thank you for shopping with The Saveur! Your order <strong>#{order_number}</strong> has been confirmed and is being prepared for dispatch.</p>
     
-    <h3 style="color: #2D5016; border-bottom: 2px solid #2D5016; padding-bottom: 8px;">Order Details</h3>
+    <div style="background-color: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; margin: 20px 0; text-align: center;">
+        <span style="font-size: 14px; font-weight: 700; color: #166534;">✅ Status: Order Confirmed</span>
+        <div style="font-size: 12px; color: #15803d; margin-top: 4px;">We will notify you with the tracking details as soon as your order is dispatched.</div>
+    </div>
+
+    <h3 style="color: #2D5016; border-bottom: 2px solid #2D5016; padding-bottom: 8px; margin-top: 24px;">Order Summary</h3>
     <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <thead>
             <tr style="background-color: #FAF7F2; color: #2D5016; font-weight: bold;">
@@ -214,96 +217,205 @@ def send_order_confirmation_email(user_email, user_name, order_number, total_amo
         </tbody>
     </table>
     
-    <div style="margin-top: 20px; text-align: right; font-size: 16px; font-weight: bold; color: #2D5016;">
+    <div style="margin-top: 16px; text-align: right; font-size: 16px; font-weight: bold; color: #2D5016;">
         Total Amount: ${total_amount:.2f}
     </div>
     
-    <div style="background-color: #FAF7F2; border-radius: 8px; padding: 15px; margin-top: 20px;">
-        <strong style="color: #2D5016; font-size: 14px;">Shipping Address:</strong><br>
-        <span style="font-size: 14px; color: #3d3d3d;">{shipping_address}</span>
+    <div style="background-color: #FAF7F2; border-radius: 8px; padding: 14px 16px; margin-top: 20px;">
+        <strong style="color: #2D5016; font-size: 13px;">Shipping Address:</strong><br>
+        <span style="font-size: 13px; color: #3d3d3d; line-height: 1.4;">{shipping_address}</span>
     </div>
     """
-    html_body = get_email_template("Thank You for Your Order!", body_content)
+    html_body = get_email_template("Your Order is Confirmed!", body_content, footer_note="Thank you for your order with The Saveur.")
     send_custom_html_email(user_email, subject, html_body)
 
 
-def send_order_shipped_email(user_email, user_name, order_number, tracking_url, courier_partner=None, tracking_number=None, estimated_delivery_date=None):
-    """Notify user of order shipment with courier details, AWB, EDD, and live tracking links."""
-    subject = f"Your Order #{order_number} is Shipped! 🚚 | The Saveur"
+def _render_email_tracking_stepper(current_status):
+    """
+    Render a 5-stage tracking progress bar for email clients:
+    Order Confirmed -> Shipped -> In Transit -> Out for Delivery -> Delivered
+    """
+    stages = [
+        ('Order Confirmed', '✅ Confirmed'),
+        ('Shipped', '📦 Shipped'),
+        ('In Transit', '🚚 In Transit'),
+        ('Out for Delivery', '🛵 Out for Delivery'),
+        ('Delivered', '🏠 Delivered')
+    ]
+    status_ranks = {
+        'Order Confirmed': 1,
+        'Processing': 1,
+        'Placed': 1,
+        'Shipped': 2,
+        'In Transit': 3,
+        'Out for Delivery': 4,
+        'Delivered': 5
+    }
+    cur_rank = status_ranks.get(current_status, 2)
+
+    cells = []
+    for idx, (stage_key, label) in enumerate(stages, 1):
+        if idx < cur_rank:
+            # Completed
+            color = "#059669"
+            bg = "#ecfdf5"
+            border = "#a7f3d0"
+            dot = "✓"
+        elif idx == cur_rank:
+            # Active
+            color = "#ffffff"
+            bg = "#059669"
+            border = "#059669"
+            dot = str(idx)
+        else:
+            # Pending
+            color = "#94a3b8"
+            bg = "#f8fafc"
+            border = "#e2e8f0"
+            dot = str(idx)
+
+        cells.append(f"""
+        <td style="width: 20%; padding: 4px 2px; text-align: center; vertical-align: top;">
+            <div style="display: inline-block; width: 22px; height: 22px; line-height: 20px; border-radius: 50%; background: {bg}; border: 1.5px solid {border}; color: {color}; font-size: 11px; font-weight: 700; margin-bottom: 4px;">
+                {dot}
+            </div>
+            <div style="font-size: 10px; font-weight: 700; color: {'#065f46' if idx <= cur_rank else '#94a3b8'}; line-height: 1.2;">
+                {label}
+            </div>
+        </td>
+        """)
+
+    stepper_html = f"""
+    <div style="background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 10px; padding: 14px 8px; margin: 18px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <tr>
+                {"".join(cells)}
+            </tr>
+        </table>
+    </div>
+    """
+    return stepper_html
+
+
+def send_order_tracking_email(user_email, user_name, order_number, status, tracking_url, courier_partner=None, tracking_number=None, estimated_delivery_date=None):
+    """
+    Notify customer with real-time tracking details, 5-stage progress indicator,
+    courier name, AWB ID, EDD, and live tracking links.
+    """
     courier_meta = get_courier_metadata(courier_partner) if courier_partner else None
-    courier_display = courier_meta['name'] if courier_meta else (courier_partner or 'Express Courier Partner')
+    courier_display = courier_meta['name'] if courier_meta else (courier_partner or 'Express Courier')
+
+    status_titles = {
+        'Shipped': 'Your Order is Shipped! 🚚',
+        'In Transit': 'Your Package is In Transit 🚚',
+        'Out for Delivery': 'Your Package is Out for Delivery! 🛵',
+        'Delivered': 'Your Order is Delivered! 🎉'
+    }
+    status_descriptions = {
+        'Shipped': f"Your order <strong>#{order_number}</strong> has been dispatched via <strong>{courier_display}</strong> and is on its way to you.",
+        'In Transit': f"Your package for order <strong>#{order_number}</strong> is moving smoothly through courier hubs with <strong>{courier_display}</strong>.",
+        'Out for Delivery': f"Great news! Your package for order <strong>#{order_number}</strong> is out for delivery today with your local <strong>{courier_display}</strong> agent.",
+        'Delivered': f"Your order <strong>#{order_number}</strong> has been successfully delivered. We hope you love your products!"
+    }
+
+    heading = status_titles.get(status, f"Order Status Update: {status}")
+    subject = f"{heading} – #{order_number} | The Saveur"
+    desc_text = status_descriptions.get(status, f"Your order #{order_number} status is now {status}.")
+
+    stepper_html = _render_email_tracking_stepper(status)
 
     courier_info_html = ""
     if courier_partner or tracking_number or estimated_delivery_date:
         courier_info_html = f"""
-        <div style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 20px; margin: 24px 0;">
+        <div style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                 <tr>
-                    <td style="padding-bottom: 12px; font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" colspan="2">
-                        📦 Shipment Details
+                    <td style="padding-bottom: 10px; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" colspan="2">
+                        📦 Shipment &amp; Courier Details
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding: 6px 0; font-size: 14px; color: #475569; font-weight: 600;">Courier Partner:</td>
-                    <td style="padding: 6px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">{courier_display}</td>
+                    <td style="padding: 5px 0; font-size: 13px; color: #475569; font-weight: 600;">Delivery Partner:</td>
+                    <td style="padding: 5px 0; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right;">{courier_display}</td>
                 </tr>
                 {f'''<tr>
-                    <td style="padding: 6px 0; font-size: 14px; color: #475569; font-weight: 600;">Tracking / AWB No:</td>
-                    <td style="padding: 6px 0; font-size: 14px; color: #059669; font-weight: 700; font-family: monospace; text-align: right;">{tracking_number}</td>
+                    <td style="padding: 5px 0; font-size: 13px; color: #475569; font-weight: 600;">Tracking / AWB Number:</td>
+                    <td style="padding: 5px 0; font-size: 13px; color: #059669; font-weight: 700; font-family: monospace; text-align: right;">{tracking_number}</td>
                 </tr>''' if tracking_number else ''}
                 {f'''<tr>
-                    <td style="padding: 6px 0; font-size: 14px; color: #475569; font-weight: 600;">Estimated Delivery:</td>
-                    <td style="padding: 6px 0; font-size: 14px; color: #d97706; font-weight: 700; text-align: right;">{estimated_delivery_date}</td>
+                    <td style="padding: 5px 0; font-size: 13px; color: #475569; font-weight: 600;">Estimated Delivery:</td>
+                    <td style="padding: 5px 0; font-size: 13px; color: #d97706; font-weight: 700; text-align: right;">{estimated_delivery_date}</td>
                 </tr>''' if estimated_delivery_date else ''}
             </table>
         </div>
         """
 
     official_courier_url = generate_tracking_url(courier_partner, tracking_number) if (courier_partner and tracking_number) else None
-
-    courier_button_html = ""
+    courier_link_html = ""
     if official_courier_url:
-        courier_button_html = f"""
-        <div style="margin-top: 14px;">
+        courier_link_html = f"""
+        <div style="margin-top: 12px;">
             <a href="{official_courier_url}" target="_blank" style="color: #059669; font-size: 13px; font-weight: 600; text-decoration: underline;">
-                Track Directly on {courier_display} Official Site &rarr;
+                Track Directly on {courier_display} Website &rarr;
             </a>
         </div>
         """
 
     body_content = f"""
-    <p style="color: #3d3d3d; font-size: 15px; margin-bottom: 12px;">Hello {user_name},</p>
-    <p style="color: #3d3d3d; font-size: 15px; line-height: 1.6;">Good news! Your order <strong>#{order_number}</strong> has been dispatched and is currently in transit with <strong>{courier_display}</strong>.</p>
+    <p style="color: #3d3d3d; font-size: 15px; margin-bottom: 8px;">Hello {user_name},</p>
+    <p style="color: #3d3d3d; font-size: 15px; line-height: 1.5;">{desc_text}</p>
     
+    {stepper_html}
     {courier_info_html}
     
-    <div style="text-align: center; margin: 30px 0;">
-        <a href="{tracking_url}" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 99px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 14px rgba(16,185,129,0.3); display: inline-block;">
+    <div style="text-align: center; margin: 26px 0 16px;">
+        <a href="{tracking_url}" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 13px 30px; text-decoration: none; border-radius: 99px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(16,185,129,0.3); display: inline-block;">
             📍 Live Tracking Portal
         </a>
-        {courier_button_html}
+        {courier_link_html}
     </div>
     
-    <p style="color: #6b6b6b; font-size: 13px; text-align: center;">You can track real-time delivery checkpoints and live status updates using the link above.</p>
+    <p style="color: #6b6b6b; font-size: 12px; text-align: center; line-height: 1.4;">
+        You can track real-time delivery checkpoints, download invoices, or contact support anytime using the tracking link.
+    </p>
     """
-    html_body = get_email_template("Your Order has Shipped!", body_content)
+
+    html_body = get_email_template(heading, body_content, footer_note="This is an automated shipping notification for your order with The Saveur.")
     send_custom_html_email(user_email, subject, html_body)
+
+
+def send_order_shipped_email(user_email, user_name, order_number, tracking_url, courier_partner=None, tracking_number=None, estimated_delivery_date=None):
+    """Alias for send_order_tracking_email for Shipped status."""
+    return send_order_tracking_email(
+        user_email=user_email,
+        user_name=user_name,
+        order_number=order_number,
+        status='Shipped',
+        tracking_url=tracking_url,
+        courier_partner=courier_partner,
+        tracking_number=tracking_number,
+        estimated_delivery_date=estimated_delivery_date
+    )
 
 
 def send_order_delivered_email(user_email, user_name, order_number):
     """Notify user of successful delivery."""
     subject = f"Your Order #{order_number} is Delivered! 🎉 | The Saveur"
+    stepper_html = _render_email_tracking_stepper('Delivered')
     body_content = f"""
     <p style="color: #3d3d3d; font-size: 15px;">Hello {user_name},</p>
-    <p style="color: #3d3d3d; font-size: 15px;">Your order #{order_number} has been successfully delivered. We hope you love your premium teas and spices!</p>
-    <p style="color: #3d3d3d; font-size: 15px;">Thank you for shopping with The Saveur.</p>
+    <p style="color: #3d3d3d; font-size: 15px; line-height: 1.5;">Your order <strong>#{order_number}</strong> has been successfully delivered. We hope you enjoy your premium products!</p>
+    
+    {stepper_html}
+
+    <p style="color: #3d3d3d; font-size: 14px; margin-top: 20px;">Thank you for choosing The Saveur. If you have any feedback or queries, our support team is always ready to assist.</p>
     """
-    html_body = get_email_template("Order Delivered!", body_content)
+    html_body = get_email_template("Order Delivered Successfully!", body_content, footer_note="Thank you for shopping with The Saveur.")
     send_custom_html_email(user_email, subject, html_body)
 
 
 def send_order_status_update_email(order_id, new_status, host_url=None):
-    """Fetch order details and send status update email based on current state."""
+    """Fetch order details and send tracking/status update email based on current state."""
     db = get_db()
     order = db.execute(
         """
@@ -321,19 +433,21 @@ def send_order_status_update_email(order_id, new_status, host_url=None):
 
     user_email = order['email']
     user_name = order['full_name']
-    order_number = order['order_number']
+    order_number = order['order_number'] if order['order_number'] else f"#{order_id}"
 
-    if new_status == 'Shipped':
-        if not host_url and has_request_context():
-            host_url = request.host_url
-        if not host_url:
-            host_url = "https://thesaveur.com/"
-        tracking_url = f"{host_url}track-order/{order_id}"
+    if not host_url and has_request_context():
+        host_url = request.host_url
+    if not host_url:
+        host_url = "https://thesaveur.com/"
+    
+    tracking_url = f"{host_url.rstrip('/')}/track-order/{order_id}"
 
-        send_order_shipped_email(
+    if new_status in ['Shipped', 'In Transit', 'Out for Delivery']:
+        send_order_tracking_email(
             user_email=user_email,
             user_name=user_name,
             order_number=order_number,
+            status=new_status,
             tracking_url=tracking_url,
             courier_partner=order['courier_partner'],
             tracking_number=order['tracking_number'],
@@ -348,7 +462,7 @@ def send_order_status_update_email(order_id, new_status, host_url=None):
         <p style="color: #3d3d3d; font-size: 15px;">Your order #{order_number} has been cancelled. If you paid online, the refund will be initiated to your source account.</p>
         <p style="color: #3d3d3d; font-size: 15px;">If you have any questions, please contact our support team.</p>
         """
-        html_body = get_email_template("Order Cancelled", body_content, banner_color_start="#e74c3c", banner_color_end="#c0392b")
+        html_body = get_email_template("Order Cancelled", body_content, banner_color_start="#e74c3c", banner_color_end="#c0392b", footer_note="Order cancellation notice from The Saveur.")
         send_custom_html_email(user_email, subject, html_body)
 
 
@@ -363,7 +477,7 @@ def queue_order_confirmation_email(user_email, user_name, order_number, total_am
     return send_order_confirmation_email(user_email, user_name, order_number, total_amount, shipping_address, items)
 
 def queue_order_shipped_email(user_email, user_name, order_number, tracking_url):
-    return send_order_shipped_email(user_email, user_name, order_number, tracking_url)
+    return send_order_tracking_email(user_email, user_name, order_number, 'Shipped', tracking_url)
 
 def queue_order_delivered_email(user_email, user_name, order_number):
     return send_order_delivered_email(user_email, user_name, order_number)
