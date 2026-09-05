@@ -6,7 +6,7 @@
   <title>Invoice {{ order.order_number if order.order_number else '#' ~ order.id }} – The Saveur</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,22 +16,24 @@
       --amber:         #C8860A;
       --cream:         #FAF7F2;
       --text-dark:     #1a1a1a;
-      --text-muted:    #6b6b6b;
+      --text-muted:    #666666;
       --border:        rgba(0,0,0,0.08);
+      --border-light:  rgba(0,0,0,0.05);
     }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: #e8e8e8;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #eaedf0;
       color: var(--text-dark);
       min-height: 100vh;
-      padding: 40px 20px;
+      padding: 24px 16px;
+      line-height: 1.4;
     }
 
-    /* ── Action Bar (not printed) ─────────────────────────── */
+    /* ── Action Toolbar (hidden on print) ──────────────────────── */
     .action-bar {
-      max-width: 900px;
-      margin: 0 auto 24px;
+      max-width: 860px;
+      margin: 0 auto 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -42,218 +44,226 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 20px;
+      padding: 9px 18px;
       border-radius: 8px;
-      font-size: 0.88rem;
-      font-weight: 700;
+      font-size: 0.86rem;
+      font-weight: 600;
       cursor: pointer;
       text-decoration: none;
-      font-family: 'Inter', sans-serif;
-      transition: all 0.2s;
+      font-family: inherit;
+      transition: all 0.2s ease;
     }
     .btn-back {
-      background: white;
-      border: 1.5px solid var(--border);
-      color: var(--text-muted);
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      color: #4b5563;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .btn-back:hover { border-color: #aaa; color: var(--text-dark); }
+    .btn-back:hover { background: #f9fafb; color: #111827; border-color: #9ca3af; }
     .btn-print {
       background: var(--green-primary);
-      border: 1.5px solid var(--green-primary);
-      color: white;
+      border: 1px solid var(--green-primary);
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(90,158,53,0.3);
     }
     .btn-print:hover { background: var(--green-dark); border-color: var(--green-dark); }
     .btn-download {
       background: var(--amber);
-      border: 1.5px solid var(--amber);
-      color: white;
+      border: 1px solid var(--amber);
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(200,134,10,0.3);
     }
     .btn-download:hover { background: #a36d00; border-color: #a36d00; }
     .action-bar svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-    /* ── Invoice Paper ────────────────────────────────────── */
+    /* ── Invoice Paper Container ──────────────────────────────── */
     .invoice-paper {
-      max-width: 900px;
+      max-width: 860px;
       margin: 0 auto;
-      background: #fff;
+      background: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       overflow: hidden;
+      position: relative;
     }
 
-    /* ── Header Band ──────────────────────────────────────── */
+    /* ── Header Band ──────────────────────────────────────────── */
     .inv-header {
-      background: linear-gradient(135deg, #2D5016 0%, #4a8829 60%, #5a9e35 100%);
-      padding: 40px 48px;
+      background: linear-gradient(135deg, #1e3a0f 0%, #2D5016 45%, #477c2a 100%);
+      padding: 24px 32px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 24px;
-      flex-wrap: wrap;
+      gap: 20px;
+      color: #ffffff;
     }
-    .inv-brand { display: flex; align-items: center; gap: 16px; }
+    .inv-brand { display: flex; align-items: flex-start; gap: 14px; }
     .inv-brand-logo {
-      width: 56px; height: 56px;
-      border-radius: 12px;
-      border: 2px solid rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.1);
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
       display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
+      font-size: 24px;
       overflow: hidden;
+      flex-shrink: 0;
     }
     .inv-brand-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .inv-brand-text { color: white; }
     .inv-brand-text h1 {
       font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      letter-spacing: 0.01em;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      margin-bottom: 2px;
     }
     .inv-brand-text p {
-      font-size: 0.78rem;
-      opacity: 0.75;
-      margin-top: 2px;
+      font-size: 0.74rem;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 500;
     }
     .inv-brand-address {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.7);
-      margin-top: 8px;
-      line-height: 1.6;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.78);
+      margin-top: 6px;
+      line-height: 1.45;
     }
 
-    .inv-title-block { text-align: right; color: white; }
+    .inv-title-block { text-align: right; }
     .inv-title-block .inv-label {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       text-transform: uppercase;
-      letter-spacing: 0.15em;
-      opacity: 0.7;
+      letter-spacing: 0.16em;
+      opacity: 0.8;
+      font-weight: 700;
     }
     .inv-title-block .inv-number {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin: 4px 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin: 2px 0 3px;
     }
     .inv-title-block .inv-date {
-      font-size: 0.82rem;
-      opacity: 0.8;
+      font-size: 0.78rem;
+      opacity: 0.85;
     }
     .inv-status-pill {
       display: inline-block;
-      margin-top: 10px;
-      padding: 5px 14px;
-      border-radius: 100px;
-      font-size: 0.72rem;
+      margin-top: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
     }
-    .inv-status-pill.processing { background: rgba(52,152,219,0.25); color: #a3d5f7; }
-    .inv-status-pill.shipped    { background: rgba(230,126,34,0.25); color: #ffd4a0; }
-    .inv-status-pill.delivered  { background: rgba(46,204,113,0.25); color: #a8f7c8; }
-    .inv-status-pill.cancelled  { background: rgba(231,76,60,0.25);  color: #ffb3aa; }
+    .inv-status-pill.processing { background: rgba(52,152,219,0.25); color: #cbe7fc; }
+    .inv-status-pill.shipped    { background: rgba(230,126,34,0.25); color: #ffe6c8; }
+    .inv-status-pill.delivered  { background: rgba(46,204,113,0.25); color: #c3f9d7; }
+    .inv-status-pill.cancelled  { background: rgba(231,76,60,0.25);  color: #ffd1cc; }
 
-    /* ── Meta Strip ───────────────────────────────────────── */
+    /* ── Meta Strip ───────────────────────────────────────────── */
     .inv-meta-strip {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0;
-      border-bottom: 1.5px solid var(--border);
+      grid-template-columns: repeat(4, 1fr);
+      background: #fafbfa;
+      border-bottom: 1px solid var(--border);
     }
     .inv-meta-cell {
-      padding: 22px 24px;
+      padding: 10px 20px;
       border-right: 1px solid var(--border);
     }
-    .inv-meta-cell:first-child { padding-left: 48px; }
-    .inv-meta-cell:last-child  { border-right: none; padding-right: 48px; }
+    .inv-meta-cell:last-child { border-right: none; }
     .inv-meta-label {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       color: var(--text-muted);
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
     }
     .inv-meta-value {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: var(--text-dark);
-      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .inv-meta-value.muted { font-weight: 400; color: var(--text-muted); }
 
-    /* ── Bill To / Ship To ────────────────────────────────── */
+    /* ── Bill To / Ship To ────────────────────────────────────── */
     .inv-addresses {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0;
-      border-bottom: 1.5px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
     .inv-address-block {
-      padding: 28px 48px;
+      padding: 14px 32px;
       border-right: 1px solid var(--border);
     }
     .inv-address-block:last-child { border-right: none; }
     .inv-address-title {
-      font-size: 0.7rem;
+      font-size: 0.66rem;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: var(--green-primary);
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 4px;
     }
     .inv-address-name {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-dark);
-      margin-bottom: 6px;
-    }
-    .inv-address-detail {
-      font-size: 0.84rem;
-      color: var(--text-muted);
-      line-height: 1.7;
-    }
-
-    /* ── Items Table ──────────────────────────────────────── */
-    .inv-table-wrap { padding: 0 48px; }
-    .inv-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 32px 0;
-    }
-    .inv-table thead tr {
-      background: var(--cream);
-      border-radius: 8px;
-    }
-    .inv-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      font-weight: 700;
-      border-bottom: 2px solid var(--border);
-    }
-    .inv-table th:first-child { border-radius: 8px 0 0 8px; padding-left: 0; }
-    .inv-table th:last-child  { border-radius: 0 8px 8px 0; text-align: right; padding-right: 0; }
-    .inv-table td {
-      padding: 18px 16px;
       font-size: 0.9rem;
-      vertical-align: middle;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    .inv-table td:first-child { padding-left: 0; }
-    .inv-table td:last-child  { text-align: right; padding-right: 0; }
-    .inv-table tbody tr:last-child td { border-bottom: none; }
-
-    .inv-prod-name {
       font-weight: 700;
       color: var(--text-dark);
       margin-bottom: 3px;
     }
-    .inv-prod-meta {
-      font-size: 0.76rem;
+    .inv-address-detail {
+      font-size: 0.78rem;
       color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* ── Items Table ──────────────────────────────────────────── */
+    .inv-table-wrap { padding: 0 32px; }
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 10px;
+    }
+    .inv-table thead tr {
+      background: var(--cream);
+    }
+    .inv-table th {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .inv-table th:first-child { padding-left: 6px; }
+    .inv-table th:last-child  { text-align: right; padding-right: 6px; }
+    .inv-table td {
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .inv-table td:first-child { padding-left: 6px; }
+    .inv-table td:last-child  { text-align: right; padding-right: 6px; }
+    .inv-table tbody tr:last-child td { border-bottom: 1px solid var(--border); }
+
+    .inv-prod-name {
+      font-weight: 600;
+      color: var(--text-dark);
+      line-height: 1.25;
+    }
+    .inv-prod-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 1px;
     }
     .inv-qty-badge {
       display: inline-flex;
@@ -261,181 +271,237 @@
       justify-content: center;
       background: rgba(90,158,53,0.08);
       color: var(--green-dark);
-      font-weight: 700;
-      font-size: 0.82rem;
-      padding: 3px 10px;
-      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.74rem;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
-    /* ── Totals ───────────────────────────────────────────── */
-    .inv-totals {
-      padding: 0 48px 36px;
-      display: flex;
-      justify-content: flex-end;
+    /* ── Bottom Section: Two Column (Left Notes/QR, Right Totals) ─ */
+    .inv-bottom-section {
+      padding: 10px 32px 14px;
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 20px;
+      align-items: start;
     }
+
+    .inv-left-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .inv-terms-note {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      background: var(--cream);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .inv-terms-note strong { color: var(--text-dark); font-size: 0.74rem; }
+
+    .inv-auth-qr-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 6px;
+    }
+    .inv-qr-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .inv-qr-box img {
+      width: 64px;
+      height: 64px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: white;
+      padding: 2px;
+      display: block;
+      flex-shrink: 0;
+    }
+    .inv-qr-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .inv-qr-text .qr-lbl {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .inv-qr-text .qr-code-id {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--green-dark);
+    }
+
+    .inv-sign-box {
+      text-align: right;
+    }
+    .inv-sign-label {
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .inv-sign-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--green-dark);
+    }
+    .inv-sign-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Totals Box */
     .inv-totals-box {
-      width: 320px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
       overflow: hidden;
+      background: #ffffff;
     }
     .inv-total-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 11px 20px;
-      font-size: 0.88rem;
-      border-bottom: 1px solid var(--border);
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      border-bottom: 1px solid var(--border-light);
       color: var(--text-muted);
     }
     .inv-total-row:last-child { border-bottom: none; }
-    .inv-total-row.grand {
-      background: linear-gradient(135deg, #2D5016, #5a9e35);
-      color: white;
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 16px 20px;
-    }
     .inv-total-row .val { font-weight: 600; color: var(--text-dark); }
-    .inv-total-row.grand .val { color: white; font-size: 1.1rem; }
+    .inv-total-row.grand {
+      background: linear-gradient(135deg, #1e3a0f, #2D5016);
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 700;
+      padding: 10px 14px;
+    }
+    .inv-total-row.grand .val { color: #ffffff; font-size: 1.02rem; }
 
-    /* ── Footer ───────────────────────────────────────────── */
-    .inv-footer {
-      margin: 0 48px 40px;
-      padding: 24px 28px;
-      background: var(--cream);
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .inv-footer-note {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.7;
-      max-width: 420px;
-    }
-    .inv-footer-note strong { color: var(--text-dark); font-size: 0.82rem; }
-    .inv-footer-stamp {
-      text-align: right;
-    }
-    .inv-footer-stamp .stamp-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-    .inv-footer-brand {
-      display: flex; align-items: center; gap: 10px;
-    }
-    .inv-footer-brand .dot-logo {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, #2D5016, #5a9e35);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      color: white;
-    }
-    .inv-footer-brand span {
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem;
-      color: var(--green-dark);
-    }
+    /* ── Thank You Footer Bar ─────────────────────────────────── */
     .inv-thankyou {
       text-align: center;
-      padding: 20px 48px 40px;
-      font-size: 0.82rem;
+      padding: 8px 32px 10px;
+      font-size: 0.74rem;
       color: var(--text-muted);
-      border-top: 1.5px solid var(--border);
+      border-top: 1px solid var(--border);
+      background: #fdfcfb;
     }
-    .inv-thankyou strong { color: var(--green-dark); font-size: 0.95rem; display: block; margin-bottom: 6px; }
-
-    /* ── QR Code Block ────────────────────────────────────── */
-    .inv-qr-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .inv-qr-block img {
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      border: 2px solid var(--border);
-      background: white;
-      padding: 4px;
-      display: block;
-    }
-    .inv-qr-label {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      text-align: center;
-      font-weight: 600;
-    }
-    .inv-qr-ref {
-      font-size: 0.7rem;
+    .inv-thankyou strong {
       color: var(--green-dark);
-      font-weight: 700;
-      text-align: center;
-      letter-spacing: 0.03em;
+      font-size: 0.8rem;
+      display: inline-block;
+      margin-right: 4px;
     }
 
-    /* ── Watermark for Cancelled ──────────────────────────── */
+    /* ── Watermark for Cancelled Orders ──────────────────────── */
     {% if order.status == 'Cancelled' %}
     .invoice-paper::before {
       content: 'CANCELLED';
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) rotate(-30deg);
-      font-size: 5rem;
+      transform: translate(-50%, -50%) rotate(-28deg);
+      font-size: 4.5rem;
       font-weight: 900;
-      color: rgba(231,76,60,0.07);
+      color: rgba(231,76,60,0.08);
       pointer-events: none;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
       white-space: nowrap;
+      z-index: 10;
     }
-    .invoice-paper { position: relative; }
     {% endif %}
 
-    /* ── Print Styles ─────────────────────────────────────── */
-    @media print {
-      body { background: white; padding: 0; }
-      .action-bar { display: none !important; }
-      .invoice-paper {
-        box-shadow: none;
-        border-radius: 0;
-        max-width: 100%;
-      }
-      .inv-qr-block img {
-        /* ensure QR renders in print */
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      @page {
-        size: A4 portrait;
-        margin: 0;
-      }
+    /* ══════════════════════════════════════════════════════════
+       PRINT SPECIFIC RULES (GUARANTEES 1 PAGE)
+    ══════════════════════════════════════════════════════════ */
+    @page {
+      size: A4 portrait;
+      margin: 6mm 8mm;
     }
 
-    @media (max-width: 600px) {
-      .inv-header { padding: 28px 24px; }
-      .inv-meta-cell:first-child { padding-left: 24px; }
-      .inv-meta-cell:last-child  { padding-right: 24px; }
+    @media print {
+      html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .action-bar { display: none !important; }
+
+      .invoice-paper {
+        box-shadow: none !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 4px !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      .inv-header { padding: 14px 20px !important; }
+      .inv-brand-logo { width: 40px !important; height: 40px !important; font-size: 20px !important; }
+      .inv-brand-text h1 { font-size: 1.15rem !important; }
+      .inv-brand-address { font-size: 0.68rem !important; margin-top: 4px !important; }
+      .inv-title-block .inv-number { font-size: 1.25rem !important; margin: 1px 0 2px !important; }
+
+      .inv-meta-strip { grid-template-columns: repeat(4, 1fr) !important; }
+      .inv-meta-cell { padding: 6px 14px !important; }
+      .inv-meta-label { font-size: 0.6rem !important; }
+      .inv-meta-value { font-size: 0.75rem !important; }
+
+      .inv-address-block { padding: 8px 20px !important; }
+      .inv-address-name { font-size: 0.82rem !important; }
+      .inv-address-detail { font-size: 0.72rem !important; line-height: 1.35 !important; }
+
+      .inv-table-wrap { padding: 0 20px !important; }
+      .inv-table { margin: 8px 0 !important; }
+      .inv-table th { padding: 5px 6px !important; font-size: 0.64rem !important; }
+      .inv-table td { padding: 5px 6px !important; font-size: 0.74rem !important; }
+      .inv-prod-meta { font-size: 0.64rem !important; }
+
+      .inv-bottom-section { padding: 8px 20px 10px !important; gap: 14px !important; }
+      .inv-terms-note { font-size: 0.66rem !important; padding: 6px 10px !important; line-height: 1.3 !important; }
+      .inv-qr-box img { width: 56px !important; height: 56px !important; }
+      .inv-total-row { padding: 4px 10px !important; font-size: 0.72rem !important; }
+      .inv-total-row.grand { padding: 6px 10px !important; font-size: 0.84rem !important; }
+      .inv-total-row.grand .val { font-size: 0.92rem !important; }
+
+      .inv-thankyou { padding: 6px 20px 8px !important; font-size: 0.68rem !important; }
+    }
+
+    @media (max-width: 650px) {
+      .inv-header { padding: 18px 16px; flex-direction: column; }
+      .inv-title-block { text-align: left; }
+      .inv-meta-strip { grid-template-columns: 1fr 1fr; }
+      .inv-meta-cell:nth-child(2) { border-right: none; }
+      .inv-meta-cell:nth-child(3) { border-top: 1px solid var(--border); }
+      .inv-meta-cell:nth-child(4) { border-top: 1px solid var(--border); border-right: none; }
       .inv-addresses { grid-template-columns: 1fr; }
-      .inv-address-block { padding: 20px 24px; border-right: none; border-bottom: 1px solid var(--border); }
-      .inv-table-wrap { padding: 0 24px; }
-      .inv-totals { padding: 0 24px 28px; }
-      .inv-totals-box { width: 100%; }
-      .inv-footer { padding: 20px; margin: 0 24px 28px; }
-      .inv-thankyou { padding: 16px 24px 28px; }
+      .inv-address-block { padding: 12px 16px; border-right: none; border-bottom: 1px solid var(--border); }
+      .inv-address-block:last-child { border-bottom: none; }
+      .inv-table-wrap { padding: 0 16px; }
+      .inv-bottom-section { grid-template-columns: 1fr; padding: 12px 16px; }
+      .inv-thankyou { padding: 8px 16px 12px; }
     }
   </style>
 </head>
@@ -460,7 +526,7 @@
   </div>
 
   <!-- ══════════════════════════════════════════════
-       INVOICE PAPER
+       INVOICE PAPER (Single-Page Layout)
   ══════════════════════════════════════════════ -->
   <div class="invoice-paper" id="invoice-root">
 
@@ -474,10 +540,8 @@
           <h1>The Saveur</h1>
           <p>Premium Store</p>
           <div class="inv-brand-address">
-            Premium Quality Products<br>
             info@thesaveur.com · thesaveur.com<br>
-            fssai Lic No: 12226999000440<br>
-            GSTIN: 08DKEPK9374L1ZF
+            fssai Lic No: 12226999000440 | GSTIN: 08DKEPK9374L1ZF
           </div>
         </div>
       </div>
@@ -494,7 +558,7 @@
     <!-- Meta Strip -->
     <div class="inv-meta-strip">
       <div class="inv-meta-cell">
-        <div class="inv-meta-label">Invoice No.</div>
+        <div class="inv-meta-label">Invoice / Order Ref</div>
         <div class="inv-meta-value">{{ order.order_number if order.order_number else ('INV-2026-%05d' % order.id) }}</div>
       </div>
       <div class="inv-meta-cell">
@@ -502,16 +566,16 @@
         <div class="inv-meta-value">{{ (order.created_at|string).split(' ')[0] if order.created_at else '—' }}</div>
       </div>
       <div class="inv-meta-cell">
-        <div class="inv-meta-label">Payment Method</div>
+        <div class="inv-meta-label">Payment Mode</div>
         <div class="inv-meta-value">{{ order.payment_method }}</div>
       </div>
       <div class="inv-meta-cell">
-        <div class="inv-meta-label">Order Status</div>
+        <div class="inv-meta-label">Status</div>
         <div class="inv-meta-value" style="color:
           {%- if order.status == 'Delivered' -%}#27ae60
           {%- elif order.status == 'Shipped' -%}#d35400
           {%- elif order.status == 'Processing' -%}#2980b9
-          {%- else -%}#c0392b{%- endif -%}">
+          {%- else -%}#c0392b{%- endif -%};">
           {{ order.status }}
         </div>
       </div>
@@ -520,13 +584,12 @@
     <!-- Addresses -->
     <div class="inv-addresses">
       <div class="inv-address-block">
-        <div class="inv-address-title">Sold By</div>
+        <div class="inv-address-title">Sold By (Seller)</div>
         <div class="inv-address-name">HM Enterprises</div>
         <div class="inv-address-detail">
           5th Floor, Flat No. 608, KH No. 29/1, Vill Girdharipura<br>
           Jaipur, Rajasthan, India 302021<br>
-          fssai License Number: 12226999000440<br>
-          GSTIN: 08DKEPK9374L1ZF
+          fssai License No: 12226999000440 | GSTIN: 08DKEPK9374L1ZF
         </div>
       </div>
       <div class="inv-address-block">
@@ -535,11 +598,7 @@
         <div class="inv-address-detail">
           {{ order.shipping_address }}<br>
           {{ order.city }}, {{ order.state }} – {{ order.zip_code }}<br>
-          India<br>
-          {{ order.user_email }}<br>
-          <span style="display:inline-block; margin-top:6px; font-size:0.78rem; color:#8b8b8b; font-weight:600; letter-spacing:0.04em;">
-            Order Ref: {{ order.order_number if order.order_number else ('#%05d' % order.id) }}
-          </span>
+          India · {{ order.user_email }}
         </div>
       </div>
     </div>
@@ -549,13 +608,13 @@
       <table class="inv-table">
         <thead>
           <tr>
-            <th style="width:40px;">#</th>
+            <th style="width:28px;">#</th>
             <th>Product Description</th>
-            <th style="text-align:center;">Unit</th>
-            <th style="text-align:center;">Qty</th>
-            <th style="text-align:right;">Unit Price</th>
-            <th style="text-align:center;">GST %</th>
-            <th style="text-align:right;">Amount</th>
+            <th style="text-align:center; width:55px;">Unit</th>
+            <th style="text-align:center; width:45px;">Qty</th>
+            <th style="text-align:right; width:75px;">Unit Price</th>
+            <th style="text-align:center; width:55px;">GST %</th>
+            <th style="text-align:right; width:80px;">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -571,7 +630,7 @@
           {% set item_tax_amt = line_total - (line_total / (1 + (item_gst_rate / 100))) %}
           {% set total_gst.val = total_gst.val + item_tax_amt %}
           <tr>
-            <td style="color:var(--text-muted); font-size:0.82rem;">{{ loop.index }}</td>
+            <td style="color:var(--text-muted);">{{ loop.index }}</td>
             <td>
               <div class="inv-prod-name">{{ item.product_name }}</div>
               <div class="inv-prod-meta">Natural · Premium Quality · The Saveur</div>
@@ -582,7 +641,7 @@
             <td style="text-align:center; font-weight:700;">{{ item.quantity }}</td>
             <td style="text-align:right; color:var(--text-muted);">
               {% if orig_pr > item.price %}
-                <span style="text-decoration:line-through; color:#95a5a6; font-size:0.82rem; margin-right:4px;">${{ '%.2f' % orig_pr }}</span>
+                <span style="text-decoration:line-through; color:#95a5a6; font-size:0.74rem; margin-right:2px;">${{ '%.2f' % orig_pr }}</span>
               {% endif %}
               <span>${{ '%.2f' % item.price }}</span>
             </td>
@@ -596,8 +655,37 @@
       </table>
     </div>
 
-    <!-- Totals -->
-    <div class="inv-totals">
+    <!-- ── Two-Column Bottom Section ───────────────────────────── -->
+    <div class="inv-bottom-section">
+      <!-- Left: Terms, Notes, QR Code, Signature -->
+      <div class="inv-left-block">
+        <div class="inv-terms-note">
+          <strong>Terms &amp; Notes:</strong> Products are carefully packed and dispatched. For queries, contact <a href="mailto:info@thesaveur.com" style="color:var(--green-primary); text-decoration:none;">info@thesaveur.com</a> or WhatsApp <strong>+91 95005 29076</strong>.<br>
+          This is a computer-generated tax invoice and requires no physical signature.
+        </div>
+
+        <div class="inv-auth-qr-row">
+          <!-- QR Code -->
+          {% set qr_data = (order.order_number if order.order_number else ('#%05d' % order.id)) ~ ' | ' ~ order.user_name ~ ' | Total: $' ~ ('%.2f' % order.total_amount) ~ ' | Status: ' ~ order.status %}
+          {% set qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&ecc=M&data=' ~ (qr_data | urlencode) %}
+          <div class="inv-qr-box">
+            <img src="{{ qr_url }}" alt="Verification QR Code" loading="eager" />
+            <div class="inv-qr-text">
+              <span class="qr-lbl">Scan to Verify</span>
+              <span class="qr-code-id">{{ order.order_number if order.order_number else ('#%05d' % order.id) }}</span>
+            </div>
+          </div>
+
+          <!-- Authorised Signatory -->
+          <div class="inv-sign-box">
+            <div class="inv-sign-label">Authorised Signatory</div>
+            <div class="inv-sign-brand">🍃 HM Enterprises</div>
+            <div class="inv-sign-sub">For HM Enterprises</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Compact Totals Breakdown -->
       <div class="inv-totals-box">
         <div class="inv-total-row">
           <span>Subtotal</span>
@@ -611,7 +699,7 @@
         {% endif %}
         {% if order.promo_code %}
         <div class="inv-total-row">
-          <span>Coupon Discount ({{ order.promo_code }})</span>
+          <span>Coupon ({{ order.promo_code }})</span>
           <span class="val" style="color:#27ae60;">−${{ '%.2f' % order.discount_amount }}</span>
         </div>
         {% endif %}
@@ -652,38 +740,7 @@
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="inv-footer">
-      <div class="inv-footer-note">
-        <strong>Terms &amp; Conditions</strong>
-        All products are subject to availability. Once shipped, orders cannot be modified.
-        For any queries regarding this invoice, please contact us at
-        <a href="mailto:info@thesaveur.com" style="color:var(--green-primary);">info@thesaveur.com</a>
-        or WhatsApp <a href="https://wa.me/919500529076" style="color:#25d366;">+91 95005 29076</a>.<br>
-        <strong>Sold By:</strong> HM Enterprises | fssai Lic No: 12226999000440 | GSTIN: 08DKEPK9374L1ZF<br>
-        This is a computer-generated invoice and does not require a physical signature.
-      </div>
-
-      <!-- QR Code -->
-      {% set qr_data = (order.order_number if order.order_number else ('#%05d' % order.id)) ~ ' | ' ~ order.user_name ~ ' | Total: $' ~ ('%.2f' % order.total_amount) ~ ' | Status: ' ~ order.status %}
-      {% set qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&data=' ~ (qr_data | urlencode) %}
-      <div class="inv-qr-block">
-        <img src="{{ qr_url }}" alt="Order QR Code" loading="eager" />
-        <div class="inv-qr-label">Scan to Verify</div>
-        <div class="inv-qr-ref">{{ order.order_number if order.order_number else ('#%05d' % order.id) }}</div>
-      </div>
-
-      <div class="inv-footer-stamp">
-        <div class="stamp-label">Authorised Signatory</div>
-        <div class="inv-footer-brand">
-          <div class="dot-logo">🍃</div>
-          <span>HM Enterprises</span>
-        </div>
-        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px;">For HM Enterprises</div>
-      </div>
-    </div>
-
-    <!-- Thank You -->
+    <!-- Thank You Strip -->
     <div class="inv-thankyou">
       <strong>Thank you for choosing The Saveur! 🙏</strong>
       Premium quality products, sourced with care and delivered with love.
@@ -693,7 +750,6 @@
 
   <script>
     function downloadPDF() {
-      // Use browser's print dialog in "Save as PDF" mode
       const origTitle = document.title;
       document.title = 'Invoice-{{ order.order_number if order.order_number else order.id }}-TheSaveur';
       window.print();
