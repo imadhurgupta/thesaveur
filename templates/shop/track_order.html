@@ -575,15 +575,34 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color:var(--green-primary);"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="13" y1="10" x2="23" y2="10"/></svg>
               Payment &amp; Total
             </h3>
-            <p>
-              <strong>Payment Method:</strong> {{ order.payment_method }}<br>
+            <div style="font-size:0.875rem; line-height:1.6;">
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+                <strong>Payment:</strong>
+                {% set pm = (order.payment_method or 'Online') | upper %}
+                {% if 'COD' in pm or 'CASH' in pm %}
+                <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:99px; font-weight:700; font-size:0.75rem;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+                  Cash on Delivery (COD)
+                </span>
+                {% elif 'PAYPAL' in pm %}
+                <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; border-radius:99px; font-weight:700; font-size:0.75rem;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  PayPal (Paid)
+                </span>
+                {% else %}
+                <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; border-radius:99px; font-weight:700; font-size:0.75rem;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  Online Payment (Paid)
+                </span>
+                {% endif %}
+              </div>
               <strong>Total Amount:</strong> ${{ order.total_amount }}
               <small style="color:#64748b; font-size:0.75rem;">(Includes ${{ "%.2f"|format(order.shipping_charge) if order.shipping_charge else "0.00" }} shipping)</small><br>
               <strong>Current Status:</strong> 
               <span style="font-weight:700; color:{% if order.status in ['Order Confirmed', 'Processing', 'Placed'] %}#2563eb{% elif order.status=='Shipped' %}#d97706{% elif order.status=='In Transit' %}#7c3aed{% elif order.status=='Out for Delivery' %}#0d9488{% elif order.status=='Delivered' %}#059669{% else %}#dc2626{% endif %};">
                 {{ order.status }}
               </span>
-            </p>
+            </div>
           </div>
         </div>
 

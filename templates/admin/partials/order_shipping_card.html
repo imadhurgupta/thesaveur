@@ -28,11 +28,13 @@
             {% else %}
               {% for label, icon in steps %}
               {% set step_idx = loop.index0 %}
+              {% set is_step_done = (step_idx < current_idx) or (step_idx == current_idx and order.status == 'Delivered') %}
+              {% set is_step_active = (step_idx == current_idx and order.status != 'Delivered') %}
               <div class="od-timeline-step" data-step-label="{{ label }}" data-step-index="{{ step_idx }}">
-                <div class="od-timeline-dot {% if step_idx < current_idx %}done{% elif step_idx == current_idx %}active{% endif %}">
-                  {% if step_idx < current_idx %}
+                <div class="od-timeline-dot {% if is_step_done %}done{% elif is_step_active %}active{% endif %}">
+                  {% if is_step_done %}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
-                  {% elif step_idx == current_idx %}
+                  {% elif is_step_active %}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><circle cx="12" cy="12" r="3"/></svg>
                   {% else %}
                   <span style="color:#64748b; font-size:0.65rem; font-weight:700;">{{ loop.index }}</span>
@@ -41,8 +43,8 @@
                 <div class="od-timeline-text">
                   <div class="od-timeline-title" style="{% if step_idx > current_idx %}opacity:0.4;{% endif %}">{{ label }}</div>
                   <div class="od-timeline-sub">
-                    {% if step_idx < current_idx %}Completed
-                    {% elif step_idx == current_idx %}In progress
+                    {% if is_step_done %}Completed
+                    {% elif is_step_active %}In progress
                     {% else %}Pending{% endif %}
                   </div>
                 </div>

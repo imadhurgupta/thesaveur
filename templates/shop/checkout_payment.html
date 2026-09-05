@@ -554,7 +554,22 @@
     <!-- Payment Method -->
     <div class="summary-row">
       <span class="s-label">Payment</span>
-      <span class="s-value">{{ order.payment_method }}</span>
+      <span class="s-value">
+        {% set pm = (order.payment_method or 'Online') | upper %}
+        {% if 'COD' in pm or 'CASH' in pm %}
+        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:99px; font-weight:700; font-size:0.75rem;">
+          Cash on Delivery (COD)
+        </span>
+        {% elif 'PAYPAL' in pm %}
+        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; border-radius:99px; font-weight:700; font-size:0.75rem;">
+          PayPal
+        </span>
+        {% else %}
+        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; border-radius:99px; font-weight:700; font-size:0.75rem;">
+          Online Payment (Razorpay)
+        </span>
+        {% endif %}
+      </span>
     </div>
   </div>
 
