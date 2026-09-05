@@ -159,3 +159,46 @@ def customer_invoice(id):
         back_label='Back to My Orders',
         viewer='customer'
     )
+
+
+@orders_bp.route('/orders/<int:id>/cancel', methods=['POST'], endpoint='customer_cancel_order')
+def customer_cancel_order(id):
+    """Allow customer to cancel their order before it is shipped, reversing product stock."""
+    if 'user_id' not in session:
+        flash('Please log in to manage your order.', 'error')
+        return redirect(url_for('login'))
+
+    db = get_db()
+    order = db.execute(
+        "SELECT * FROM orders WHERE id = ? AND user_id = ?",
+        (id, session['user_id'])
+    ).fetchone()
+
+    if not order:
+        db.close()
+        flash("Order not found.", "error")
+        return redirect(url_for('my_orders'))
+
+    if order['status'] != 'Processing':
+        db.close()
+        flash(f"Order cannot be cancelled because it is already {order['status'].lower()}.", "error")
+        return redirect(url_for('my_orders'))
+
+    # Reverse stock back to products
+    order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
+    for item in order_items:
+        db.execute("UPDATE products SET stocks = stocks + ? WHERE id = ?", (item['quantity'], item['product_id']))
+
+    db.execute("UPDATE orders SET status = 'Cancelled' WHERE id = ?", (id,))
+    db.commit()
+    db.close()
+
+    try:
+        from services.email_service import queue_order_status_update_email
+        queue_order_status_update_email(id, 'Cancelled')
+    except Exception as mail_err:
+        print(f"[MAIL ERROR] Failed to send customer cancel email: {mail_err}")
+
+    flash(f"Order #{order['order_number'] or id} has been successfully cancelled and stocks restored.", "success")
+    return redirect(url_for('my_orders'))
+

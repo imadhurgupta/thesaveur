@@ -78,6 +78,23 @@ def admin_update_order_status(id):
     else:
         final_tracking_url = current_order['tracking_url'] or ''
 
+    old_status = current_order['status']
+
+    # ── Stock Management on Status Change ─────────────────────────────────────
+    # 1. Reverse stock when cancelling an order BEFORE it has been shipped (e.g. from Processing / Placed)
+    if status == 'Cancelled' and old_status in ['Processing', 'Placed']:
+        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
+        for item in order_items:
+            db.execute("UPDATE products SET stocks = stocks + ? WHERE id = ?", (item['quantity'], item['product_id']))
+        print(f"[STOCK REVERSED] Order #{id} cancelled from '{old_status}'. Restored stock for {len(order_items)} items.")
+
+    # 2. Re-deduct stock if an order was 'Cancelled' and is reactivated back to 'Processing' / 'Placed' / 'Shipped'
+    elif old_status == 'Cancelled' and status in ['Processing', 'Placed', 'Shipped']:
+        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (id,)).fetchall()
+        for item in order_items:
+            db.execute("UPDATE products SET stocks = stocks - ? WHERE id = ?", (item['quantity'], item['product_id']))
+        print(f"[STOCK DEDUCTED] Order #{id} reactivated to '{status}'. Deducted stock for {len(order_items)} items.")
+
     # Shipped timestamp
     shipped_clause = ""
     if status == 'Shipped' and not current_order['shipped_at']:
