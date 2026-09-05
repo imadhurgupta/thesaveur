@@ -31,13 +31,19 @@ def _build_smtp_headers(msg, subject, receiver_email, smtp_sender):
     msg['X-Auto-Response-Suppress'] = 'All'
 
 
-def send_custom_html_email(receiver_email, subject, html_body, plain_body=None):
-    """General custom HTML email sending function via SMTP with plain-text fallback."""
-    smtp_host = os.environ.get('SMTP_HOST')
-    smtp_port = os.environ.get('SMTP_PORT')
+def _get_smtp_credentials():
+    """Retrieve SMTP settings supporting both SMTP_HOST and SMTP_SERVER env keys."""
+    smtp_host = os.environ.get('SMTP_HOST') or os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+    smtp_port = os.environ.get('SMTP_PORT', '587')
     smtp_user = os.environ.get('SMTP_USER')
     smtp_password = os.environ.get('SMTP_PASSWORD')
     smtp_sender = os.environ.get('SMTP_SENDER', smtp_user)
+    return smtp_host, smtp_port, smtp_user, smtp_password, smtp_sender
+
+
+def send_custom_html_email(receiver_email, subject, html_body, plain_body=None):
+    """General custom HTML email sending function via SMTP with plain-text fallback."""
+    smtp_host, smtp_port, smtp_user, smtp_password, smtp_sender = _get_smtp_credentials()
 
     if not all([smtp_host, smtp_port, smtp_user, smtp_password]):
         print(f"[SMTP] SMTP variables not fully set. Skip sending '{subject}'.")
@@ -45,31 +51,15 @@ def send_custom_html_email(receiver_email, subject, html_body, plain_body=None):
 
     try:
         port = int(smtp_port)
-        msg = MIMEMultipart('related')
+        msg = MIMEMultipart('alternative')
         _build_smtp_headers(msg, subject, receiver_email, smtp_sender)
-        
-        msg_alternative = MIMEMultipart('alternative')
-        msg.attach(msg_alternative)
         
         # 1. Plain text fallback (reduces spam score)
         text_content = plain_body or _strip_html(html_body)
-        msg_alternative.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
         
         # 2. Rich HTML part
-        msg_alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
-        
-        # Attach inlined logo
-        try:
-            logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'images', 'logo.jpg')
-            if os.path.exists(logo_path):
-                with open(logo_path, 'rb') as f:
-                    img_data = f.read()
-                msg_img = MIMEImage(img_data, name='logo.jpg')
-                msg_img.add_header('Content-ID', '<logo>')
-                msg_img.add_header('Content-Disposition', 'inline', filename='logo.jpg')
-                msg.attach(msg_img)
-        except Exception as e:
-            print(f"[SMTP] Failed to attach inline logo to custom email: {e}")
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         if port == 465:
             server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
@@ -92,14 +82,10 @@ def send_otp_email(receiver_email, otp, purpose='reset'):
     """Dispatch OTP email for verification or password reset with high inbox deliverability."""
     print(f"[OTP DISPATCH] Generated {purpose} OTP for {receiver_email}: {otp}")
 
-    smtp_host = os.environ.get('SMTP_HOST')
-    smtp_port = os.environ.get('SMTP_PORT')
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_password = os.environ.get('SMTP_PASSWORD')
-    smtp_sender = os.environ.get('SMTP_SENDER', smtp_user)
+    smtp_host, smtp_port, smtp_user, smtp_password, smtp_sender = _get_smtp_credentials()
 
     if not all([smtp_host, smtp_port, smtp_user, smtp_password]):
-        print(f"[SMTP] Not fully configured. (Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD). Local OTP is: {otp}")
+        print(f"[SMTP] Not fully configured. (Required: SMTP_HOST/SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD). Local OTP is: {otp}")
         return False
 
     if purpose == 'signup':
@@ -134,42 +120,29 @@ https://thesaveur.com
 
     try:
         port = int(smtp_port)
-        msg = MIMEMultipart('related')
+        msg = MIMEMultipart('alternative')
         _build_smtp_headers(msg, subject, receiver_email, smtp_sender)
-        
-        msg_alternative = MIMEMultipart('alternative')
-        msg.attach(msg_alternative)
+        msg['X-Priority'] = '1'  # Mark high priority transactional OTP
         
         # 1. Plain text version
-        msg_alternative.attach(MIMEText(plain_text, 'plain', 'utf-8'))
+        msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
         
         # 2. HTML version
         body_content = f"""
-        <p style="color: #3d3d3d; font-size: 15px;">Hello,</p>
-        <p style="color: #3d3d3d; font-size: 15px;">{body_text}</p>
+        <p style="color: #3d3d3d; font-size: 15px; margin-top: 0;">Hello,</p>
+        <p style="color: #3d3d3d; font-size: 15px; line-height: 1.6;">{body_text}</p>
         
-        <div style="background-color: #FAF7F2; border: 1px dashed #C8860A; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #C8860A; font-family: monospace;">{otp}</span>
+        <div style="background-color: #FAF7F2; border: 1.5px dashed #C8860A; border-radius: 8px; padding: 20px; text-align: center; margin: 28px 0;">
+            <div style="font-size: 12px; color: #777777; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">One-Time Password</div>
+            <span style="font-size: 34px; font-weight: 700; letter-spacing: 8px; color: #C8860A; font-family: monospace;">{otp}</span>
         </div>
         
-        <p style="color: #6b6b6b; font-size: 13px;">This code is valid for 10 minutes. For security, never share this OTP with anyone.</p>
-        <p style="color: #6b6b6b; font-size: 13px;">If you did not request this, please ignore this email or contact support if you have concerns.</p>
+        <p style="color: #6b6b6b; font-size: 13px; margin-bottom: 6px;">&bull; This code is valid for <strong>10 minutes</strong>.</p>
+        <p style="color: #6b6b6b; font-size: 13px; margin-top: 0;">&bull; For security reasons, never share this code with anyone.</p>
         """
         
         html_body = get_email_template(heading, body_content)
-        msg_alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
-        
-        try:
-            logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'images', 'logo.jpg')
-            if os.path.exists(logo_path):
-                with open(logo_path, 'rb') as f:
-                    img_data = f.read()
-                msg_img = MIMEImage(img_data, name='logo.jpg')
-                msg_img.add_header('Content-ID', '<logo>')
-                msg_img.add_header('Content-Disposition', 'inline', filename='logo.jpg')
-                msg.attach(msg_img)
-        except Exception as e:
-            print(f"[SMTP] Failed to attach inline logo to OTP email: {e}")
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         if port == 465:
             server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
