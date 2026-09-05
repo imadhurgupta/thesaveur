@@ -258,13 +258,13 @@
             <span style="font-size:0.75rem; color:var(--text-muted);">Paid via: {{ order.payment_method }}</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <a href="{{ url_for('track_order', order_id=order.id) }}"
+            <a href="{{ url_for('track_order', order_ref=order.order_number if order.order_number else order.id) }}"
                style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#ffffff; border-radius:8px; font-size:0.8rem; font-weight:700; text-decoration:none; box-shadow:0 3px 10px rgba(16,185,129,0.25); transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
               Track Order
             </a>
-            <a href="{{ url_for('customer_invoice', id=order.id) }}" target="_blank"
+            <a href="{{ url_for('customer_invoice', order_ref=order.order_number if order.order_number else order.id) }}" target="_blank"
                style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:rgba(90,158,53,0.08); color:var(--green-dark); border:1.5px solid rgba(90,158,53,0.2); border-radius:8px; font-size:0.8rem; font-weight:700; text-decoration:none; transition:all 0.2s;"
                onmouseover="this.style.background='rgba(90,158,53,0.15)'" onmouseout="this.style.background='rgba(90,158,53,0.08)'">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>

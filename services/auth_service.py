@@ -23,10 +23,10 @@ def hash_password(password):
 
 
 def generate_order_number():
-    """Generate a unique alphanumeric order number, e.g. AMT-A3X9KZ2Q."""
+    """Generate a unique alphanumeric order number, e.g. TSV-A3X9KZ2Q."""
     chars = string.ascii_uppercase + string.digits
     suffix = ''.join(random.choices(chars, k=8))
-    return f'AMT-{suffix}'
+    return f'TSV-{suffix}'
 
 
 def allowed_file(filename):

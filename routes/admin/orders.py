@@ -210,10 +210,11 @@ def admin_order_detail(id):
     )
 
 
-@admin_orders_bp.route('/admin/orders/<int:id>/invoice', endpoint='admin_invoice')
+@admin_orders_bp.route('/admin/orders/<order_ref>/invoice', endpoint='admin_invoice')
 @admin_required
-def admin_invoice(id):
+def admin_invoice(order_ref):
     db = get_db()
+    clean_ref = str(order_ref).lstrip('#').strip()
     order = db.execute(
         """
         SELECT o.*,
@@ -221,14 +222,16 @@ def admin_invoice(id):
                u.email     AS user_email
         FROM orders o
         JOIN users u ON o.user_id = u.id
-        WHERE o.id = ? AND o.status != 'Pending Payment'
+        WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
+          AND o.status != 'Pending Payment'
+        LIMIT 1
         """,
-        (id,)
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
     ).fetchone()
 
     if not order:
         db.close()
-        flash(f"Order #{id} not found or payment has not been completed.", "error")
+        flash(f"Order '{order_ref}' not found or payment has not been completed.", "error")
         return redirect(url_for('admin_dashboard'))
 
     items = db.execute(
@@ -241,7 +244,7 @@ def admin_invoice(id):
         JOIN products p ON oi.product_id = p.id
         WHERE oi.order_id = ?
         """,
-        (id,)
+        (order['id'],)
     ).fetchall()
 
     db.close()
@@ -250,7 +253,7 @@ def admin_invoice(id):
         'invoice.html',
         order=order,
         items=items,
-        back_url=url_for('admin_order_detail', id=id),
+        back_url=url_for('admin_order_detail', id=order['id']),
         back_label='Back to Order Detail',
         viewer='admin'
     )
