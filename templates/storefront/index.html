@@ -143,64 +143,44 @@ orders, fast shipping.{% endblock %}
 {% if carousel_slides %}
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const slides = document.querySelectorAll('.hero-slide');
-    const indicators = document.querySelectorAll('.indicator');
-    const prevBtn = document.querySelector('.carousel-control.prev');
-    const nextBtn = document.querySelector('.carousel-control.next');
-    let currentSlide = 0;
+    const slides      = document.querySelectorAll('.hero-slide');
+    const textSlides  = document.querySelectorAll('.hero-text-slide');
+    const indicators  = document.querySelectorAll('.indicator');
+    const prevBtn     = document.querySelector('.carousel-control.prev');
+    const nextBtn     = document.querySelector('.carousel-control.next');
+    let currentSlide  = 0;
     let slideInterval;
 
     function showSlide(index) {
       if (!slides.length) return;
-      slides.forEach(slide => {
-        if (slide) slide.classList.remove('active');
-      });
-      indicators.forEach(ind => {
-        if (ind) ind.classList.remove('active');
-      });
+
+      // Remove active from image slides
+      slides.forEach(slide => slide && slide.classList.remove('active'));
+      // Remove active from text slides (below banner)
+      textSlides.forEach(ts => ts && ts.classList.remove('active'));
+      // Remove active from indicators
+      indicators.forEach(ind => ind && ind.classList.remove('active'));
 
       currentSlide = (index + slides.length) % slides.length;
-      if (slides[currentSlide]) {
-        slides[currentSlide].classList.add('active');
-      }
-      if (indicators[currentSlide]) {
-        indicators[currentSlide].classList.add('active');
-      }
+
+      if (slides[currentSlide])     slides[currentSlide].classList.add('active');
+      if (textSlides[currentSlide]) textSlides[currentSlide].classList.add('active');
+      if (indicators[currentSlide]) indicators[currentSlide].classList.add('active');
     }
 
-    function nextSlide() {
-      showSlide(currentSlide + 1);
-    }
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
 
-    function prevSlide() {
-      showSlide(currentSlide - 1);
-    }
-
-    function startAutoplay() {
-      slideInterval = setInterval(nextSlide, 6000);
-    }
-
-    function stopAutoplay() {
-      clearInterval(slideInterval);
-    }
+    function startAutoplay() { slideInterval = setInterval(nextSlide, 6000); }
+    function stopAutoplay()  { clearInterval(slideInterval); }
 
     if (slides.length > 0) {
       if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-          prevSlide();
-          stopAutoplay();
-          startAutoplay();
-        });
+        prevBtn.addEventListener('click', () => { prevSlide(); stopAutoplay(); startAutoplay(); });
       }
-
       if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-          nextSlide();
-          stopAutoplay();
-          startAutoplay();
-        });
+        nextBtn.addEventListener('click', () => { nextSlide(); stopAutoplay(); startAutoplay(); });
       }
-
       indicators.forEach(indicator => {
         indicator.addEventListener('click', () => {
           showSlide(parseInt(indicator.getAttribute('data-slide')));
@@ -208,7 +188,6 @@ orders, fast shipping.{% endblock %}
           startAutoplay();
         });
       });
-
       startAutoplay();
     }
   });

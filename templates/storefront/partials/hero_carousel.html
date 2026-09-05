@@ -3,121 +3,17 @@
   <div class="hero-carousel">
     {% if carousel_slides %}
       {% for slide in carousel_slides %}
-      <div class="hero-slide {% if loop.first %}active{% endif %}">
+      <div class="hero-slide {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}">
         <div class="hero-bg"
           style="background-image: url('{% if slide.image_filename and '://' in slide.image_filename %}{{ slide.image_filename }}{% elif slide.image_filename %}{{ url_for('static', filename='images/' + slide.image_filename) }}{% else %}{{ url_for('static', filename='images/logo.jpg') }}{% endif %}');"
           role="img" aria-label="{{ slide.title }}"></div>
-        <div class="hero-overlay"></div>
-        <div class="container">
-          <div class="hero-content">
-            {% if slide.badge_text %}
-            <div class="hero-badge">
-              {% if slide.badge_icon %}
-              <i data-lucide="{{ slide.badge_icon }}"></i>
-              {% endif %}
-              {{ slide.badge_text }}
-            </div>
-            {% endif %}
-            <h1>
-              {{ slide.title | replace('\n', '<br />') | safe }}
-            </h1>
-            {% if slide.description %}
-            <p>{{ slide.description }}</p>
-            {% endif %}
-            <div class="hero-actions">
-              <a href="{{ slide.button_link }}" class="btn btn-primary">
-                <i data-lucide="shopping-cart"></i> {{ slide.button_text }}
-              </a>
-            </div>
-          </div>
-        </div>
+        <!-- No overlay, no text inside — clean image only -->
       </div>
       {% endfor %}
     {% else %}
       <!-- Fallback hero when no carousel slides are configured -->
-      <style>
-        .hero-slide--welcome {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          text-align: center !important;
-          height: 100% !important;
-          width: 100% !important;
-          opacity: 1 !important;
-          visibility: visible !important;
-        }
-        .hero-bg--gradient {
-          background: linear-gradient(135deg, #1b261b 0%, #151e15 50%, #0d120d 100%) !important;
-          background-image: none !important;
-          transform: none !important;
-        }
-        .hero-content--center {
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          justify-content: center !important;
-          margin: 0 auto !important;
-          max-width: 600px !important;
-          text-align: center !important;
-        }
-        .welcome-logo-wrap {
-          margin-bottom: 20px !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-        }
-        .welcome-logo {
-          width: 90px !important;
-          height: 90px !important;
-          max-width: 90px !important;
-          max-height: 90px !important;
-          border-radius: 50% !important;
-          object-fit: cover !important;
-          border: 3px solid var(--amber) !important;
-          box-shadow: 0 0 0 6px rgba(200,134,10,0.2), 0 8px 30px rgba(0,0,0,0.5) !important;
-          background-color: var(--white) !important;
-        }
-        .welcome-title {
-          font-size: clamp(2rem, 5vw, 3rem) !important;
-          color: var(--white) !important;
-          margin-bottom: 12px !important;
-          font-weight: 700 !important;
-          letter-spacing: -0.02em !important;
-        }
-        .welcome-subtitle {
-          color: rgba(255,255,255,0.8) !important;
-          font-size: 1.05rem !important;
-          max-width: 480px !important;
-          margin: 0 auto 24px !important;
-          line-height: 1.5 !important;
-        }
-      </style>
       <div class="hero-slide active hero-slide--welcome">
         <div class="hero-bg hero-bg--gradient"></div>
-        <div class="hero-overlay"></div>
-        <div class="container">
-          <div class="hero-content hero-content--center">
-            <div class="welcome-logo-wrap">
-              <img src="{{ url_for('static', filename='images/logo.jpg') }}"
-                   alt="{{ site_name }} Logo"
-                   class="welcome-logo"
-                   onerror="this.style.display='none'">
-            </div>
-            <div class="hero-badge">
-              <i data-lucide="star"></i> Welcome
-            </div>
-            <h1 class="welcome-title">{{ site_name }}</h1>
-            <p class="welcome-subtitle">Premium quality products, sourced with care and delivered to your door.</p>
-            <div class="hero-actions">
-              <a href="/products" class="btn btn-primary">
-                <i data-lucide="shopping-bag"></i> Shop Now
-              </a>
-              <a href="/about" class="btn btn-outline" style="margin-left:12px;">
-                <i data-lucide="info"></i> Learn More
-              </a>
-            </div>
-          </div>
-        </div>
       </div>
     {% endif %}
   </div>
@@ -137,3 +33,47 @@
   </div>
   {% endif %}
 </section>
+
+<!-- Hero Text Block — shown BELOW the banner, outside the image -->
+<div class="hero-text-block">
+  {% if carousel_slides %}
+    {% for slide in carousel_slides %}
+    <div class="hero-text-slide {% if loop.first %}active{% endif %}" data-text-index="{{ loop.index0 }}">
+      {% if slide.badge_text %}
+      <div class="hero-badge">
+        {% if slide.badge_icon %}
+        <i data-lucide="{{ slide.badge_icon }}"></i>
+        {% endif %}
+        {{ slide.badge_text }}
+      </div>
+      {% endif %}
+      <h2 class="hero-title">{{ slide.title | replace('\n', '<br />') | safe }}</h2>
+      {% if slide.description %}
+      <p class="hero-desc">{{ slide.description }}</p>
+      {% endif %}
+      <div class="hero-actions">
+        <a href="{{ slide.button_link }}" class="btn btn-primary">
+          <i data-lucide="shopping-cart"></i> {{ slide.button_text }}
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <!-- Fallback text block -->
+    <div class="hero-text-slide active">
+      <div class="hero-badge">
+        <i data-lucide="star"></i> Welcome
+      </div>
+      <h2 class="hero-title">{{ site_name }}</h2>
+      <p class="hero-desc">Premium quality products, sourced with care and delivered to your door.</p>
+      <div class="hero-actions">
+        <a href="/products" class="btn btn-primary">
+          <i data-lucide="shopping-bag"></i> Shop Now
+        </a>
+        <a href="/about" class="btn btn-outline">
+          <i data-lucide="info"></i> Learn More
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
