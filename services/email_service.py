@@ -10,6 +10,7 @@ from flask import request, has_request_context
 from database import get_db
 from services.couriers_service import generate_tracking_url, get_courier_metadata
 from services.email_templates import get_email_template
+from services.auth_service import generate_order_access_token
 
 
 def _strip_html(html_str):
@@ -420,7 +421,7 @@ def send_order_out_for_delivery_email(user_email, user_name, order_number, track
 # ══════════════════════════════════════════════════════════════════════
 # 4. DELIVERED EMAIL
 # ══════════════════════════════════════════════════════════════════════
-def send_order_delivered_email(user_email, user_name, order_number, order_id=None, host_url=None):
+def send_order_delivered_email(user_email, user_name, order_number, order_id=None, user_id=None, host_url=None):
     """Notify user of successful delivery with invoice and feedback options."""
     subject = f"Your Order #{order_number} Has Been Delivered | The Saveur"
     stepper_html = _render_email_tracking_stepper('Delivered')
@@ -430,8 +431,10 @@ def send_order_delivered_email(user_email, user_name, order_number, order_id=Non
     if not host_url:
         host_url = "https://thesaveur.com/"
     
+    token = generate_order_access_token(order_id, user_id, order_number) if (order_id and user_id) else None
     invoice_ref = order_number if order_number else order_id
-    invoice_url = f"{host_url.rstrip('/')}/orders/{invoice_ref}/invoice" if invoice_ref else f"{host_url.rstrip('/')}/my-orders"
+    token_query = f"?token={token}" if token else ""
+    invoice_url = f"{host_url.rstrip('/')}/orders/{invoice_ref}/invoice{token_query}" if invoice_ref else f"{host_url.rstrip('/')}/my-orders"
 
     body_content = f"""
     <p style="color: #3d3d3d; font-size: 15px;">Hello {user_name},</p>
@@ -473,7 +476,7 @@ def send_order_status_update_email(order_id, new_status, host_url=None):
     db = get_db()
     order = db.execute(
         """
-        SELECT o.id, o.order_number, o.courier_partner, o.tracking_number, o.tracking_url, 
+        SELECT o.id, o.user_id, o.order_number, o.courier_partner, o.tracking_number, o.tracking_url, 
                o.estimated_delivery_date, o.total_amount, o.shipping_address, o.city, o.state, o.zip_code,
                u.full_name, u.email 
         FROM orders o
@@ -496,8 +499,9 @@ def send_order_status_update_email(order_id, new_status, host_url=None):
     if not host_url:
         host_url = "https://thesaveur.com/"
     
+    token = generate_order_access_token(order['id'], order['user_id'], order['order_number'] or '')
     tracking_ref = order['order_number'] if order['order_number'] else order_id
-    tracking_url = f"{host_url.rstrip('/')}/track-order/{tracking_ref}"
+    tracking_url = f"{host_url.rstrip('/')}/track-order/{tracking_ref}?token={token}"
 
     if new_status in ['Order Confirmed', 'Processing', 'Placed']:
         items = db.execute(
@@ -534,7 +538,7 @@ def send_order_status_update_email(order_id, new_status, host_url=None):
 
     elif new_status == 'Delivered':
         db.close()
-        send_order_delivered_email(user_email, user_name, order_number, order_id=order_id, host_url=host_url)
+        send_order_delivered_email(user_email, user_name, order_number, order_id=order_id, user_id=order['user_id'], host_url=host_url)
 
     elif new_status == 'Cancelled':
         db.close()

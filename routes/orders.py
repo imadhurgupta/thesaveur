@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db
 from services.couriers_service import generate_tracking_url, get_courier_metadata, get_courier_list
+from services.auth_service import verify_order_access
 
 orders_bp = Blueprint('orders', __name__)
 
@@ -39,9 +40,13 @@ def my_orders():
 @orders_bp.route('/track-order', methods=['GET', 'POST'], endpoint='track_order')
 @orders_bp.route('/track-order/<order_ref>', endpoint='track_order')
 def track_order(order_ref=None):
-    """Public live tracking page for customers using secure alphanumeric order numbers."""
+    """
+    Secure live tracking page for customers.
+    Strictly verifies customer ownership (logged-in account, admin role, or cryptographic HMAC token).
+    """
     db = get_db()
     search_query = ''
+    order = None
 
     if order_ref is None:
         ref = (request.values.get('order_number') or request.values.get('order_id') or request.values.get('ref') or '').strip()
@@ -58,11 +63,10 @@ def track_order(order_ref=None):
                 """,
                 (ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
             ).fetchone()
-            if order:
-                order_id = order['id']
-            else:
+
+            if not order:
                 db.close()
-                flash(f"No order found matching '{ref}'. Please check your Order ID or tracking reference.", "error")
+                flash(f"No order found matching '{ref}'. Please check your Order ID.", "error")
                 return render_template('track_order.html', order=None, items=[], couriers=get_courier_list(), search_query=search_query)
         else:
             db.close()
@@ -84,9 +88,19 @@ def track_order(order_ref=None):
             db.close()
             flash(f"Order '{order_ref}' not found.", "error")
             return render_template('track_order.html', order=None, items=[], couriers=get_courier_list(), search_query=str(order_ref))
-        
-        order_id = order['id']
 
+    # Strict ownership authentication check
+    is_authorized, auth_msg = verify_order_access(order, session, request)
+    if not is_authorized:
+        db.close()
+        if 'user_id' not in session:
+            flash("Security Verification: Please log in to your account to view this order's tracking details.", "error")
+            return redirect(url_for('login', next=request.full_path if request.full_path else request.path))
+        else:
+            flash("Access Denied: You are not authorized to view tracking details for another customer's order.", "error")
+            return redirect(url_for('my_orders'))
+
+    order_id = order['id']
     items = db.execute(
         """
         SELECT oi.*, p.name as product_name, p.unit as unit,
@@ -119,32 +133,39 @@ def track_order(order_ref=None):
 
 @orders_bp.route('/orders/<order_ref>/invoice', endpoint='customer_invoice')
 def customer_invoice(order_ref):
-    """Render single-page secure tax invoice identified by alphanumeric order number."""
-    if 'user_id' not in session:
-        flash('Please log in to view your invoice.', 'error')
-        return redirect(url_for('login'))
-
+    """Render single-page secure tax invoice with strict customer ownership authentication."""
     db = get_db()
     clean_ref = str(order_ref).lstrip('#').strip()
     order = db.execute(
         """
         SELECT o.*,
                u.full_name AS user_name,
-               u.email     AS user_email
+               u.email     AS user_email,
+               u.phone     AS user_phone
         FROM orders o
         JOIN users u ON o.user_id = u.id
         WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
-          AND o.user_id = ?
           AND o.status != 'Pending Payment'
         LIMIT 1
         """,
-        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}", session['user_id'])
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
     ).fetchone()
 
     if not order:
         db.close()
-        flash("Invoice not found or you don't have permission to view it.", "error")
-        return redirect(url_for('my_orders'))
+        flash("Invoice not found or payment is incomplete.", "error")
+        return redirect(url_for('my_orders') if 'user_id' in session else url_for('home'))
+
+    # Verify authorization
+    is_authorized, auth_msg = verify_order_access(order, session, request)
+    if not is_authorized:
+        db.close()
+        if 'user_id' not in session:
+            flash("Please log in to your account to securely view your invoice.", "error")
+            return redirect(url_for('login', next=request.full_path if request.full_path else request.path))
+        else:
+            flash("Access Denied: You do not have permission to view this invoice.", "error")
+            return redirect(url_for('my_orders'))
 
     items = db.execute(
         """
@@ -164,8 +185,8 @@ def customer_invoice(order_ref):
         'invoice.html',
         order=order,
         items=items,
-        back_url=url_for('my_orders'),
-        back_label='Back to My Orders',
+        back_url=url_for('my_orders') if 'user_id' in session else url_for('home'),
+        back_label='Back to My Orders' if 'user_id' in session else 'Back to Home',
         viewer='customer'
     )
 
