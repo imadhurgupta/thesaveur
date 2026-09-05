@@ -50,7 +50,7 @@ def admin_add_slide():
     db.close()
 
     flash('Carousel slide added successfully.', 'success')
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_dashboard') + '#carousel-tab')
 
 
 @admin_slides_bp.route('/admin/edit-slide/<int:id>', methods=['POST'], endpoint='admin_edit_slide')
@@ -66,14 +66,14 @@ def admin_edit_slide(id):
 
     if not title:
         flash('Slide title is required.', 'error')
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_dashboard') + '#carousel-tab')
 
     db = get_db()
     slide = db.execute("SELECT image_filename FROM carousel_slides WHERE id = ?", (id,)).fetchone()
     if not slide:
         db.close()
         flash('Slide not found.', 'error')
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_dashboard') + '#carousel-tab')
 
     image_filename = slide['image_filename']
     uploaded_file = request.files.get('local_images')
@@ -106,7 +106,7 @@ def admin_edit_slide(id):
     db.close()
 
     flash('Carousel slide updated successfully.', 'success')
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_dashboard') + '#carousel-tab')
 
 
 @admin_slides_bp.route('/admin/delete-slide/<int:id>', methods=['POST'], endpoint='admin_delete_slide')
@@ -117,4 +117,4 @@ def admin_delete_slide(id):
     db.commit()
     db.close()
     flash('Carousel slide deleted successfully.', 'success')
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_dashboard') + '#carousel-tab')

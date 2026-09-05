@@ -356,31 +356,6 @@ def init_db():
         conn.commit()
         print("[OK] Seeded default admin account (admin@thesaveur.com / admin123).")
 
-    # ---- SEED: carousel slides ----
-    slides_data = [
-        ('hero_tea_garden.png', 'leaf', 'Direct from Source',
-         'Premium Handpicked\nOrganic Tea',
-         'Sourced from single-estate organic gardens in Assam and Darjeeling. 100% natural, whole-leaf teas.',
-         'Shop Teas', '/products?category=tea', 0),
-        ('Garam-Masala.jpg', 'sparkles', 'Aromatic & Pure',
-         'Rich & Authentic\nIndian Spices',
-         'Pure, high-essential-oil spices ground to perfection. No artificial colors or additives.',
-         'Explore Spices', '/products?category=spices', 1),
-    ]
-    slides_seeded = False
-    for slide in slides_data:
-        cursor.execute("SELECT 1 FROM carousel_slides WHERE title = ?", (slide[3],))
-        if not cursor.fetchone():
-            cursor.execute(
-                "INSERT INTO carousel_slides (image_filename, badge_icon, badge_text, title, description, button_text, button_link, slide_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                slide
-            )
-            slides_seeded = True
-    if slides_seeded:
-        conn.commit()
-        print("[OK] Seeded default carousel slides.")
-
-
     # ---- SEED: location shipping ----
     loc_charges = [
         ('Delhi', 40.0), ('New Delhi', 40.0), ('Maharashtra', 80.0),

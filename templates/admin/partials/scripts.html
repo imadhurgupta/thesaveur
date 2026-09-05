@@ -71,8 +71,18 @@
     }
 
     localStorage.setItem('admin_active_tab', tabId);
-
   }
+
+  // Restore active tab on page load from URL hash or storage
+  document.addEventListener('DOMContentLoaded', function() {
+    const hash = window.location.hash.replace('#', '');
+    const savedTab = localStorage.getItem('admin_active_tab');
+    if (hash && document.getElementById(hash)) {
+      switchTab(null, hash);
+    } else if (savedTab && document.getElementById(savedTab)) {
+      switchTab(null, savedTab);
+    }
+  });
 
   // Select inbox message
   function selectMessage(element) {
