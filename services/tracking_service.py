@@ -309,7 +309,7 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
     Map Shiprocket status code or text to The Saveur's 5 core statuses:
     'Order Confirmed' -> 'Shipped' -> 'In Transit' -> 'Out for Delivery' -> 'Delivered' (or 'Cancelled').
     """
-    # Numeric code mapping (Shiprocket standard)
+    # 1. Numeric code mapping (Shiprocket standard)
     if status_code is not None:
         try:
             code = int(status_code)
@@ -321,7 +321,7 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
                 return 'In Transit'
             elif code == 6:
                 return 'Shipped'
-            elif code in [8, 9, 10, 46]:
+            elif code in [8, 9, 10, 14, 15, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 48, 49, 50, 51, 53, 54]:
                 return 'Cancelled'
         except (ValueError, TypeError):
             pass
@@ -331,17 +331,30 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
 
     status_upper = str(raw_status).upper().strip()
 
+    # 2. Cancellation and return checks FIRST (highest priority)
+    if any(k in status_upper for k in [
+        'CANCEL', 'CANCELLATION', 'RTO', 'UNDELIVERED', 'RETURN', 
+        'REJECT', 'FAIL', 'ABORT', 'LOST', 'DAMAGED', 'DESTROY', 
+        'NOT DELIVERED', 'REFUSED', 'FAILED DELIVERY', 'CUSTOMER REFUSED', 'UNCLAIMED'
+    ]):
+        return 'Cancelled'
+
+    # 3. Delivered checks
     if any(k in status_upper for k in ['DELIVERED', 'COMPLETED']):
         return 'Delivered'
+
+    # 4. Out for delivery checks
     if any(k in status_upper for k in ['OUT FOR DELIVERY', 'OUT_FOR_DELIVERY', 'OFD']):
         return 'Out for Delivery'
-    if any(k in status_upper for k in ['CANCELLED', 'CANCELED', 'RTO', 'UNDELIVERED', 'RETURN']):
-        return 'Cancelled'
+
+    # 5. In transit checks
     if any(k in status_upper for k in [
         'IN TRANSIT', 'TRANSIT', 'REACHED', 'HUB', 'FACILITY', 'DEPARTED',
         'RECEIVED AT', 'PICKED UP', 'PICKED_UP', 'LINE HAUL', 'CONNECTION'
     ]):
         return 'In Transit'
+
+    # 6. Shipped checks
     if any(k in status_upper for k in ['SHIPPED', 'DISPATCHED', 'MANIFEST', 'PICKUP SCHEDULED', 'READY FOR PICKUP']):
         return 'Shipped'
 
@@ -583,11 +596,28 @@ def get_order_live_tracking_status(order_id: int, force_refresh: bool = False, h
 
     db = get_db()
     order = db.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
-    db.close()
     if not order:
+        db.close()
         return {'success': False, 'error': 'Order not found'}
 
     o = dict(order)
+
+    # If courier status indicates cancellation but order is not cancelled in DB, cancel & refund now!
+    raw_st = o.get('tracking_status_raw', '')
+    if raw_st and map_shiprocket_status_to_order_status(raw_st) == 'Cancelled' and o.get('status') != 'Cancelled':
+        db.close()
+        try:
+            from services.refund_service import process_order_cancellation_refund
+            process_order_cancellation_refund(order_id, reason=f"Courier checkpoint: {raw_st}", host_url=host_url)
+            print(f"[AUTO CANCELLED] Order #{order_id} automatically cancelled due to courier status: '{raw_st}'")
+        except Exception as auto_c_err:
+            print(f"[AUTO CANCEL ERROR] {auto_c_err}")
+        db = get_db()
+        order = db.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
+        o = dict(order)
+
+    db.close()
+
     tracking_data = {}
     if o.get('tracking_data_json'):
         try:
@@ -597,11 +627,14 @@ def get_order_live_tracking_status(order_id: int, force_refresh: bool = False, h
 
     is_cod = (o.get('payment_method') or '').strip().lower() in ['cod', 'cash on delivery', 'cash_on_delivery', 'cash']
 
+    current_st = o.get('status', 'Processing')
     return {
         'success': True,
         'order_id': o['id'],
         'order_number': o.get('order_number') or f"#{o['id']}",
-        'status': o.get('status', 'Processing'),
+        'status': current_st,
+        'new_status': current_st,
+        'changed': True,
         'payment_method': o.get('payment_method', ''),
         'is_cod': is_cod,
         'courier_partner': o.get('courier_partner', ''),

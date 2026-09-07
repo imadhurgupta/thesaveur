@@ -133,8 +133,11 @@ def admin_update_order_status(order_ref):
         try:
             from services.tracking_service import update_order_from_tracking
             live_sync = update_order_from_tracking(order_id, host_url=request.host_url)
-            if live_sync.get('changed') and live_sync.get('new_status'):
+            if live_sync.get('new_status'):
                 status = live_sync['new_status']
+                if status == 'Cancelled':
+                    from services.refund_service import process_order_cancellation_refund
+                    refund_info = process_order_cancellation_refund(order_id, reason=f"Courier checkpoint: {live_sync.get('raw_courier_status')}", host_url=request.host_url)
                 print(f"[LIVE COURIER AUTO-ADVANCE] Order #{order_id} automatically set to '{status}' by live courier status.")
         except Exception as sync_err:
             print(f"[AUTO COURIER SYNC ERROR] {sync_err}")
@@ -267,13 +270,30 @@ def admin_sync_order_tracking(order_ref):
     sync_result = update_order_from_tracking(order['id'], host_url=request.host_url)
     live_tracking = get_order_live_tracking(order['id'])
 
+    db = get_db()
+    refreshed_order = db.execute("SELECT * FROM orders WHERE id = ?", (order['id'],)).fetchone()
+    db.close()
+
+    refund_info = {}
+    if refreshed_order and (refreshed_order['status'] == 'Cancelled' or refreshed_order['refund_status']):
+        refund_info = {
+            'refund_id': refreshed_order['refund_id'],
+            'refund_status': refreshed_order['refund_status'],
+            'refund_amount': refreshed_order['refund_amount'],
+            'payment_method': refreshed_order['payment_method']
+        }
+
+    target_st = (refreshed_order['status'] if refreshed_order else None) or sync_result.get('new_status')
+
     return jsonify({
         'success': sync_result.get('success', False),
         'changed': sync_result.get('changed', False),
         'old_status': sync_result.get('old_status'),
-        'new_status': sync_result.get('new_status'),
+        'new_status': target_st,
+        'status': target_st,
         'raw_courier_status': sync_result.get('raw_courier_status', ''),
         'live_tracking': live_tracking,
+        'refund_info': refund_info,
         'error': sync_result.get('error')
     })
 

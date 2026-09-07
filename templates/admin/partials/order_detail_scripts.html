@@ -860,17 +860,22 @@
       }
 
       if (data.success) {
+        const targetStatus = data.new_status || data.status;
         // Update status dropdown and visual timeline
-        if (data.new_status) {
+        if (targetStatus) {
           const statusSelect = document.getElementById('status-select');
-          if (statusSelect) statusSelect.value = data.new_status;
-          updateTimelineUI(data.new_status);
+          if (statusSelect) statusSelect.value = targetStatus;
+          updateTimelineUI(targetStatus);
+        }
+
+        if (targetStatus === 'Cancelled' || data.refund_info || data.refund_status) {
+          renderRefundCard(data.refund_info || data);
         }
 
         // Update current courier status headline
         const statusText = document.getElementById('shiprocket-current-status-text');
         if (statusText) {
-          statusText.textContent = data.raw_courier_status || data.new_status || 'In Transit';
+          statusText.textContent = data.raw_courier_status || targetStatus || 'In Transit';
         }
 
         // Update timestamp
@@ -902,7 +907,7 @@
           scansList.innerHTML = html;
         }
 
-        const msg = data.changed ? `Status advanced to "${data.new_status}"!` : 'Shiprocket tracking is up-to-date.';
+        const msg = data.changed ? `Status advanced to "${targetStatus}"!` : 'Shiprocket tracking is up-to-date.';
         showToast('success', msg);
       } else {
         showToast('error', data.error || 'Failed to sync with Shiprocket.');
@@ -936,10 +941,15 @@
         .then(r => r.json())
         .then(data => {
           if (data.success) {
-            if (data.changed && data.new_status) {
-              if (statusSelect) statusSelect.value = data.new_status;
-              updateTimelineUI(data.new_status);
-              showToast('success', `Live Courier Update: ${data.new_status}`);
+            const currentStatus = data.status || data.new_status;
+            if (currentStatus && statusSelect && statusSelect.value !== currentStatus) {
+              statusSelect.value = currentStatus;
+              updateTimelineUI(currentStatus);
+              showToast('success', `Live Courier Update: ${currentStatus}`);
+            }
+
+            if (currentStatus === 'Cancelled' || data.refund_info || data.refund_status) {
+              renderRefundCard(data.refund_info || data);
             }
 
             if (data.raw_courier_status) {
@@ -952,7 +962,7 @@
               timeEl.textContent = `Live: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
             }
 
-            if (data.new_status === 'Delivered' || data.new_status === 'Cancelled') {
+            if (currentStatus === 'Delivered' || currentStatus === 'Cancelled') {
               clearInterval(livePollingInterval);
             }
           }
