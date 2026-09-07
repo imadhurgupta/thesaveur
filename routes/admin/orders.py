@@ -154,7 +154,8 @@ def admin_update_order_status(order_ref):
     )
     
     # If the admin changes status to something other than Cancelled, clear any existing refund data
-    if status != 'Cancelled' and current_order.get('refund_id'):
+    has_refund = ('refund_id' in current_order.keys() and current_order['refund_id'])
+    if status != 'Cancelled' and has_refund:
         db.execute(
             """
             UPDATE orders 
