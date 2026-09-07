@@ -284,6 +284,12 @@ def init_db():
             color TEXT DEFAULT '#16a34a',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""",
+
+        f"""CREATE TABLE IF NOT EXISTS system_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
     ]
 
     for stmt in create_stmts:
@@ -338,6 +344,10 @@ def init_db():
         "ALTER TABLE orders ADD COLUMN tracking_url TEXT DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN estimated_delivery_date TEXT DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN shipped_at TIMESTAMP",
+        "ALTER TABLE orders ADD COLUMN last_tracking_fetch TIMESTAMP",
+        "ALTER TABLE orders ADD COLUMN tracking_status_raw TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN tracking_data_json TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN shipment_id TEXT DEFAULT ''",
         "ALTER TABLE order_items ADD COLUMN original_price REAL DEFAULT 0",
         "ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0",
     ]

@@ -121,12 +121,17 @@ def track_order(order_ref=None):
     courier_meta = get_courier_metadata(order['courier_partner'])
     official_tracking_url = order['tracking_url'] or generate_tracking_url(order['courier_partner'], order['tracking_number'])
 
+    # Fetch live Shiprocket courier scans & checkpoints
+    from services.tracking_service import get_order_live_tracking
+    live_tracking = get_order_live_tracking(order['id'])
+
     return render_template(
         'track_order.html',
         order=order,
         items=items,
         courier_meta=courier_meta,
         official_tracking_url=official_tracking_url,
+        live_tracking=live_tracking,
         search_query=search_query or (order['order_number'] or str(order['id']))
     )
 

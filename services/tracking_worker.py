@@ -72,7 +72,7 @@ def poll_all_active_orders(self):
                 updated += 1
         except Exception as e:
             errors += 1
-            print(f'[WORKER] Error polling order #{order[id]}: {e}')
+            print(f"[WORKER] Error polling order #{order['id']}: {e}")
 
     summary = {'polled': len(orders), 'updated': updated,
                'skipped': skipped, 'errors': errors}

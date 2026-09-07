@@ -199,9 +199,12 @@ def admin_order_detail(order_ref):
 
     db.close()
 
+    from services.tracking_service import get_order_live_tracking, update_order_from_tracking
+
     couriers_list = get_courier_list()
     courier_meta = get_courier_metadata(order['courier_partner'])
     official_tracking_url = order['tracking_url'] or generate_tracking_url(order['courier_partner'], order['tracking_number'])
+    live_tracking = get_order_live_tracking(order['id'])
 
     courier_url_map = {}
     for c in couriers_list:
@@ -215,8 +218,43 @@ def admin_order_detail(order_ref):
         couriers=couriers_list,
         courier_meta=courier_meta,
         courier_url_map=courier_url_map,
-        official_tracking_url=official_tracking_url
+        official_tracking_url=official_tracking_url,
+        live_tracking=live_tracking
     )
+
+
+@admin_orders_bp.route('/admin/orders/<order_ref>/sync-tracking', methods=['POST'], endpoint='admin_sync_order_tracking')
+@admin_required
+def admin_sync_order_tracking(order_ref):
+    """On-demand manual Shiprocket live tracking sync for an order from the admin console."""
+    clean_ref = str(order_ref).lstrip('#').strip()
+    db = get_db()
+    order = db.execute(
+        """
+        SELECT * FROM orders 
+        WHERE (order_number = ? OR id = ? OR order_number = ?)
+        LIMIT 1
+        """,
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+    db.close()
+
+    if not order:
+        return jsonify({'success': False, 'error': 'Order not found.'}), 404
+
+    from services.tracking_service import update_order_from_tracking, get_order_live_tracking
+    sync_result = update_order_from_tracking(order['id'], host_url=request.host_url)
+    live_tracking = get_order_live_tracking(order['id'])
+
+    return jsonify({
+        'success': sync_result.get('success', False),
+        'changed': sync_result.get('changed', False),
+        'old_status': sync_result.get('old_status'),
+        'new_status': sync_result.get('new_status'),
+        'raw_courier_status': sync_result.get('raw_courier_status', ''),
+        'live_tracking': live_tracking,
+        'error': sync_result.get('error')
+    })
 
 
 @admin_orders_bp.route('/admin/orders/<order_ref>/invoice', endpoint='admin_invoice')

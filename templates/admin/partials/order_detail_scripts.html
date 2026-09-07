@@ -655,6 +655,92 @@
     .catch(() => showToast('error', 'Network error.'));
   }
 
+  // ── Shiprocket Live Tracking Synchronization ───────────────────────────
+  function syncShiprocketTracking() {
+    const btn = document.getElementById('btn-sync-shiprocket');
+    const icon = document.getElementById('sync-spinner-icon');
+    const originalText = btn ? btn.innerHTML : '';
+
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.innerHTML = `
+        <svg class="spin-animation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" style="animation: spin 0.8s linear infinite;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Syncing...</span>
+      `;
+    }
+
+    fetch(`/admin/orders/${ORDER_ID}/sync-tracking`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = originalText;
+      }
+
+      if (data.success) {
+        // Update status dropdown and visual timeline
+        if (data.new_status) {
+          const statusSelect = document.getElementById('status-select');
+          if (statusSelect) statusSelect.value = data.new_status;
+          updateTimelineUI(data.new_status);
+        }
+
+        // Update current courier status headline
+        const statusText = document.getElementById('shiprocket-current-status-text');
+        if (statusText) {
+          statusText.textContent = data.raw_courier_status || data.new_status || 'In Transit';
+        }
+
+        // Update timestamp
+        const timeEl = document.getElementById('sync-last-timestamp');
+        if (timeEl) {
+          timeEl.textContent = `Synced: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        }
+
+        // Update scans list
+        const scansList = document.getElementById('shiprocket-scans-list');
+        const lt = data.live_tracking;
+        if (scansList && lt && lt.shipment_track_activities && lt.shipment_track_activities.length > 0) {
+          let html = '';
+          lt.shipment_track_activities.forEach((act, idx) => {
+            const isLatest = idx === 0;
+            const dotColor = isLatest ? '#0284c7' : '#94a3b8';
+            html += `
+              <div style="position:relative;">
+                <div style="position:absolute; left:-21px; top:4px; width:10px; height:10px; border-radius:50%; background:${dotColor}; border:2px solid #ffffff;"></div>
+                <div style="font-size:0.8rem; font-weight:700; color:#1e293b;">
+                  ${escapeHtml(act.activity || act.status || 'In Transit')}
+                </div>
+                <div style="font-size:0.7rem; color:#64748b; margin-top:1px;">
+                  ${escapeHtml(act.location || 'Courier Hub')} • ${escapeHtml(act.date || act.time || '')}
+                </div>
+              </div>
+            `;
+          });
+          scansList.innerHTML = html;
+        }
+
+        const msg = data.changed ? `Status advanced to "${data.new_status}"!` : 'Shiprocket tracking is up-to-date.';
+        showToast('success', msg);
+      } else {
+        showToast('error', data.error || 'Failed to sync with Shiprocket.');
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = originalText;
+      }
+      showToast('error', 'Network error while syncing Shiprocket.');
+    });
+  }
+
   // Restore Orders tab when returning to dashboard
   if (window.performance && window.performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
     sessionStorage.setItem('adminTab', 'orders');

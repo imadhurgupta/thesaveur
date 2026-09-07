@@ -30,6 +30,13 @@ ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'webm', 'ogg', 'mov'}
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'images')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Shiprocket Logistics & Courier Tracking
+SHIPROCKET_EMAIL = os.environ.get('SHIPROCKET_EMAIL', '').strip()
+SHIPROCKET_PASSWORD = os.environ.get('SHIPROCKET_PASSWORD', '').strip()
+SHIPROCKET_API_TOKEN = os.environ.get('SHIPROCKET_API_TOKEN', '').strip()
+SHIPROCKET_WEBHOOK_TOKEN = os.environ.get('SHIPROCKET_WEBHOOK_TOKEN', '').strip()
+SHIPROCKET_MOCK_MODE = os.environ.get('SHIPROCKET_MOCK_MODE', '1').strip() == '1'
+
 # Admin Credentials
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@thesaveur.com')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')

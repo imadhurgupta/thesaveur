@@ -1,5 +1,12 @@
 from datetime import datetime
+import json
 from flask import Blueprint, request, jsonify
+from database import get_db
+from services.tracking_service import (
+    map_shiprocket_status_to_order_status,
+    STATUS_STAGE_WEIGHTS,
+    get_system_setting
+)
 
 api_webhooks_bp = Blueprint('api_webhooks_bp', __name__)
 
@@ -11,4 +18,185 @@ def webhook_health():
         'status': 'active',
         'service': 'The Saveur Webhook Handler',
         'timestamp': datetime.now().isoformat()
+    }), 200
+
+
+@api_webhooks_bp.route('/api/webhooks/shiprocket/tracking', methods=['POST'], endpoint='shiprocket_tracking_webhook')
+def shiprocket_tracking_webhook():
+    """
+    Real-time push webhook endpoint for Shiprocket Courier Tracking Updates.
+    Dispatched by Shiprocket automatically whenever a package is scanned, in transit,
+    out for delivery, or delivered.
+    """
+    # 1. Verify webhook secret token if configured
+    webhook_secret = get_system_setting('SHIPROCKET_WEBHOOK_TOKEN')
+    if webhook_secret:
+        auth_header = (
+            request.headers.get('x-api-key') or 
+            request.headers.get('x-shiprocket-token') or 
+            request.headers.get('Authorization', '').replace('Bearer ', '') or
+            request.args.get('token', '')
+        ).strip()
+        if auth_header != webhook_secret:
+            print(f"[SHIPROCKET WEBHOOK] Security token verification failed.")
+            return jsonify({'success': False, 'error': 'Unauthorized webhook token.'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    if not payload and request.form:
+        payload = request.form.to_dict()
+
+    print(f"[SHIPROCKET WEBHOOK] Received payload: {json.dumps(payload)[:300]}...")
+
+    # Extract tracking details from varying Shiprocket webhook structures
+    tracking_data = payload.get('tracking_data') or payload.get('data') or payload
+
+    awb = (
+        tracking_data.get('awb') or 
+        tracking_data.get('awb_code') or 
+        payload.get('awb') or 
+        payload.get('awb_code') or ''
+    ).strip()
+
+    order_ref = str(
+        tracking_data.get('order_id') or 
+        payload.get('order_id') or 
+        payload.get('order_number') or ''
+    ).strip()
+
+    raw_status = (
+        tracking_data.get('current_status') or 
+        payload.get('current_status') or 
+        tracking_data.get('status') or ''
+    ).strip()
+
+    status_code = (
+        tracking_data.get('current_status_id') or 
+        tracking_data.get('shipment_status') or 
+        payload.get('shipment_status')
+    )
+
+    courier_name = (
+        tracking_data.get('courier_name') or 
+        payload.get('courier_name') or ''
+    ).strip()
+
+    edd = (
+        tracking_data.get('edd') or 
+        payload.get('edd') or ''
+    ).strip()
+
+    # Locate order in database
+    db = get_db()
+    order = None
+
+    if awb:
+        order = db.execute("SELECT * FROM orders WHERE tracking_number = ? LIMIT 1", (awb,)).fetchone()
+
+    if not order and order_ref:
+        clean_ref = order_ref.lstrip('#').strip()
+        order = db.execute(
+            """
+            SELECT * FROM orders 
+            WHERE (order_number = ? OR id = ? OR order_number = ?)
+            LIMIT 1
+            """,
+            (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+        ).fetchone()
+
+    if not order:
+        db.close()
+        print(f"[SHIPROCKET WEBHOOK] Order not found for AWB='{awb}', Ref='{order_ref}'. Acknowledging reception.")
+        return jsonify({
+            'success': True,
+            'message': f"Order not found for AWB {awb}, webhook acknowledged."
+        }), 200
+
+    order_id = order['id']
+    old_status = order['status']
+    new_status = map_shiprocket_status_to_order_status(raw_status, status_code)
+
+    old_weight = STATUS_STAGE_WEIGHTS.get(old_status, 1)
+    new_weight = STATUS_STAGE_WEIGHTS.get(new_status, 1)
+
+    status_changed = False
+    final_status = old_status
+
+    if new_status == 'Cancelled' and old_status != 'Cancelled':
+        final_status = 'Cancelled'
+        status_changed = True
+    elif new_weight > old_weight:
+        final_status = new_status
+        status_changed = True
+    elif old_status == 'Processing' and new_weight >= 2:
+        final_status = new_status
+        status_changed = True
+
+    # Normalize scan activities
+    raw_scans = tracking_data.get('scans') or tracking_data.get('shipment_track_activities') or []
+    activities_clean = []
+    if isinstance(raw_scans, list):
+        for s in raw_scans:
+            activities_clean.append({
+                'activity': s.get('activity') or s.get('status') or raw_status,
+                'location': s.get('location') or s.get('city') or '',
+                'date': s.get('date') or s.get('time') or datetime.now().strftime('%Y-%m-%d %H:%M'),
+                'status': s.get('status') or ''
+            })
+
+    # Prepare tracking JSON string
+    existing_json = {}
+    if order['tracking_data_json']:
+        try:
+            existing_json = json.loads(order['tracking_data_json'])
+        except Exception:
+            pass
+
+    combined_activities = activities_clean or existing_json.get('shipment_track_activities', [])
+
+    tracking_json_str = json.dumps({
+        'current_status': raw_status or existing_json.get('current_status', ''),
+        'courier_name': courier_name or existing_json.get('courier_name', ''),
+        'edd': edd or existing_json.get('edd', ''),
+        'origin': existing_json.get('origin', ''),
+        'destination': existing_json.get('destination', ''),
+        'shipment_track': existing_json.get('shipment_track', []),
+        'shipment_track_activities': combined_activities,
+        'last_synced_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'source': 'webhook'
+    })
+
+    edd_to_save = edd or order['estimated_delivery_date'] or ''
+    courier_to_save = courier_name or order['courier_partner'] or ''
+
+    db.execute(
+        """
+        UPDATE orders
+        SET status = ?,
+            tracking_status_raw = ?,
+            tracking_data_json = ?,
+            estimated_delivery_date = ?,
+            courier_partner = ?,
+            last_tracking_fetch = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """,
+        (final_status, raw_status, tracking_json_str, edd_to_save, courier_to_save, order_id)
+    )
+    db.commit()
+    db.close()
+
+    if status_changed:
+        try:
+            from services.email_service import queue_order_status_update_email
+            queue_order_status_update_email(order_id, final_status, host_url=request.host_url)
+            print(f"[SHIPROCKET WEBHOOK] Order #{order_id} advanced to '{final_status}'. Notification email sent.")
+        except Exception as mail_err:
+            print(f"[SHIPROCKET WEBHOOK ERROR] Email dispatch failed: {mail_err}")
+
+    return jsonify({
+        'success': True,
+        'message': f"Order #{order_id} updated successfully.",
+        'order_id': order_id,
+        'old_status': old_status,
+        'new_status': final_status,
+        'status_changed': status_changed
     }), 200
