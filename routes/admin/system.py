@@ -51,9 +51,37 @@ def admin_backup_db():
         flash("Database file not found.", "error")
         return redirect(url_for('admin_dashboard'))
     
+    import tempfile
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     backup_filename = f"thesaveur_backup_{timestamp}.db"
-    return send_file(DB_PATH, as_attachment=True, download_name=backup_filename)
+    
+    temp_dir = tempfile.gettempdir()
+    temp_backup_file = os.path.join(temp_dir, backup_filename)
+    
+    try:
+        # Create an atomic, consistent online backup snapshot
+        src_conn = sqlite3.connect(DB_PATH)
+        dst_conn = sqlite3.connect(temp_backup_file)
+        with dst_conn:
+            src_conn.backup(dst_conn, pages=0)
+        dst_conn.close()
+        src_conn.close()
+        
+        return send_file(
+            temp_backup_file,
+            as_attachment=True,
+            download_name=backup_filename,
+            mimetype="application/x-sqlite3"
+        )
+    except Exception as e:
+        print(f"[BACKUP ERROR] {e}")
+        return send_file(
+            DB_PATH,
+            as_attachment=True,
+            download_name=backup_filename,
+            mimetype="application/x-sqlite3"
+        )
+
 
 
 @admin_system_bp.route('/admin/restore-db', methods=['POST'], endpoint='admin_restore_db')

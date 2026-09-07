@@ -8,9 +8,22 @@
 
     </div>
 
-    <div style="font-size: 0.9rem; background: rgba(0,0,0,0.04); padding: 8px 18px; border-radius: var(--radius-pill); font-weight: 500;">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
 
-      Logged in as: <strong>{{ session.get('user_name', 'Admin') }}</strong>
+      <a href="{{ url_for('admin_system_bp.admin_backup_db') }}" class="btn btn-primary" title="Download current live database backup (.db file)" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: var(--radius-pill); font-size: 0.88rem; font-weight: 600; text-decoration: none; box-shadow: 0 4px 12px rgba(45, 106, 79, 0.2); transition: all 0.2s ease;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Download Database</span>
+      </a>
+
+      <div style="font-size: 0.9rem; background: rgba(0,0,0,0.04); padding: 8px 18px; border-radius: var(--radius-pill); font-weight: 500;">
+
+        Logged in as: <strong>{{ session.get('user_name', 'Admin') }}</strong>
+
+      </div>
 
     </div>
 
