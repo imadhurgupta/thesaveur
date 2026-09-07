@@ -280,8 +280,8 @@
           <span>${{ subtotal }}</span>
         </div>
         <div class="summary-row" style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:var(--text-muted);">
-          <span>Shipping Charge</span>
-          <span id="summary-shipping" style="color:#2ecc71; font-weight:600;">FREE</span>
+          <span>Delivery Charge</span>
+          <span id="summary-shipping" style="color:#10b981; font-weight:700;">FREE</span>
         </div>
         <div id="promo-discount-row" style="display:none; justify-content:space-between; margin-bottom:10px; font-size:0.9rem; color:#e74c3c; font-weight:600;">
           <span>Promo Discount (<span id="applied-promo-label"></span>)</span>
@@ -377,44 +377,13 @@
     }
 
     async function recalculateShipping() {
-      const stateVal = stateInput ? stateInput.value.trim() : '';
-      if (!stateVal) {
-        currentShippingCharge = 0.00;
-        if (summaryShipping) {
-          summaryShipping.innerText = 'FREE';
-          summaryShipping.style.color = '#2ecc71';
-        }
-        if (hiddenShippingCharge) hiddenShippingCharge.value = '0.00';
-        updateTotals();
-        return;
+      currentShippingCharge = 0.00;
+      if (summaryShipping) {
+        summaryShipping.innerText = 'FREE';
+        summaryShipping.style.color = '#10b981';
       }
-
-      try {
-        const res = await fetch('/api/calculate-shipping', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ state: stateVal })
-        });
-        const data = await res.json();
-        if (data.success) {
-          currentShippingCharge = parseFloat(data.total_shipping);
-          if (summaryShipping) {
-            if (currentShippingCharge > 0) {
-              summaryShipping.innerText = '$' + currentShippingCharge.toFixed(2);
-              summaryShipping.style.color = 'var(--text-dark)';
-            } else {
-              summaryShipping.innerText = 'FREE';
-              summaryShipping.style.color = '#2ecc71';
-            }
-          }
-          if (hiddenShippingCharge) hiddenShippingCharge.value = currentShippingCharge.toFixed(2);
-          updateTotals();
-        }
-      } catch (err) {
-        console.error('Error calculating shipping:', err);
-      }
+      if (hiddenShippingCharge) hiddenShippingCharge.value = '0.00';
+      updateTotals();
     }
 
     if (stateInput) {

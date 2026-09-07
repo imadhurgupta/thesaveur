@@ -73,7 +73,7 @@
 
               <td>
                 <strong style="font-size:0.95rem; color:var(--green-dark);">${{ ord.total_amount }}</strong><br>
-                <small style="color:var(--text-muted); font-size:0.75rem;">(Includes ${{ "%.2f"|format(ord.shipping_charge) if ord.shipping_charge else "0.00" }} shipping)</small>
+                <small style="color:#10b981; font-size:0.75rem; font-weight:600;">(Free Delivery)</small>
                 <div style="margin-top:5px;">
                   {% set pm = (ord.payment_method or 'Online') | upper %}
                   {% if 'COD' in pm or 'CASH' in pm %}

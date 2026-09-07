@@ -122,27 +122,8 @@ def checkout_submit():
                         final_discount = min(round(promo['discount_value'], 2), total_amount)
                     applied_promo = promo
 
-        # Secure server-side calculation of shipping charges
-        state_row = db.execute(
-            "SELECT charge FROM location_shipping_charges WHERE UPPER(state) = ?",
-            (state.upper(),)
-        ).fetchone()
-        
-        if state_row:
-            location_charge = float(state_row['charge'])
-        else:
-            default_row = db.execute(
-                "SELECT charge FROM location_shipping_charges WHERE UPPER(state) = 'DEFAULT'"
-            ).fetchone()
-            location_charge = float(default_row['charge']) if default_row else 60.0
-
-        product_shipping_total = 0.0
-        for prod_id, qty in cart.items():
-            product_sh = db.execute("SELECT shipping_charge FROM products WHERE id = ?", (prod_id,)).fetchone()
-            if product_sh:
-                product_shipping_total += float(product_sh['shipping_charge'] or 0.0) * int(qty)
-                
-        final_shipping_charge = location_charge + product_shipping_total
+        # All deliveries are free
+        final_shipping_charge = 0.0
         final_total = round(total_amount - final_discount + final_shipping_charge, 2)
         order_number = generate_order_number()
 

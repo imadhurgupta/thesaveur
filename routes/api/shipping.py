@@ -7,28 +7,16 @@ from services.shipping_calculator import compute_shipping_cost
 api_shipping_bp = Blueprint('api_shipping_bp', __name__)
 
 
-@api_shipping_bp.route('/api/calculate-shipping', methods=['POST'], endpoint='calculate_shipping')
+@api_shipping_bp.route('/api/calculate-shipping', methods=['POST', 'GET'], endpoint='calculate_shipping')
 def calculate_shipping():
-    """AJAX endpoint: calculate shipping charges based on location (state) and cart products."""
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please log in first.'}), 401
-    
-    data = request.get_json() or {}
-    state_input = data.get('state', '').strip()
-    
-    if not state_input:
-        return jsonify({'success': False, 'message': 'State is required.'}), 400
-        
-    cart = session.get('cart', {})
-    location_charge, product_charge, total_shipping = compute_shipping_cost(state_input, cart)
-    
+    """AJAX endpoint: calculate shipping charges - delivery is completely free for all orders."""
     return jsonify({
         'success': True,
-        'state': state_input,
-        'location_charge': location_charge,
-        'product_charge': product_charge,
-        'shipping_charge': total_shipping,
-        'message': f"Shipping charge for {state_input} is ₹{total_shipping:.2f}"
+        'location_charge': 0.0,
+        'product_charge': 0.0,
+        'shipping_charge': 0.0,
+        'total_shipping': 0.0,
+        'message': "Free Delivery on all orders"
     })
 
 
