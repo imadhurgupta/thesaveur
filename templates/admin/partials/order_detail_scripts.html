@@ -459,61 +459,87 @@
   }
 
   let awbLookupDebounce = null;
+  let lastLookupAwb = '';
+
   function onAwbInput(val) {
     const awb = (val || '').trim();
-    // Default link for all Shiprocket couriers: https://shiprocket.co/tracking/{awb}
     const linkInput = document.getElementById('courier-link-input');
-    if (awb && linkInput) {
+    const eddInput  = document.getElementById('edd-input');
+    const partnerBadge = document.getElementById('courier-partner-badge');
+    const awbHelp = document.getElementById('awb-help');
+
+    // If admin clears the AWB, reset auto-detected details
+    if (!awb) {
+      if (partnerBadge) partnerBadge.style.display = 'none';
+      if (linkInput && linkInput.value.includes('shiprocket.co/tracking/')) {
+        linkInput.value = '';
+      }
+      if (awbHelp) awbHelp.textContent = 'Enter courier tracking ID';
+      const pulseDot = document.getElementById('live-pulse-dot');
+      const pulseStatus = document.getElementById('live-pulse-status');
+      if (pulseDot) {
+        pulseDot.style.background = '#cbd5e1';
+        pulseDot.style.boxShadow = 'none';
+      }
+      if (pulseStatus) {
+        pulseStatus.style.color = '#64748b';
+        pulseStatus.textContent = 'Awaiting AWB Assignment';
+      }
+      updateTrackingPreview();
+      return;
+    }
+
+    // When AWB changes, automatically update the tracking URL to the new AWB
+    if (linkInput) {
       if (!linkInput.value || linkInput.value.includes('shiprocket.co/tracking/')) {
         linkInput.value = `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`;
       }
     }
     updateTrackingPreview();
-    if (awb) {
-      const statusSelect = document.getElementById('status-select');
-      if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing' || statusSelect.value === 'Placed')) {
-        statusSelect.value = 'Shipped';
-        updateTimelineUI('Shipped');
-      }
-      const cancelBtn = document.getElementById('btn-cancel-order');
-      if (cancelBtn) cancelBtn.style.display = 'none';
-      const cancelOpt = document.getElementById('opt-status-cancelled');
-      if (cancelOpt) {
-        cancelOpt.disabled = true;
-        cancelOpt.style.display = 'none';
-      }
-      const pulseDot = document.getElementById('live-pulse-dot');
-      const pulseStatus = document.getElementById('live-pulse-status');
-      if (pulseDot) {
-        pulseDot.style.background = '#10b981';
-        pulseDot.style.boxShadow = '0 0 0 2px rgba(16,185,129,0.25)';
-      }
-      if (pulseStatus) {
-        pulseStatus.style.color = '#059669';
-        pulseStatus.textContent = 'Active (Real-time)';
-      }
 
-      // Automatically query courier API to fetch complete courier partner details
-      if (awbLookupDebounce) clearTimeout(awbLookupDebounce);
-      if (awb.length >= 6) {
-        const awbHelp = document.getElementById('awb-help');
-        if (awbHelp) {
-          awbHelp.innerHTML = `<span style="color:#0284c7; font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="animation:spin 0.8s linear infinite; display:inline-block; vertical-align:middle;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Fetching courier partner info from API...</span>`;
-        }
-        awbLookupDebounce = setTimeout(() => {
-          fetchCourierInfoByAwb(awb);
-        }, 500);
+    const statusSelect = document.getElementById('status-select');
+    if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing' || statusSelect.value === 'Placed')) {
+      statusSelect.value = 'Shipped';
+      updateTimelineUI('Shipped');
+    }
+    const cancelBtn = document.getElementById('btn-cancel-order');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    const cancelOpt = document.getElementById('opt-status-cancelled');
+    if (cancelOpt) {
+      cancelOpt.disabled = true;
+      cancelOpt.style.display = 'none';
+    }
+    const pulseDot = document.getElementById('live-pulse-dot');
+    const pulseStatus = document.getElementById('live-pulse-status');
+    if (pulseDot) {
+      pulseDot.style.background = '#10b981';
+      pulseDot.style.boxShadow = '0 0 0 2px rgba(16,185,129,0.25)';
+    }
+    if (pulseStatus) {
+      pulseStatus.style.color = '#059669';
+      pulseStatus.textContent = 'Active (Real-time)';
+    }
+
+    // Automatically query courier API to fetch updated partner info whenever AWB changes
+    if (awbLookupDebounce) clearTimeout(awbLookupDebounce);
+    if (awb.length >= 6 && awb !== lastLookupAwb) {
+      if (awbHelp) {
+        awbHelp.innerHTML = `<span style="color:#0284c7; font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="animation:spin 0.8s linear infinite; display:inline-block; vertical-align:middle;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Fetching updated courier partner info from API...</span>`;
       }
+      awbLookupDebounce = setTimeout(() => {
+        fetchCourierInfoByAwb(awb);
+      }, 450);
     }
   }
 
   function fetchCourierInfoByAwb(awb) {
     if (!awb || awb.length < 5) return;
+    lastLookupAwb = awb;
     const fetchBtn = document.getElementById('btn-fetch-awb');
     const originalBtnHtml = fetchBtn ? fetchBtn.innerHTML : '';
     if (fetchBtn) {
       fetchBtn.disabled = true;
-      fetchBtn.innerHTML = `<span>Fetching...</span>`;
+      fetchBtn.innerHTML = `<span>Updating...</span>`;
     }
 
     fetch(`/api/admin/couriers/lookup-awb?awb=${encodeURIComponent(awb)}`)
@@ -524,7 +550,7 @@
           fetchBtn.innerHTML = originalBtnHtml;
         }
         if (data.success && data.courier_name) {
-          // 1. Visibly show and select the courier partner in the Choose Courier box
+          // 1. Visibly show and select the NEW courier partner in the Choose Courier box
           const courierSelect = document.getElementById('courier-select');
           if (courierSelect) {
             const targetCode = (data.courier_code || '').toLowerCase().trim();
@@ -570,7 +596,7 @@
             const customBox = document.getElementById('custom-courier-box');
             if (customBox) customBox.style.display = 'none';
 
-            // Visually highlight the choose courier box so admin clearly sees the fetched partner
+            // Visually highlight the choose courier box so admin clearly sees the updated partner
             courierSelect.style.transition = 'all 0.3s ease';
             courierSelect.style.borderColor = '#10b981';
             courierSelect.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.25)';
@@ -590,31 +616,29 @@
             onCourierChange();
           }
 
-          // 2. Populate EDD if returned
-          if (data.edd) {
-            const eddInput = document.getElementById('edd-input');
-            if (eddInput && !eddInput.value) {
-              eddInput.value = data.edd;
-            }
+          // 2. Update EDD to new courier's estimated delivery date
+          const eddInput = document.getElementById('edd-input');
+          if (eddInput) {
+            eddInput.value = data.edd || '';
           }
 
-          // 3. Populate tracking link (default to https://shiprocket.co/tracking/{awb} for all Shiprocket couriers)
+          // 3. Update tracking link to new AWB's tracking link
           const defaultShiprocketUrl = `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`;
           const linkInput = document.getElementById('courier-link-input');
           if (linkInput) {
             linkInput.value = data.tracking_url || defaultShiprocketUrl;
           }
 
-          // 4. Update preview block
+          // 4. Update live tracking preview block
           updateTrackingPreview();
 
           // 5. Update helper text
           const awbHelp = document.getElementById('awb-help');
           if (awbHelp) {
-            awbHelp.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Identified Partner: ${escapeHtml(data.courier_name)}</span>`;
+            awbHelp.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Updated Partner: ${escapeHtml(data.courier_name)}</span>`;
           }
 
-          showToast('success', `Identified Courier Partner: ${data.courier_name}`);
+          showToast('success', `Updated Courier Partner to ${data.courier_name}`);
         } else {
           const awbHelp = document.getElementById('awb-help');
           if (awbHelp) {

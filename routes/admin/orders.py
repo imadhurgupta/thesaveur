@@ -63,21 +63,27 @@ def admin_update_order_status(order_ref):
 
     final_edd = estimated_delivery_date if estimated_delivery_date is not None and estimated_delivery_date.strip() else (current_order['estimated_delivery_date'] or '')
 
-    # If AWB is entered and courier partner is not explicitly set, fetch complete information from API
-    if final_awb and (not final_courier or final_courier in ['Courier Partner', '', '__custom__', 'custom']):
+    # Check if AWB was changed compared to current database record
+    old_awb = (current_order['tracking_number'] or '').strip()
+    awb_changed = bool(final_awb and final_awb != old_awb)
+
+    # If AWB is newly entered or changed, re-query courier API to fetch updated information
+    if final_awb and (awb_changed or not final_courier or final_courier in ['Courier Partner', '', '__custom__', 'custom']):
         try:
             from services.tracking_service import ShiprocketClient
             client = ShiprocketClient()
             track_res = client.track_awb(final_awb)
             if track_res.get('success') and track_res.get('courier_name'):
                 final_courier = track_res['courier_name']
-                if not custom_tracking_url:
+                if track_res.get('edd'):
+                    final_edd = track_res['edd']
+                if not custom_tracking_url or awb_changed or 'shiprocket.co/tracking/' in custom_tracking_url:
                     custom_tracking_url = track_res.get('track_url') or f"https://shiprocket.co/tracking/{final_awb}"
         except Exception as e:
             print(f"[AWB FETCH PARTNER ERROR] {e}")
 
     # Default tracking URL for all Shiprocket couriers
-    if final_awb and not custom_tracking_url:
+    if final_awb and (not custom_tracking_url or awb_changed or 'shiprocket.co/tracking/' in custom_tracking_url):
         custom_tracking_url = f"https://shiprocket.co/tracking/{final_awb}"
 
     # Auto-advance status to 'Shipped' when tracking number/AWB is entered
