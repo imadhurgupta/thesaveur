@@ -45,19 +45,26 @@ def admin_update_order_status(order_ref):
     order_id = current_order['id']
     VALID_STATUSES = ['Order Confirmed', 'Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered', 'Cancelled']
 
-    # Fallback to existing values if not provided
-    if courier_partner in ['__custom__', 'custom', ''] and custom_courier_name:
-        final_courier = custom_courier_name
-    elif courier_partner is not None:
-        final_courier = courier_partner
-    else:
-        final_courier = current_order['courier_partner'] or ''
+    # Auto-detect courier & extract AWB from courier link if needed
+    from services.couriers_service import detect_courier_info
+    detected = detect_courier_info(custom_tracking_url or courier_partner or '', tracking_number or '')
 
-    final_awb = tracking_number if tracking_number is not None else (current_order['tracking_number'] or '')
+    final_awb = tracking_number if tracking_number is not None and tracking_number.strip() else (detected.get('awb') or current_order['tracking_number'] or '')
+
+    # Determine courier partner
+    if custom_courier_name and custom_courier_name.strip():
+        final_courier = custom_courier_name.strip()
+    elif courier_partner and courier_partner not in ['__custom__', 'custom', '']:
+        final_courier = courier_partner
+    elif detected.get('name') and detected.get('code') != 'custom':
+        final_courier = detected['name']
+    else:
+        final_courier = current_order['courier_partner'] or 'Courier Partner'
+
     final_edd = estimated_delivery_date if estimated_delivery_date is not None else (current_order['estimated_delivery_date'] or '')
 
-    # Auto-change status to 'Shipped' when courier partner & tracking number are provided
-    if final_courier and final_awb:
+    # Auto-advance status to 'Shipped' when tracking number/AWB is entered
+    if final_awb:
         if not status or status in ['Processing', 'Order Confirmed', 'Placed', '']:
             status = 'Shipped'
 
@@ -86,31 +93,14 @@ def admin_update_order_status(order_ref):
             print(f"[CUSTOM COURIER SAVE ERROR] {ce}")
 
     # Compute official tracking URL
-    if custom_tracking_url:
-        final_tracking_url = generate_tracking_url(final_courier, final_awb, custom_url=custom_tracking_url)
+    if custom_tracking_url and custom_tracking_url.strip():
+        final_tracking_url = generate_tracking_url(final_courier, final_awb, custom_url=custom_tracking_url.strip())
     elif final_awb:
         final_tracking_url = generate_tracking_url(final_courier, final_awb)
-    elif custom_tracking_url is not None:
-        final_tracking_url = ''
     else:
         final_tracking_url = current_order['tracking_url'] or ''
 
     old_status = current_order['status']
-
-    # ── Stock Management on Status Change ─────────────────────────────────────
-    # 1. Reverse stock when cancelling an order BEFORE it has been shipped
-    if status == 'Cancelled' and old_status in ['Processing', 'Placed', 'Order Confirmed']:
-        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
-        for item in order_items:
-            db.execute("UPDATE products SET stocks = stocks + ? WHERE id = ?", (item['quantity'], item['product_id']))
-        print(f"[STOCK REVERSED] Order #{order_id} cancelled from '{old_status}'. Restored stock for {len(order_items)} items.")
-
-    # 2. Re-deduct stock if an order was 'Cancelled' and is reactivated back to an active state
-    elif old_status == 'Cancelled' and status in ['Processing', 'Placed', 'Order Confirmed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
-        order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
-        for item in order_items:
-            db.execute("UPDATE products SET stocks = stocks - ? WHERE id = ?", (item['quantity'], item['product_id']))
-        print(f"[STOCK DEDUCTED] Order #{order_id} reactivated to '{status}'. Deducted stock for {len(order_items)} items.")
 
     # Shipped timestamp
     shipped_clause = ""
@@ -133,11 +123,28 @@ def admin_update_order_status(order_ref):
     db.commit()
     db.close()
 
-    # Send status email notification
-    try:
-        queue_order_status_update_email(order_id, status, host_url=request.host_url)
-    except Exception as mail_err:
-        print(f"[MAIL ALERT ERROR] Failed to send status update email: {mail_err}")
+    # ── Cancellation & Refund Processing ──────────────────────────────────
+    refund_info = {}
+    if status == 'Cancelled':
+        from services.refund_service import process_order_cancellation_refund
+        refund_info = process_order_cancellation_refund(order_id, reason="Admin order cancellation", host_url=request.host_url)
+    elif final_awb:
+        # Immediately trigger live courier sync to advance status from courier live checkpoints
+        try:
+            from services.tracking_service import update_order_from_tracking
+            live_sync = update_order_from_tracking(order_id, host_url=request.host_url)
+            if live_sync.get('changed') and live_sync.get('new_status'):
+                status = live_sync['new_status']
+                print(f"[LIVE COURIER AUTO-ADVANCE] Order #{order_id} automatically set to '{status}' by live courier status.")
+        except Exception as sync_err:
+            print(f"[AUTO COURIER SYNC ERROR] {sync_err}")
+
+    # Send status email notification if not cancelled (refund service handles cancellation email)
+    if status != 'Cancelled':
+        try:
+            queue_order_status_update_email(order_id, status, host_url=request.host_url)
+        except Exception as mail_err:
+            print(f"[MAIL ALERT ERROR] Failed to send status update email: {mail_err}")
 
     if request.is_json:
         courier_meta = get_courier_metadata(final_courier)
@@ -148,12 +155,26 @@ def admin_update_order_status(order_ref):
             'courier_name': courier_meta['name'],
             'tracking_number': final_awb,
             'tracking_url': final_tracking_url,
-            'estimated_delivery_date': final_edd
+            'estimated_delivery_date': final_edd,
+            'refund_id': refund_info.get('refund_id'),
+            'refund_status': refund_info.get('refund_status'),
+            'is_cod': refund_info.get('is_cod', False)
         })
 
     label = current_order['order_number'] if current_order['order_number'] else f'#{order_id}'
     flash(f"Order {label} updated successfully.", "success")
     return redirect(url_for('admin_order_detail', order_ref=current_order['order_number'] if current_order['order_number'] else order_id))
+
+
+@admin_orders_bp.route('/api/admin/orders/<int:order_id>/live-tracking-status', methods=['GET', 'POST'], endpoint='api_admin_order_live_tracking_status')
+@admin_required
+def api_admin_order_live_tracking_status(order_id):
+    """Real-time live courier tracking status & refund details API for Admin Panel."""
+    from services.tracking_service import get_order_live_tracking_status
+    force = request.args.get('force', '1') in ['1', 'true', 'True']
+    data = get_order_live_tracking_status(order_id, force_refresh=force, host_url=request.host_url)
+    return jsonify(data)
+
 
 
 @admin_orders_bp.route('/admin/orders/<order_ref>', endpoint='admin_order_detail')

@@ -193,6 +193,10 @@ def init_db():
             tracking_url TEXT DEFAULT '',
             estimated_delivery_date TEXT DEFAULT '',
             shipped_at TIMESTAMP,
+            refund_id TEXT,
+            refund_status TEXT DEFAULT '',
+            refund_amount {REAL} DEFAULT 0.0,
+            refund_created_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )""",
@@ -348,6 +352,10 @@ def init_db():
         "ALTER TABLE orders ADD COLUMN tracking_status_raw TEXT DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN tracking_data_json TEXT DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN shipment_id TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN refund_id TEXT",
+        "ALTER TABLE orders ADD COLUMN refund_status TEXT DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN refund_amount REAL DEFAULT 0.0",
+        "ALTER TABLE orders ADD COLUMN refund_created_at TIMESTAMP",
         "ALTER TABLE order_items ADD COLUMN original_price REAL DEFAULT 0",
         "ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0",
     ]

@@ -463,8 +463,17 @@ def update_order_from_tracking(order_id: int, host_url: str = '') -> dict:
     db.commit()
     db.close()
 
+    # Handle cancellation & refund if status transitioned to Cancelled
+    if final_status == 'Cancelled' and old_status != 'Cancelled':
+        try:
+            from services.refund_service import process_order_cancellation_refund
+            process_order_cancellation_refund(order_id, reason=f"Courier checkpoint: {raw_status}", host_url=host_url)
+            print(f"[COURIER CANCELLATION] Order #{order_id} cancelled by courier. Refund processed.")
+        except Exception as ref_err:
+            print(f"[COURIER CANCELLATION REFUND ERROR] {ref_err}")
+
     # Trigger customer notification email on milestone change
-    if status_changed:
+    if status_changed and final_status != 'Cancelled':
         try:
             from services.email_service import queue_order_status_update_email
             queue_order_status_update_email(order_id, final_status, host_url=host_url)
@@ -559,6 +568,55 @@ def get_order_live_tracking(order_id: int) -> dict:
             }
 
     return {}
+
+
+def get_order_live_tracking_status(order_id: int, force_refresh: bool = False, host_url: str = '') -> dict:
+    """
+    Get real-time order status, live courier tracking milestones, and refund status.
+    If force_refresh is True, fetches latest checkpoints from courier immediately.
+    """
+    if force_refresh:
+        try:
+            update_order_from_tracking(order_id, host_url=host_url)
+        except Exception as e:
+            print(f"[LIVE TRACKING SYNC ERROR] {e}")
+
+    db = get_db()
+    order = db.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
+    db.close()
+    if not order:
+        return {'success': False, 'error': 'Order not found'}
+
+    o = dict(order)
+    tracking_data = {}
+    if o.get('tracking_data_json'):
+        try:
+            tracking_data = json.loads(o['tracking_data_json'])
+        except Exception:
+            pass
+
+    is_cod = (o.get('payment_method') or '').strip().lower() in ['cod', 'cash on delivery', 'cash_on_delivery', 'cash']
+
+    return {
+        'success': True,
+        'order_id': o['id'],
+        'order_number': o.get('order_number') or f"#{o['id']}",
+        'status': o.get('status', 'Processing'),
+        'payment_method': o.get('payment_method', ''),
+        'is_cod': is_cod,
+        'courier_partner': o.get('courier_partner', ''),
+        'tracking_number': o.get('tracking_number', ''),
+        'tracking_url': o.get('tracking_url', ''),
+        'estimated_delivery_date': o.get('estimated_delivery_date', ''),
+        'last_tracking_fetch': o.get('last_tracking_fetch', ''),
+        'tracking_status_raw': o.get('tracking_status_raw', ''),
+        'refund_id': o.get('refund_id'),
+        'refund_status': o.get('refund_status'),
+        'refund_amount': o.get('refund_amount', 0.0),
+        'refund_created_at': o.get('refund_created_at'),
+        'tracking_data': tracking_data
+    }
+
 
 
 # ── In-App Background Thread Scheduler ─────────────────────────────────

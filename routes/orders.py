@@ -232,22 +232,36 @@ def customer_cancel_order(order_ref):
         return redirect(url_for('my_orders'))
 
     order_id = order['id']
-
-    # Reverse stock back to products
-    order_items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
-    for item in order_items:
-        db.execute("UPDATE products SET stocks = stocks + ? WHERE id = ?", (item['quantity'], item['product_id']))
-
-    db.execute("UPDATE orders SET status = 'Cancelled' WHERE id = ?", (order_id,))
-    db.commit()
     db.close()
 
-    try:
-        from services.email_service import queue_order_status_update_email
-        queue_order_status_update_email(order_id, 'Cancelled')
-    except Exception as mail_err:
-        print(f"[MAIL ERROR] Failed to send customer cancel email: {mail_err}")
+    from services.refund_service import process_order_cancellation_refund
+    refund_res = process_order_cancellation_refund(order_id, reason="Customer cancelled order from profile", host_url=request.host_url)
 
-    flash(f"Order #{order['order_number'] or order_id} has been successfully cancelled and stocks restored.", "success")
+    if refund_res.get('is_cod'):
+        flash(f"Order #{order['order_number'] or order_id} has been cancelled. As this was Cash on Delivery, no refund is applicable.", "success")
+    else:
+        ref_code = refund_res.get('refund_id') or 'Generated'
+        flash(f"Order #{order['order_number'] or order_id} has been cancelled. Refund reference {ref_code} has been initiated.", "success")
     return redirect(url_for('my_orders'))
+
+
+@orders_bp.route('/api/orders/<int:order_id>/live-tracking-status', methods=['GET', 'POST'], endpoint='api_order_live_tracking_status')
+def api_order_live_tracking_status(order_id):
+    """Customer-facing real-time courier tracking status and refund status API."""
+    from flask import jsonify
+    db = get_db()
+    order = db.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
+    db.close()
+    if not order:
+        return jsonify({'success': False, 'error': 'Order not found'}), 404
+
+    is_authorized, auth_msg = verify_order_access(order, session, request)
+    if not is_authorized:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    from services.tracking_service import get_order_live_tracking_status
+    force = request.args.get('force', '1') in ['1', 'true', 'True']
+    data = get_order_live_tracking_status(order_id, force_refresh=force, host_url=request.host_url)
+    return jsonify(data)
+
 

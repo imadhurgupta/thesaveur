@@ -457,11 +457,116 @@
       .replace(/'/g, '&#039;');
   }
 
+  function onAwbInput(val) {
+    updateTrackingPreview();
+    const awb = (val || '').trim();
+    if (awb) {
+      const statusSelect = document.getElementById('status-select');
+      if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing' || statusSelect.value === 'Placed')) {
+        statusSelect.value = 'Shipped';
+        updateTimelineUI('Shipped');
+      }
+      const pulseDot = document.getElementById('live-pulse-dot');
+      const pulseStatus = document.getElementById('live-pulse-status');
+      if (pulseDot) {
+        pulseDot.style.background = '#10b981';
+        pulseDot.style.boxShadow = '0 0 0 2px rgba(16,185,129,0.25)';
+      }
+      if (pulseStatus) {
+        pulseStatus.style.color = '#059669';
+        pulseStatus.textContent = 'Active (Real-time)';
+      }
+    }
+  }
+
+  function onCourierLinkInput(urlStr) {
+    if (!urlStr) return;
+    const url = urlStr.trim();
+    if (!url) return;
+
+    const lowerUrl = url.toLowerCase();
+    const courierSelect = document.getElementById('courier-select');
+    const awbInput = document.getElementById('awb-input');
+
+    // Courier domain matchers
+    const matchers = [
+      { key: 'delhivery', pattern: /delhivery/i },
+      { key: 'bluedart', pattern: /bluedart/i },
+      { key: 'dtdc', pattern: /dtdc/i },
+      { key: 'shiprocket', pattern: /shiprocket/i },
+      { key: 'indiapost', pattern: /(indiapost|speedpost)/i },
+      { key: 'xpressbees', pattern: /xpressbees/i },
+      { key: 'shadowfax', pattern: /shadowfax/i },
+      { key: 'ekart', pattern: /ekart/i },
+      { key: 'amazon', pattern: /amazon/i },
+      { key: 'fedex', pattern: /fedex/i },
+      { key: 'dhl', pattern: /dhl/i },
+      { key: 'trackon', pattern: /trackon/i },
+      { key: 'ecomexpress', pattern: /ecomexpress/i },
+      { key: 'smartr', pattern: /smartr/i }
+    ];
+
+    let detectedCourier = '';
+    for (const m of matchers) {
+      if (m.pattern.test(lowerUrl)) {
+        detectedCourier = m.key;
+        break;
+      }
+    }
+
+    if (detectedCourier && courierSelect) {
+      // Find matching option
+      let found = false;
+      for (let i = 0; i < courierSelect.options.length; i++) {
+        if (courierSelect.options[i].value.toLowerCase() === detectedCourier) {
+          courierSelect.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Match custom courier or add
+        const customName = detectedCourier.charAt(0).toUpperCase() + detectedCourier.slice(1);
+        const nameInp = document.getElementById('custom-courier-name');
+        if (nameInp) nameInp.value = customName;
+      }
+    }
+
+    // Try extracting AWB number embedded in URL
+    const awbMatches = [
+      /[?&](?:awb|trackid|tracking_no|tracking_number|waybill|cnno|consignment|num|id)=([A-Za-z0-9_-]{6,32})/i,
+      /\/(?:track|tracking|shipment|package|awb)\/([A-Za-z0-9_-]{6,32})/i,
+      /\/([0-9]{8,18})(?:[/?#]|$)/
+    ];
+
+    if (awbInput && !awbInput.value.trim()) {
+      for (const rx of awbMatches) {
+        const m = url.match(rx);
+        if (m && m[1]) {
+          awbInput.value = m[1];
+          break;
+        }
+      }
+    }
+
+    // Auto-advance to Shipped
+    const statusSelect = document.getElementById('status-select');
+    if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing' || statusSelect.value === 'Placed')) {
+      statusSelect.value = 'Shipped';
+      updateTimelineUI('Shipped');
+    }
+
+    updateTrackingPreview();
+  }
+
   function updateTrackingPreview() {
     const courierSelect = document.getElementById('courier-select');
-    const courierCode   = courierSelect.value || 'custom';
-    const selectedOpt   = courierSelect.options[courierSelect.selectedIndex];
-    const awb           = document.getElementById('awb-input').value.trim();
+    const courierCode   = courierSelect ? courierSelect.value || 'custom' : 'custom';
+    const selectedOpt   = courierSelect ? courierSelect.options[courierSelect.selectedIndex] : null;
+    const awbInput      = document.getElementById('awb-input');
+    const awb           = awbInput ? awbInput.value.trim() : '';
+    const linkInput     = document.getElementById('courier-link-input');
+    const directLink    = linkInput ? linkInput.value.trim() : '';
     const previewBlock  = document.getElementById('tracking-preview-block');
     const previewName   = document.getElementById('preview-courier-name');
     const previewLink   = document.getElementById('preview-url-link');
@@ -469,15 +574,18 @@
     const customNameInp = document.getElementById('custom-courier-name');
     const customUrlInp  = document.getElementById('custom-courier-url');
 
-    if (!awb) {
-      previewBlock.style.display = 'none';
+    if (!awb && !directLink) {
+      if (previewBlock) previewBlock.style.display = 'none';
       return;
     }
 
     let courierDisplayName = '';
     let targetUrl = '';
 
-    if (courierCode === '__custom__' || courierCode === 'custom') {
+    if (directLink) {
+      targetUrl = directLink;
+      courierDisplayName = (selectedOpt && selectedOpt.dataset.name) ? selectedOpt.dataset.name : (selectedOpt ? selectedOpt.text.replace('(Custom Partner)', '').replace('(Custom)', '').trim() : 'Live Courier Webpage');
+    } else if (courierCode === '__custom__' || courierCode === 'custom') {
       courierDisplayName = (customNameInp && customNameInp.value.trim()) ? customNameInp.value.trim() : 'Custom Courier';
       const customUrlPat = (customUrlInp && customUrlInp.value.trim()) ? customUrlInp.value.trim() : '';
       if (customUrlPat) {
@@ -501,14 +609,14 @@
       }
     }
 
-    previewName.textContent = courierDisplayName;
-    previewBlock.style.display = 'block';
-    previewLink.href = (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) ? targetUrl : '#';
-    previewText.textContent = targetUrl;
+    if (previewName) previewName.textContent = courierDisplayName;
+    if (previewBlock) previewBlock.style.display = 'block';
+    if (previewLink) previewLink.href = (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) ? targetUrl : '#';
+    if (previewText) previewText.textContent = targetUrl;
 
     // Auto-promote status to Shipped if currently at initial stage
     const statusSelect = document.getElementById('status-select');
-    if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing')) {
+    if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing' || statusSelect.value === 'Placed')) {
       statusSelect.value = 'Shipped';
     }
   }
@@ -579,12 +687,72 @@
     timeline.innerHTML = html;
   }
 
+  function renderRefundCard(refundInfo) {
+    if (!refundInfo) return;
+    let card = document.getElementById('admin-refund-card');
+    const isCod = refundInfo.refund_status === 'No Refund (COD)' || (refundInfo.payment_method && refundInfo.payment_method.toLowerCase().includes('cod'));
+    
+    const badgeHtml = isCod 
+      ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; background:#fee2e2; color:#991b1b; border:1px solid #f87171; border-radius:99px; font-size:0.75rem; font-weight:700;">No Refund (COD)</span>`
+      : `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:99px; font-size:0.75rem; font-weight:700;">Refund ${escapeHtml(refundInfo.refund_status || 'Processed')}</span>`;
+
+    const detailsHtml = isCod 
+      ? `<div>
+           <div style="color:#9f1239; font-size:0.68rem; font-weight:700; text-transform:uppercase;">Payment Mode</div>
+           <div style="color:#1e293b; font-weight:700; margin-top:2px;">Cash on Delivery (COD)</div>
+         </div>
+         <div style="grid-column: span 2;">
+           <div style="color:#9f1239; font-size:0.68rem; font-weight:700; text-transform:uppercase;">Refund Policy</div>
+           <div style="color:#475569; margin-top:2px;">Cash on Delivery order — No upfront payment collected, no refund issued.</div>
+         </div>`
+      : `<div>
+           <div style="color:#9f1239; font-size:0.68rem; font-weight:700; text-transform:uppercase;">Refund Reference ID</div>
+           <div style="color:#0f172a; font-family:monospace; font-weight:800; margin-top:2px;">${escapeHtml(refundInfo.refund_id || 'REF-PENDING')}</div>
+         </div>
+         <div>
+           <div style="color:#9f1239; font-size:0.68rem; font-weight:700; text-transform:uppercase;">Refund Status</div>
+           <div style="color:#15803d; font-weight:800; margin-top:2px;">${escapeHtml(refundInfo.refund_status || 'Initiated')}</div>
+         </div>
+         <div>
+           <div style="color:#9f1239; font-size:0.68rem; font-weight:700; text-transform:uppercase;">Refund Amount</div>
+           <div style="color:#15803d; font-weight:800; margin-top:2px;">$${Number(refundInfo.refund_amount || 0).toFixed(2)}</div>
+         </div>`;
+
+    const cardContent = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#e11d48; color:#fff; font-size:11px; font-weight:800;">✕</span>
+          <strong style="color:#9f1239; font-size:0.88rem; text-transform:uppercase; letter-spacing:0.03em;">Cancellation &amp; Refund Status</strong>
+        </div>
+        <div>${badgeHtml}</div>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; font-size:0.78rem; margin-top:10px; padding-top:10px; border-top:1px solid #ffe4e6;">
+        ${detailsHtml}
+      </div>
+    `;
+
+    if (card) {
+      card.innerHTML = cardContent;
+      card.style.display = 'block';
+    } else {
+      const timeline = document.getElementById('timeline-container');
+      if (timeline && timeline.parentNode) {
+        card = document.createElement('div');
+        card.id = 'admin-refund-card';
+        card.style.cssText = 'margin-bottom: 16px; background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 10px; padding: 14px 16px;';
+        card.innerHTML = cardContent;
+        timeline.parentNode.insertBefore(card, timeline);
+      }
+    }
+  }
+
   function saveTrackingAndStatus(e) {
     e.preventDefault();
     const btn = document.getElementById('dispatch-btn');
     const status = document.getElementById('status-select').value;
     const courier_partner = document.getElementById('courier-select').value;
     const tracking_number = document.getElementById('awb-input').value.trim();
+    const direct_link     = document.getElementById('courier-link-input')?.value.trim() || '';
     const estimated_delivery_date = document.getElementById('edd-input').value;
 
     const customNameInp = document.getElementById('custom-courier-name');
@@ -592,7 +760,7 @@
     const savePermanentInp = document.getElementById('save-courier-permanently');
 
     const custom_courier_name = customNameInp ? customNameInp.value.trim() : '';
-    const tracking_url = customUrlInp ? customUrlInp.value.trim() : '';
+    const tracking_url = direct_link || (customUrlInp ? customUrlInp.value.trim() : '');
     const save_courier_permanently = savePermanentInp ? savePermanentInp.checked : false;
 
     btn.disabled = true;
@@ -607,6 +775,7 @@
         custom_courier_name,
         tracking_number,
         tracking_url,
+        courier_link: direct_link,
         estimated_delivery_date,
         save_courier_permanently
       })
@@ -616,13 +785,18 @@
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Update &amp; Dispatch Order`;
       if (data.success) {
-        updateTimelineUI(status);
+        const newStatus = data.status || status;
+        updateTimelineUI(newStatus);
         if (data.courier_name) {
           const previewName = document.getElementById('preview-courier-name');
           if (previewName) previewName.textContent = data.courier_name;
         }
+        if (data.refund_info) {
+          renderRefundCard(data.refund_info);
+        }
         updateTrackingPreview();
-        showToast('success', `Order ${ORDER_NUMBER} updated successfully (Status: ${status})`);
+        startLiveCourierAutoSync();
+        showToast('success', `Order ${ORDER_NUMBER} updated successfully (Status: ${newStatus})`);
       } else {
         showToast('error', data.error || 'Update failed');
       }
@@ -647,6 +821,10 @@
     .then(data => {
       if (data.success) {
         updateTimelineUI('Cancelled');
+        if (data.refund_info) {
+          renderRefundCard(data.refund_info);
+        }
+        if (livePollingInterval) clearInterval(livePollingInterval);
         showToast('success', `Order ${ORDER_NUMBER} has been cancelled.`);
       } else {
         showToast('error', data.error || 'Cancel failed');
@@ -658,7 +836,6 @@
   // ── Shiprocket Live Tracking Synchronization ───────────────────────────
   function syncShiprocketTracking() {
     const btn = document.getElementById('btn-sync-shiprocket');
-    const icon = document.getElementById('sync-spinner-icon');
     const originalText = btn ? btn.innerHTML : '';
 
     if (btn) {
@@ -741,14 +918,58 @@
     });
   }
 
+  // ── Real-Time Live Courier Polling System ────────────────────────────────
+  let livePollingInterval = null;
+  function startLiveCourierAutoSync() {
+    if (livePollingInterval) clearInterval(livePollingInterval);
+    const statusSelect = document.getElementById('status-select');
+    const awbInput     = document.getElementById('awb-input');
+    const curStatus    = statusSelect ? statusSelect.value : '';
+    const hasAwb       = awbInput && awbInput.value.trim().length > 0;
+
+    if (!hasAwb || curStatus === 'Delivered' || curStatus === 'Cancelled') {
+      return;
+    }
+
+    livePollingInterval = setInterval(() => {
+      fetch(`/api/admin/orders/${ORDER_ID}/live-tracking-status?force=0`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            if (data.changed && data.new_status) {
+              if (statusSelect) statusSelect.value = data.new_status;
+              updateTimelineUI(data.new_status);
+              showToast('success', `Live Courier Update: ${data.new_status}`);
+            }
+
+            if (data.raw_courier_status) {
+              const statusText = document.getElementById('shiprocket-current-status-text');
+              if (statusText) statusText.textContent = data.raw_courier_status;
+            }
+
+            const timeEl = document.getElementById('sync-last-timestamp');
+            if (timeEl) {
+              timeEl.textContent = `Live: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+            }
+
+            if (data.new_status === 'Delivered' || data.new_status === 'Cancelled') {
+              clearInterval(livePollingInterval);
+            }
+          }
+        })
+        .catch(() => {});
+    }, 4000); // 4-second pulse
+  }
+
   // Restore Orders tab when returning to dashboard
   if (window.performance && window.performance.getEntriesByType('navigation')[0]?.type === 'back_forward') {
     sessionStorage.setItem('adminTab', 'orders');
   }
 
-  // Initialize tracking preview on load
+  // Initialize tracking preview and live polling on load
   document.addEventListener('DOMContentLoaded', () => {
     onCourierChange();
     updateTrackingPreview();
+    startLiveCourierAutoSync();
   });
 </script>

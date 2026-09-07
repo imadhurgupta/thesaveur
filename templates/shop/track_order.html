@@ -545,6 +545,81 @@
 
       <div class="track-card-body">
 
+        <!-- Cancellation & Refund Information Card -->
+        {% if order.status == 'Cancelled' or order.refund_status %}
+        <div class="cancellation-refund-card" style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:18px; padding:22px 26px; margin-bottom:28px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:#e11d48; color:#fff;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </span>
+                <h3 style="margin:0; font-size:1.15rem; color:#9f1239; font-weight:800;">Order Cancelled</h3>
+              </div>
+              <p style="margin:0; color:#4c0519; font-size:0.88rem; line-height:1.5;">
+                This order has been cancelled and will not be shipped.
+              </p>
+            </div>
+
+            <!-- Refund Status Badge -->
+            <div>
+              {% if order.refund_status == 'No Refund (COD)' or (not order.refund_status and ('COD' in (order.payment_method or '') | upper)) %}
+                <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#fee2e2; color:#991b1b; border:1px solid #f87171; border-radius:99px; font-weight:700; font-size:0.82rem;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                  No Refund (COD Order)
+                </span>
+              {% else %}
+                <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:99px; font-weight:700; font-size:0.82rem;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
+                  Refund {{ order.refund_status or 'Processed' }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Detailed Refund Attributes -->
+          <div style="margin-top:16px; padding-top:14px; border-top:1px solid #fed7aa; display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px;">
+            {% if order.refund_status == 'No Refund (COD)' or ('COD' in (order.payment_method or '') | upper) %}
+              <div>
+                <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#9f1239;">Payment Mode</div>
+                <div style="font-weight:700; color:#1f2937; margin-top:2px;">Cash on Delivery (COD)</div>
+              </div>
+              <div style="grid-column: span 2;">
+                <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#9f1239;">Refund Policy</div>
+                <div style="font-size:0.85rem; color:#4b5563; margin-top:2px;">Payment was to be collected on delivery. Since no payment was captured, no refund is applicable.</div>
+              </div>
+            {% else %}
+              <div>
+                <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#9f1239;">Refund Reference ID</div>
+                <div style="font-weight:800; font-family:monospace; color:#0f172a; margin-top:2px; letter-spacing:0.02em;">
+                  {{ order.refund_id or 'REF-PENDING' }}
+                </div>
+              </div>
+              <div>
+                <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#9f1239;">Refund Status</div>
+                <div style="font-weight:700; color:#166534; margin-top:2px;">
+                  {{ order.refund_status or 'Processed' }}
+                </div>
+              </div>
+              <div>
+                <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#9f1239;">Refund Amount</div>
+                <div style="font-weight:800; color:#065f46; margin-top:2px;">
+                  ${{ "%.2f"|format(order.refund_amount if order.refund_amount else order.total_amount) }}
+                </div>
+              </div>
+              {% if order.refund_created_at %}
+              <div>
+                <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#9f1239;">Processed At</div>
+                <div style="font-size:0.85rem; color:#4b5563; margin-top:2px;">
+                  {{ order.refund_created_at }}
+                </div>
+              </div>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
         <!-- Courier Partner Dispatch Banner & Live Scans -->
         {% include 'shop/partials/tracking_carrier.html' %}
 
@@ -710,5 +785,28 @@
       toast.classList.remove('show');
     }, 2500);
   }
+
+  {% if order and order.tracking_number and order.status not in ['Delivered', 'Cancelled'] %}
+  // Real-time live courier synchronization polling
+  let liveCustomerPolling = null;
+  function startCustomerLiveTracking() {
+    const orderId = {{ order.id }};
+    liveCustomerPolling = setInterval(() => {
+      fetch(`/api/orders/${orderId}/live-tracking-status?force=0`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.changed) {
+            // Live status or checkpoints updated! Reload to render fresh timeline & scans
+            window.location.reload();
+          }
+        })
+        .catch(() => {});
+    }, 5000); // Poll every 5 seconds for smooth, non-intrusive live sync
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    startCustomerLiveTracking();
+  });
+  {% endif %}
 </script>
 {% endblock %}

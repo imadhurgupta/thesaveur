@@ -94,6 +94,15 @@ COURIER_PARTNERS = {
         'icon_type': 'truck',
         'sample_format': 'e.g. 1234567890 (10 digits)'
     },
+    'shiprocket': {
+        'name': 'Shiprocket',
+        'code': 'shiprocket',
+        'url_pattern': 'https://shiprocket.co/tracking/{tracking_number}',
+        'color': '#7C3AED',
+        'bg_color': 'rgba(124, 58, 237, 0.08)',
+        'icon_type': 'package',
+        'sample_format': 'e.g. SR123456789 / AWB'
+    },
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
@@ -245,3 +254,69 @@ def get_courier_list():
             })
 
     return list_items
+
+
+def detect_courier_info(url_or_name: str, awb: str = "") -> dict:
+    """
+    Auto-detect courier partner code and name from a tracking link or courier string.
+    Also extracts AWB number from URL if awb is empty.
+    """
+    import re
+    from urllib.parse import urlparse, parse_qs
+    clean_url = (url_or_name or "").strip()
+    clean_awb = (awb or "").strip()
+
+    detected_code = "custom"
+    detected_name = clean_url if clean_url and not clean_url.startswith(('http://', 'https://')) else "Courier Partner"
+
+    url_lower = clean_url.lower()
+    for code, meta in COURIER_PARTNERS.items():
+        if code == 'custom':
+            continue
+        if code in url_lower or meta['name'].lower() in url_lower:
+            detected_code = code
+            detected_name = meta['name']
+            break
+
+    # Check custom couriers in DB
+    if detected_code == 'custom':
+        custom_list = get_custom_couriers_from_db()
+        for cc in custom_list:
+            if cc['code'].lower() in url_lower or cc['name'].lower() in url_lower:
+                detected_code = cc['code']
+                detected_name = cc['name']
+                break
+
+    # If clean_awb is empty and clean_url looks like a URL, extract AWB
+    if not clean_awb and clean_url and ('://' in clean_url or clean_url.startswith('www.')):
+        target = clean_url if '://' in clean_url else 'https://' + clean_url
+        try:
+            parsed = urlparse(target)
+            # 1. Check query parameters
+            qs = parse_qs(parsed.query)
+            awb_keys = ['awb', 'strcnno', 'trackid', 'trknbr', 'tracking-id', 'tracking_no', 'consignment', 'id', 'cnno', 'tracking_number']
+            for k, v in qs.items():
+                if k.lower() in awb_keys and v and v[0]:
+                    clean_awb = v[0].strip()
+                    break
+
+            # 2. Check path segments
+            if not clean_awb and parsed.path:
+                segs = [s.strip() for s in parsed.path.strip('/').split('/') if s.strip()]
+                if segs:
+                    last_seg = segs[-1]
+                    skip_words = {'package', 'tracking', 'track', 'results', 'tracking_results', 'index', 'home', 'shipment', 'default.asp', 'default.aspx', 'tracking.aspx'}
+                    if last_seg.lower() not in skip_words and len(last_seg) >= 4:
+                        clean_awb = re.sub(r'\.(?:html?|php|aspx?)$', '', last_seg, flags=re.I)
+        except Exception:
+            pass
+
+    return {
+        'code': detected_code,
+        'name': detected_name,
+        'awb': clean_awb,
+        'url': clean_url
+    }
+
+
+
