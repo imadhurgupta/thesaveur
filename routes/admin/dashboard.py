@@ -74,6 +74,12 @@ def admin_dashboard():
 
     db.close()
 
+    from services.tracking_service import get_all_settings
+    tracking_settings = get_all_settings()
+    for sk in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACKING_WEBHOOK_SECRET', 'SHIPGLOBAL_PASSWORD', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY'):
+        if tracking_settings.get(sk):
+            tracking_settings[sk] = '••••••••'
+
     return render_template(
         'admin/dashboard.html',
         total_products=total_products,
@@ -90,5 +96,7 @@ def admin_dashboard():
         subcategories=subcategories,
         promo_codes=promo_codes,
         shipping_rates=shipping_rates,
-        google_client_id=os.environ.get("GOOGLE_CLIENT_ID", "")
+        google_client_id=os.environ.get("GOOGLE_CLIENT_ID", ""),
+        settings=tracking_settings
     )
+

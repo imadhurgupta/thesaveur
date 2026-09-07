@@ -23,10 +23,10 @@
 <div class="stepper-section">
   <div class="stepper-track">
     <div class="stepper-bg-line"></div>
-    <div class="stepper-fill-line" style="width: {{ progress_pct }};"></div>
+    <div class="stepper-fill-line" id="stepper-fill-line" style="width: {{ progress_pct }};"></div>
 
     <!-- Stage 1: Order Confirmed -->
-    <div class="step-node {% if current_level > 1 %}completed{% elif current_level == 1 %}active{% endif %}">
+    <div class="step-node {% if current_level > 1 %}completed{% elif current_level == 1 %}active{% endif %}" id="step-node-1" data-label="Order Confirmed" data-stage="1">
       <div class="step-bubble">
         {% if current_level > 1 %}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Stage 2: Shipped -->
-    <div class="step-node {% if current_level > 2 %}completed{% elif current_level == 2 %}active{% endif %}">
+    <div class="step-node {% if current_level > 2 %}completed{% elif current_level == 2 %}active{% endif %}" id="step-node-2" data-label="Shipped" data-stage="2">
       <div class="step-bubble">
         {% if current_level > 2 %}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
@@ -52,7 +52,7 @@
     </div>
 
     <!-- Stage 3: In Transit -->
-    <div class="step-node {% if current_level > 3 %}completed{% elif current_level == 3 %}active{% endif %}">
+    <div class="step-node {% if current_level > 3 %}completed{% elif current_level == 3 %}active{% endif %}" id="step-node-3" data-label="In Transit" data-stage="3">
       <div class="step-bubble">
         {% if current_level > 3 %}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
@@ -65,7 +65,7 @@
     </div>
 
     <!-- Stage 4: Out for Delivery -->
-    <div class="step-node {% if current_level > 4 %}completed{% elif current_level == 4 %}active{% endif %}">
+    <div class="step-node {% if current_level > 4 %}completed{% elif current_level == 4 %}active{% endif %}" id="step-node-4" data-label="Out for Delivery" data-stage="4">
       <div class="step-bubble">
         {% if current_level > 4 %}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
@@ -78,7 +78,7 @@
     </div>
 
     <!-- Stage 5: Delivered -->
-    <div class="step-node {% if current_level == 5 %}completed active{% endif %}">
+    <div class="step-node {% if current_level == 5 %}completed active{% endif %}" id="step-node-5" data-label="Delivered" data-stage="5">
       <div class="step-bubble">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>

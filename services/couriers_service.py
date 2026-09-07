@@ -94,9 +94,75 @@ COURIER_PARTNERS = {
         'icon_type': 'truck',
         'sample_format': 'e.g. 1234567890 (10 digits)'
     },
+    'shipglobal': {
+        'name': 'ShipGlobal',
+        'code': 'shipglobal',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.shipglobal.in/tracking/?tracking_no={tracking_number}',
+        'color': '#0066CC',
+        'bg_color': 'rgba(0, 102, 204, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. SGI123456789 / AWB (ShipGlobal Tracking No)'
+    },
+    'dhlecs-classic': {
+        'name': 'DHL E-Commerce',
+        'code': 'DHLECS-CLASSIC',
+        'service_code': 'DHLECS-CLASSIC',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.shipglobal.in/tracking/?tracking_no={tracking_number}',
+        'color': '#D40511',
+        'bg_color': 'rgba(212, 5, 17, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. UUS000000 / AWB'
+    },
+    'dpd-classic': {
+        'name': 'DPD',
+        'code': 'DPD-CLASSIC',
+        'service_code': 'DPD-CLASSIC',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.shipglobal.in/tracking/?tracking_no={tracking_number}',
+        'color': '#DC0032',
+        'bg_color': 'rgba(220, 0, 50, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. DPD000000 / AWB'
+    },
+    'uniuni-classic': {
+        'name': 'UniUni',
+        'code': 'UNIUNI-CLASSIC',
+        'service_code': 'UNIUNI-CLASSIC',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.shipglobal.in/tracking/?tracking_no={tracking_number}',
+        'color': '#00A862',
+        'bg_color': 'rgba(0, 168, 98, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. UUN000000 / AWB'
+    },
+    'vipparcel-classic': {
+        'name': 'VipParcel',
+        'code': 'VIPPARCEL-CLASSIC',
+        'service_code': 'VIPPARCEL-CLASSIC',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.shipglobal.in/tracking/?tracking_no={tracking_number}',
+        'color': '#6366F1',
+        'bg_color': 'rgba(99, 102, 241, 0.08)',
+        'icon_type': 'package',
+        'sample_format': 'e.g. VIP000000 / AWB'
+    },
+    'ubi-classic': {
+        'name': 'UBI (eTower)',
+        'code': 'UBI-CLASSIC',
+        'service_code': 'UBI-CLASSIC',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.shipglobal.in/tracking/?tracking_no={tracking_number}',
+        'color': '#0284C7',
+        'bg_color': 'rgba(2, 132, 199, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. UBI000000 / AWB'
+    },
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
+        'provider': 'Direct',
         'url_pattern': '{tracking_number}',
         'color': '#16A34A',
         'bg_color': 'rgba(22, 163, 74, 0.08)',
@@ -104,6 +170,60 @@ COURIER_PARTNERS = {
         'sample_format': 'Enter Tracking Number or Website URL'
     }
 }
+
+# ── Hierarchical Logistics Model: Provider -> Carriers ───────────────────────
+LOGISTICS_PROVIDERS = [
+    {
+        'id': 'shipglobal',
+        'name': 'ShipGlobal',
+        'badge': 'Cross-Border Aggregator',
+        'tag': '1-Click Official Labels',
+        'color': '#0066CC',
+        'bg_color': 'rgba(0, 102, 204, 0.08)',
+        'description': 'Cross-border logistics aggregator. Generates PDF shipping labels & AWB directly via API.',
+        'carriers': [
+            {'code': 'DHLECS-CLASSIC', 'name': 'DHL E-Commerce (DHLECS-CLASSIC)', 'carrier_name': 'DHL E-Commerce', 'provider': 'shipglobal', 'format': 'e.g. UUS000000'},
+            {'code': 'DPD-CLASSIC', 'name': 'DPD (DPD-CLASSIC)', 'carrier_name': 'DPD', 'provider': 'shipglobal', 'format': 'e.g. DPD000000'},
+            {'code': 'UNIUNI-CLASSIC', 'name': 'UniUni (UNIUNI-CLASSIC)', 'carrier_name': 'UniUni', 'provider': 'shipglobal', 'format': 'e.g. UUN000000'},
+            {'code': 'VIPPARCEL-CLASSIC', 'name': 'VipParcel (VIPPARCEL-CLASSIC)', 'carrier_name': 'VipParcel', 'provider': 'shipglobal', 'format': 'e.g. VIP000000'},
+            {'code': 'UBI-CLASSIC', 'name': 'UBI eTower (UBI-CLASSIC)', 'carrier_name': 'UBI (eTower)', 'provider': 'shipglobal', 'format': 'e.g. UBI000000'},
+        ]
+    },
+    {
+        'id': 'shiprocket',
+        'name': 'Shiprocket',
+        'badge': 'Domestic Multi-Carrier Aggregator',
+        'tag': 'Unified Automated Tracking',
+        'color': '#E67E22',
+        'bg_color': 'rgba(230, 126, 34, 0.08)',
+        'description': 'Domestic logistics aggregator. Provides multi-carrier shipping & unified automated tracking.',
+        'carriers': [
+            {'code': 'bluedart', 'name': 'Blue Dart (via Shiprocket)', 'carrier_name': 'Blue Dart', 'provider': 'shiprocket', 'format': 'e.g. 89234567890'},
+            {'code': 'delhivery', 'name': 'Delhivery (via Shiprocket)', 'carrier_name': 'Delhivery', 'provider': 'shiprocket', 'format': 'e.g. 1401234567890'},
+            {'code': 'dtdc', 'name': 'DTDC (via Shiprocket)', 'carrier_name': 'DTDC', 'provider': 'shiprocket', 'format': 'e.g. D12345678'},
+            {'code': 'xpressbees', 'name': 'Xpressbees (via Shiprocket)', 'carrier_name': 'Xpressbees', 'provider': 'shiprocket', 'format': 'e.g. 138123456789'},
+            {'code': 'shadowfax', 'name': 'Shadowfax (via Shiprocket)', 'carrier_name': 'Shadowfax', 'provider': 'shiprocket', 'format': 'e.g. SF123456789'},
+            {'code': 'ekart', 'name': 'Ekart Logistics (via Shiprocket)', 'carrier_name': 'Ekart Logistics', 'provider': 'shiprocket', 'format': 'e.g. FMPC1234567890'},
+            {'code': 'indiapost', 'name': 'India Post (via Shiprocket)', 'carrier_name': 'India Post', 'provider': 'shiprocket', 'format': 'e.g. EM123456789IN'},
+            {'code': 'fedex', 'name': 'FedEx India (via Shiprocket)', 'carrier_name': 'FedEx', 'provider': 'shiprocket', 'format': 'e.g. 794812345678'},
+            {'code': 'dhl', 'name': 'DHL Express (via Shiprocket)', 'carrier_name': 'DHL Express', 'provider': 'shiprocket', 'format': 'e.g. 1234567890'},
+        ]
+    },
+    {
+        'id': 'direct',
+        'name': 'Direct Carriers & Custom',
+        'badge': 'Direct Carrier Account',
+        'tag': 'Direct / Offline Partner',
+        'color': '#16A34A',
+        'bg_color': 'rgba(22, 163, 74, 0.08)',
+        'description': 'Direct contract with courier or offline local delivery partners.',
+        'carriers': [
+            {'code': 'delhivery', 'name': 'Delhivery Direct API', 'carrier_name': 'Delhivery', 'provider': 'direct', 'format': 'e.g. 1401234567890'},
+            {'code': 'amazon', 'name': 'Amazon Shipping (ATS)', 'carrier_name': 'Amazon Shipping', 'provider': 'direct', 'format': 'e.g. TBA1234567890'},
+            {'code': 'custom', 'name': 'Local / Custom Transport Partner', 'carrier_name': 'Custom Courier', 'provider': 'direct', 'format': 'Enter Tracking Number or Website URL'},
+        ]
+    }
+]
 
 
 def get_custom_couriers_from_db():
@@ -125,7 +245,17 @@ def normalize_courier_code(courier_partner):
     key = courier_partner.lower().strip()
     key = key.replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '')
     
-    if 'delhivery' in key:
+    if 'dhlecs' in key or 'dhlecommerce' in key:
+        return 'dhlecs-classic'
+    elif 'dpd' in key:
+        return 'dpd-classic'
+    elif 'uniuni' in key:
+        return 'uniuni-classic'
+    elif 'vipparcel' in key:
+        return 'vipparcel-classic'
+    elif 'ubi' in key or 'etower' in key:
+        return 'ubi-classic'
+    elif 'delhivery' in key:
         return 'delhivery'
     elif 'blue' in key or 'dart' in key:
         return 'bluedart'
@@ -145,7 +275,26 @@ def normalize_courier_code(courier_partner):
         return 'ekart'
     elif 'amazon' in key or 'ats' in key:
         return 'amazon'
+    elif 'shipglobal' in key or 'ship_global' in key or 'shipglob' in key:
+        return 'shipglobal'
     return courier_partner.strip()
+
+
+def get_logistics_providers():
+    """Return the complete hierarchical list of Providers -> Carriers."""
+    import copy
+    providers = copy.deepcopy(LOGISTICS_PROVIDERS)
+    custom_list = get_custom_couriers_from_db()
+    for cc in custom_list:
+        providers[2]['carriers'].append({
+            'code': cc['code'],
+            'name': f"{cc['name']} (Custom)",
+            'carrier_name': cc['name'],
+            'provider': 'direct',
+            'format': cc.get('sample_format') or 'Enter Tracking Number',
+            'is_custom': True
+        })
+    return providers
 
 
 def get_courier_metadata(courier_partner):

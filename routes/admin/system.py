@@ -11,6 +11,143 @@ from services.email_service import send_order_status_update_email
 admin_system_bp = Blueprint('admin_system_bp', __name__)
 
 
+# ── Courier API Keys & System Settings ────────────────────────────────────────
+
+SETTING_KEYS = [
+    'DELHIVERY_API_TOKEN',
+    'SHIPROCKET_EMAIL',
+    'SHIPROCKET_PASSWORD',
+    'TRACK17_API_KEY',
+    'TRACKINGMORE_API_KEY',
+    'SHIPGLOBAL_EMAIL',
+    'SHIPGLOBAL_PASSWORD',
+    'SHIPGLOBAL_DEFAULT_SERVICE',
+    'TRACKING_WEBHOOK_SECRET',
+    'AUTO_TRACKING_ENABLED',
+    'TRACKING_POLL_INTERVAL_MINUTES',
+]
+
+
+@admin_system_bp.route('/admin/settings/tracking', methods=['POST'], endpoint='admin_save_tracking_settings')
+@admin_required
+def admin_save_tracking_settings():
+    """Save courier API keys and tracking configuration to system_settings."""
+    from services.tracking_service import save_system_setting
+    data = request.get_json(silent=True) or request.form
+    saved = []
+    for key in SETTING_KEYS:
+        if key not in data:
+            continue
+        val = str(data.get(key) or '').strip()
+        # For password / token fields, skip empty value (keep existing)
+        if not val and key in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY', 'SHIPGLOBAL_PASSWORD', 'TRACKING_WEBHOOK_SECRET'):
+            continue
+        save_system_setting(key, val)
+        saved.append(key)
+    
+    if request.is_json:
+        return jsonify({'success': True, 'message': f"Saved {len(saved)} setting(s) successfully.", 'saved': saved})
+
+    flash(f"Tracking settings saved ({len(saved)} keys updated).", "success")
+    return redirect(url_for('admin_dashboard') + '#settings-tab')
+
+
+@admin_system_bp.route('/admin/settings/tracking', methods=['GET'], endpoint='admin_get_tracking_settings')
+@admin_required
+def admin_get_tracking_settings():
+    """Return current tracking settings as JSON (secrets masked)."""
+    from services.tracking_service import get_all_settings
+    settings = get_all_settings()
+    # Mask secret values
+    for secret_key in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY', 'SHIPGLOBAL_PASSWORD', 'TRACKING_WEBHOOK_SECRET'):
+        if settings.get(secret_key):
+            settings[secret_key] = '••••••••'
+    return jsonify(settings)
+
+
+@admin_system_bp.route('/admin/settings/shipglobal/test-auth', methods=['POST'], endpoint='admin_test_shipglobal_auth')
+@admin_required
+def admin_test_shipglobal_auth():
+    """Test connection to ShipGlobal /api/v1/customers.php."""
+    from services.tracking_service import get_shipglobal_auth_token
+    data = request.get_json(silent=True) or {}
+    email = data.get('email')
+    password = data.get('password')
+    token, err = get_shipglobal_auth_token(email=email, password=password)
+    if token:
+        return jsonify({'success': True, 'message': 'Successfully authenticated with ShipGlobal API!'})
+    return jsonify({'success': False, 'error': err or 'Failed to authenticate with ShipGlobal'})
+
+
+@admin_system_bp.route('/admin/orders/<order_ref>/refresh-tracking', methods=['POST'],
+                       endpoint='admin_refresh_order_tracking')
+@admin_required
+def admin_refresh_order_tracking(order_ref):
+    """Manually trigger an immediate tracking fetch for a specific order."""
+    from services.tracking_service import update_order_from_tracking, get_tracking_events
+
+    db = get_db()
+    order = db.execute(
+        "SELECT id, tracking_number FROM orders WHERE order_number = ? OR CAST(id AS TEXT) = ?",
+        (order_ref, order_ref)
+    ).fetchone()
+    db.close()
+
+    if not order:
+        return jsonify({'success': False, 'error': 'Order not found'}), 404
+    if not order['tracking_number']:
+        return jsonify({'success': False, 'error': 'No tracking number on this order'}), 400
+
+    result = update_order_from_tracking(order['id'], host_url=request.host_url)
+    events = get_tracking_events(order['id'])
+    result['events_list'] = events
+    return jsonify(result)
+
+
+@admin_system_bp.route('/admin/orders/<order_ref>/add-checkpoint', methods=['POST'],
+                       endpoint='admin_add_tracking_checkpoint')
+@admin_required
+def admin_add_tracking_checkpoint(order_ref):
+    """
+    Manually add a live tracking scan event for ANY delivery partner.
+    Advances order status, commits to database, and notifies customer.
+    """
+    from services.tracking_service import add_manual_tracking_checkpoint, get_tracking_events
+
+    db = get_db()
+    order = db.execute(
+        "SELECT id, courier_partner, tracking_number FROM orders WHERE order_number = ? OR CAST(id AS TEXT) = ?",
+        (order_ref, order_ref)
+    ).fetchone()
+    db.close()
+
+    if not order:
+        return jsonify({'success': False, 'error': 'Order not found'}), 404
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    status_raw = data.get('status', '').strip()
+    location   = data.get('location', '').strip()
+    message    = data.get('message', '').strip()
+    courier    = data.get('courier_partner', '').strip() or order['courier_partner'] or 'Express Courier'
+
+    if not status_raw:
+        return jsonify({'success': False, 'error': 'Status is required'}), 400
+
+    res = add_manual_tracking_checkpoint(
+        order_id=order['id'],
+        courier=courier,
+        status_raw=status_raw,
+        location=location,
+        message=message,
+        host_url=request.host_url
+    )
+    res['events_list'] = get_tracking_events(order['id'])
+    return jsonify(res)
+
+
+
+
+
 @admin_system_bp.route('/api/admin/orders', methods=['GET'], endpoint='api_admin_orders')
 @admin_required
 def api_admin_orders():

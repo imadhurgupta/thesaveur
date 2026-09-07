@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from database import get_db
 from services.couriers_service import generate_tracking_url, get_courier_metadata, get_courier_list
 from services.auth_service import verify_order_access
@@ -121,12 +121,36 @@ def track_order(order_ref=None):
     courier_meta = get_courier_metadata(order['courier_partner'])
     official_tracking_url = order['tracking_url'] or generate_tracking_url(order['courier_partner'], order['tracking_number'])
 
+    # Load live courier scan events from local DB (populated by tracking worker / webhooks)
+    from services.tracking_service import get_tracking_events, update_order_from_tracking, get_system_setting
+    tracking_events = get_tracking_events(order_id)
+
+    # Real-time sync on view: if order is active and not polled recently, refresh in background
+    try:
+        import datetime
+        import threading
+        if order['status'] in ('Shipped', 'In Transit', 'Out for Delivery') and order['tracking_number']:
+            last_f = order.get('last_tracking_fetch')
+            should_sync = True
+            if last_f:
+                try:
+                    lf_dt = datetime.datetime.fromisoformat(str(last_f).replace('Z', ''))
+                    if (datetime.datetime.utcnow() - lf_dt).total_seconds() < 180:
+                        should_sync = False
+                except Exception:
+                    pass
+            if should_sync and get_system_setting('AUTO_TRACKING_ENABLED', '1') == '1':
+                threading.Thread(target=update_order_from_tracking, args=(order_id,), daemon=True).start()
+    except Exception as sync_err:
+        print(f"[AUTO SYNC ERROR] {sync_err}")
+
     return render_template(
         'track_order.html',
         order=order,
         items=items,
         courier_meta=courier_meta,
         official_tracking_url=official_tracking_url,
+        tracking_events=tracking_events,
         search_query=search_query or (order['order_number'] or str(order['id']))
     )
 
@@ -240,3 +264,153 @@ def customer_cancel_order(order_ref):
     flash(f"Order #{order['order_number'] or order_id} has been successfully cancelled and stocks restored.", "success")
     return redirect(url_for('my_orders'))
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Live Tracking JSON API — polled every 30s by the customer tracking page
+# ─────────────────────────────────────────────────────────────────────────────
+
+@orders_bp.route('/api/track/<order_ref>', methods=['GET'], endpoint='api_track_order')
+def api_track_order(order_ref):
+    """
+    Lightweight JSON endpoint polled by the customer tracking page.
+    Returns current status + courier scan events.
+    Protected by the same verify_order_access check as the tracking page.
+    """
+    db = get_db()
+    clean_ref = str(order_ref).lstrip('#').strip()
+    order = db.execute(
+        """
+        SELECT o.*, u.full_name as customer_name, u.email as customer_email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
+          AND o.status != 'Pending Payment'
+        LIMIT 1
+        """,
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+
+    if not order:
+        db.close()
+        return jsonify({'error': 'Order not found'}), 404
+
+    is_authorized, _ = verify_order_access(order, session, request)
+    if not is_authorized:
+        db.close()
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    db.close()
+
+    from services.tracking_service import get_tracking_events
+    from services.couriers_service import generate_tracking_url, get_courier_metadata
+
+    events = get_tracking_events(order['id'])
+    courier_meta = get_courier_metadata(order['courier_partner'])
+    tracking_url = order['tracking_url'] or generate_tracking_url(
+        order['courier_partner'], order['tracking_number']
+    )
+
+    return jsonify({
+        'status':                 order['status'],
+        'courier_partner':        order['courier_partner'] or '',
+        'courier_name':           courier_meta['name'] if courier_meta else '',
+        'tracking_number':        order['tracking_number'] or '',
+        'tracking_url':           tracking_url or '',
+        'estimated_delivery_date': order['estimated_delivery_date'] or '',
+        'last_tracking_fetch':    str(order['last_tracking_fetch'] or ''),
+        'tracking_events': [
+            {
+                'status_raw':    e['status_raw'],
+                'status_mapped': e['status_mapped'],
+                'location':      e['location'] or '',
+                'message':       e['message'] or '',
+                'event_time':    e['event_time'] or '',
+            } for e in events
+        ],
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Real-Time SSE Stream Endpoint — instantaneous status synchronization
+# ─────────────────────────────────────────────────────────────────────────────
+
+@orders_bp.route('/api/track/<order_ref>/stream', methods=['GET'], endpoint='api_track_order_stream')
+def api_track_order_stream(order_ref):
+    """
+    Real-Time Server-Sent Events (SSE) stream for instantaneous delivery status sync.
+    """
+    import json
+    import queue
+    from flask import Response
+    from services.tracking_service import (
+        get_tracking_events, subscribe_to_order_tracking,
+        unsubscribe_from_order_tracking
+    )
+
+    db = get_db()
+    clean_ref = str(order_ref).lstrip('#').strip()
+    order = db.execute(
+        """
+        SELECT o.*, u.full_name as customer_name, u.email as customer_email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
+          AND o.status != 'Pending Payment'
+        LIMIT 1
+        """,
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+
+    if not order:
+        db.close()
+        return jsonify({'error': 'Order not found'}), 404
+
+    is_authorized, _ = verify_order_access(order, session, request)
+    if not is_authorized:
+        db.close()
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    order_id = order['id']
+    courier_meta = get_courier_metadata(order['courier_partner'])
+    tracking_url = order['tracking_url'] or generate_tracking_url(
+        order['courier_partner'], order['tracking_number']
+    )
+    initial_events = get_tracking_events(order_id)
+    initial_payload = {
+        'order_id': order_id,
+        'status': order['status'],
+        'courier_partner': order['courier_partner'] or '',
+        'courier_name': courier_meta['name'] if courier_meta else '',
+        'tracking_number': order['tracking_number'] or '',
+        'tracking_url': tracking_url or '',
+        'estimated_delivery_date': order['estimated_delivery_date'] or '',
+        'last_tracking_fetch': str(order['last_tracking_fetch'] or ''),
+        'tracking_events': initial_events,
+    }
+    db.close()
+
+    q = subscribe_to_order_tracking(order_id)
+
+    def event_stream():
+        try:
+            yield f"data: {json.dumps(initial_payload)}\n\n"
+            while True:
+                try:
+                    msg = q.get(timeout=25)
+                    yield f"data: {json.dumps(msg)}\n\n"
+                    if msg.get('status') in ('Delivered', 'Cancelled'):
+                        break
+                except queue.Empty:
+                    yield ": ping\n\n"
+        finally:
+            unsubscribe_from_order_tracking(order_id, q)
+
+    return Response(
+        event_stream(),
+        mimetype="text/event-stream",
+        headers={
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
+        }
+    )

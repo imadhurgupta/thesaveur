@@ -134,6 +134,35 @@
     box-shadow: 0 0 8px #34d399;
   }
 
+  .realtime-sync-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #a7f3d0;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+  .realtime-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
+    display: inline-block;
+    animation: livePulseAnim 2s infinite ease-in-out;
+  }
+  @keyframes livePulseAnim {
+    0% { transform: scale(0.92); opacity: 0.75; }
+    50% { transform: scale(1.35); opacity: 1; box-shadow: 0 0 12px #34d399; }
+    100% { transform: scale(0.92); opacity: 0.75; }
+  }
+
   .track-card-body {
     padding: 36px;
   }
@@ -535,10 +564,16 @@
             Placed on {{ order.created_at }}
           </p>
         </div>
-        <div>
-          <span class="track-status-pill">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          {% if order.status not in ('Delivered', 'Cancelled') %}
+          <span class="realtime-sync-pill" id="realtime-sync-pill" title="Connected to Real-time Delivery Status Sync via SSE">
+            <span class="realtime-pulse-dot" id="realtime-dot"></span>
+            <span id="realtime-sync-label">⚡ Live Sync</span>
+          </span>
+          {% endif %}
+          <span class="track-status-pill" id="track-status-badge">
             <span class="dot"></span>
-            {{ order.status }}
+            <span id="track-status-text">{{ order.status }}</span>
           </span>
         </div>
       </div>
@@ -710,5 +745,154 @@
       toast.classList.remove('show');
     }, 2500);
   }
+
+  // ── Real-Time SSE Stream + 30s Polling Fallback ─────────────────────────────
+  {% if order and order.status not in ('Delivered', 'Cancelled') %}
+  (function liveTrack() {
+    const ORDER_REF  = {{ (order.order_number or order.id) | tojson }};
+    const POLL_MS    = 30000; // 30 seconds safety fallback
+    const STATUS_WEIGHT = { 'Order Confirmed': 0, 'Processing': 0, 'Placed': 0,
+                            'Shipped': 1, 'In Transit': 2, 'Out for Delivery': 3,
+                            'Delivered': 4 };
+    const PROGRESS_MAP = {
+      'Order Confirmed': '0%', 'Processing': '0%', 'Placed': '0%',
+      'Shipped': '25%', 'In Transit': '50%', 'Out for Delivery': '75%',
+      'Delivered': '100%', 'Cancelled': '0%'
+    };
+
+    let timer = null;
+    let sseSource = null;
+
+    function applyUpdate(data, isLivePush = false) {
+      if (!data || !data.status) return;
+
+      // 1 ── Update status stepper line & step nodes
+      const fillLine = document.getElementById('stepper-fill-line');
+      if (fillLine && PROGRESS_MAP[data.status]) {
+        fillLine.style.width = PROGRESS_MAP[data.status];
+      }
+
+      const stepNodes = document.querySelectorAll('.step-node');
+      if (stepNodes.length) {
+        const newWeight = STATUS_WEIGHT[data.status] ?? 0;
+        stepNodes.forEach(node => {
+          const label = node.dataset.label;
+          const sw = STATUS_WEIGHT[label] ?? 0;
+          node.classList.remove('completed', 'active');
+          if (data.status === 'Delivered') {
+            node.classList.add('completed');
+            if (label === 'Delivered') node.classList.add('active');
+          } else if (sw < newWeight) {
+            node.classList.add('completed');
+          } else if (sw === newWeight) {
+            node.classList.add('active');
+          }
+        });
+      }
+
+      // 2 ── Update status badge in header
+      const badgeText = document.getElementById('track-status-text');
+      if (badgeText) {
+        badgeText.textContent = data.status;
+      }
+
+      // 3 ── Update courier + AWB banner
+      const courierEl = document.getElementById('track-courier-name');
+      if (courierEl && (data.courier_name || data.courier_partner)) {
+        courierEl.textContent = data.courier_name || data.courier_partner;
+      }
+      const awbEl = document.getElementById('track-awb-value');
+      if (awbEl && data.tracking_number) awbEl.textContent = data.tracking_number;
+      const eddEl = document.getElementById('track-edd-value');
+      if (eddEl && data.estimated_delivery_date) eddEl.textContent = data.estimated_delivery_date;
+
+      // 4 ── Render live scan checkpoints
+      const eventsCard = document.getElementById('track-events-card');
+      const eventsWrap = document.getElementById('track-events-wrap');
+      if (eventsWrap && data.tracking_events && data.tracking_events.length) {
+        const rows = data.tracking_events.map((ev, i) => {
+          const dotColor = i === 0 ? '#10b981' : '#94a3b8';
+          const ringColor = i === 0 ? '#10b981' : '#cbd5e1';
+          const loc = ev.location ? `<span style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${ev.location}</span>` : '';
+          const ts  = ev.event_time ? `• <span style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${ev.event_time.slice(0, 16)}</span>` : '';
+          return `<div style="position:relative;">
+            <div style="position:absolute; left:-27px; top:3px; width:12px; height:12px; border-radius:50%; background:${dotColor}; border:2px solid #ffffff; box-shadow:0 0 0 2px ${ringColor};"></div>
+            <div style="font-size:0.88rem; font-weight:700; color:#1e293b;">${ev.status_raw || ev.status_mapped}</div>
+            <div style="font-size:0.75rem; color:#64748b; margin-top:2px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${loc} ${ts}</div>
+          </div>`;
+        }).join('');
+        eventsWrap.innerHTML = `<div style="display:flex; flex-direction:column; gap:16px; position:relative; padding-left:20px; border-left:2px solid #e2e8f0; margin-left:8px;">${rows}</div>`;
+        if (eventsCard) eventsCard.style.display = 'block';
+      }
+
+      // Visual notification on live push
+      if (isLivePush) {
+        showRealtimeToast(`⚡ Real-Time Update: Status is now <strong>${data.status}</strong>`);
+      }
+
+      // 5 ── Stop polling and close SSE on terminal statuses
+      if (data.status === 'Delivered' || data.status === 'Cancelled') {
+        if (timer) clearInterval(timer);
+        if (sseSource) sseSource.close();
+        const syncPill = document.getElementById('realtime-sync-pill');
+        if (syncPill) {
+          syncPill.innerHTML = '<span style="color:#059669;">✓ Delivery Complete</span>';
+          syncPill.style.background = 'rgba(255,255,255,0.25)';
+        }
+      }
+    }
+
+    function showRealtimeToast(msg) {
+      let toast = document.getElementById('realtime-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'realtime-toast';
+        toast.style.cssText = 'position:fixed;top:28px;right:28px;background:#064e3b;color:#ffffff;padding:14px 22px;border-radius:14px;font-size:0.86rem;font-weight:600;box-shadow:0 12px 35px rgba(0,0,0,0.2);z-index:99999;display:flex;align-items:center;gap:10px;transform:translateY(-20px);opacity:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = msg;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.transform = 'translateY(-20px)';
+        toast.style.opacity = '0';
+      }, 4500);
+    }
+
+    function poll() {
+      fetch(`/api/track/${encodeURIComponent(ORDER_REF)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data || !data.status) return;
+          applyUpdate(data, false);
+        })
+        .catch(() => {});
+    }
+
+    // Connect zero-latency Server-Sent Events (SSE)
+    if (window.EventSource) {
+      try {
+        sseSource = new EventSource(`/api/track/${encodeURIComponent(ORDER_REF)}/stream`);
+        sseSource.onmessage = function(e) {
+          try {
+            const data = JSON.parse(e.data);
+            if (data && data.status) {
+              applyUpdate(data, true);
+            }
+          } catch(err) {}
+        };
+        sseSource.onerror = function() {
+          // SSE connection dropped; fallback polling continues without user disruption
+        };
+      } catch (err) {
+        console.warn('SSE initialization notice:', err);
+      }
+    }
+
+    timer = setInterval(poll, POLL_MS);
+    setTimeout(poll, 6000);
+  })();
+  {% endif %}
 </script>
 {% endblock %}
+

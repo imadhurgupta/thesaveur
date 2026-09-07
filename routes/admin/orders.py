@@ -139,6 +139,24 @@ def admin_update_order_status(order_ref):
     except Exception as mail_err:
         print(f"[MAIL ALERT ERROR] Failed to send status update email: {mail_err}")
 
+    # Broadcast real-time delivery status update to all connected customers and admin screens
+    try:
+        from services.tracking_service import broadcast_tracking_update, get_tracking_events
+        events = get_tracking_events(order_id)
+        c_meta = get_courier_metadata(final_courier)
+        broadcast_tracking_update(order_id, {
+            'order_id': order_id,
+            'status': status,
+            'courier_partner': final_courier,
+            'courier_name': c_meta['name'] if c_meta else '',
+            'tracking_number': final_awb,
+            'tracking_url': final_tracking_url,
+            'estimated_delivery_date': final_edd,
+            'tracking_events': events
+        })
+    except Exception as b_err:
+        print(f"[BROADCAST ERROR] {b_err}")
+
     if request.is_json:
         courier_meta = get_courier_metadata(final_courier)
         return jsonify({
@@ -208,6 +226,16 @@ def admin_order_detail(order_ref):
         courier_url_map[c['code']] = c.get('url_pattern', '{awb}')
         courier_url_map[c['name']] = c.get('url_pattern', '{awb}')
 
+    from services.tracking_service import get_tracking_events, get_system_setting
+    tracking_events = get_tracking_events(order['id'])
+    shipglobal_email = get_system_setting('SHIPGLOBAL_EMAIL', '')
+    shipglobal_pass = get_system_setting('SHIPGLOBAL_PASSWORD', '')
+    shipglobal_service = get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'DHLECS-CLASSIC')
+    has_shipglobal_creds = bool(shipglobal_email and shipglobal_pass)
+
+    from services.couriers_service import get_logistics_providers
+    logistics_providers = get_logistics_providers()
+
     return render_template(
         'admin/order_detail.html',
         order=order,
@@ -215,8 +243,14 @@ def admin_order_detail(order_ref):
         couriers=couriers_list,
         courier_meta=courier_meta,
         courier_url_map=courier_url_map,
-        official_tracking_url=official_tracking_url
+        official_tracking_url=official_tracking_url,
+        tracking_events=tracking_events,
+        has_shipglobal_creds=has_shipglobal_creds,
+        shipglobal_email=shipglobal_email,
+        shipglobal_service=shipglobal_service,
+        logistics_providers=logistics_providers
     )
+
 
 
 @admin_orders_bp.route('/admin/orders/<order_ref>/invoice', endpoint='admin_invoice')
@@ -265,4 +299,68 @@ def admin_invoice(order_ref):
         back_url=url_for('admin_order_detail', order_ref=order['order_number'] if order['order_number'] else order['id']),
         back_label='Back to Order Detail',
         viewer='admin'
+    )
+
+
+@admin_orders_bp.route('/admin/orders/<order_ref>/shipglobal-label', methods=['POST'], endpoint='admin_create_shipglobal_label')
+@admin_required
+def admin_create_shipglobal_label(order_ref):
+    """
+    Generate official international shipping label via ShipGlobal API (/api/v1/addOrder.php).
+    Returns JSON with waybill_number and pdf_base64.
+    """
+    from services.tracking_service import create_shipglobal_shipment, get_system_setting
+
+    db = get_db()
+    clean_ref = str(order_ref).lstrip('#').strip()
+    order = db.execute(
+        "SELECT id FROM orders WHERE order_number = ? OR id = ? OR order_number = ?",
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+    db.close()
+
+    if not order:
+        return jsonify({'success': False, 'error': 'Order not found'}), 404
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    service_code = data.get('service_code') or get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'DHLECS-CLASSIC')
+
+    res = create_shipglobal_shipment(order['id'], service_code=service_code, host_url=request.host_url)
+    return jsonify(res)
+
+
+@admin_orders_bp.route('/admin/orders/<order_ref>/download-shipping-label', methods=['GET'], endpoint='admin_download_shipping_label')
+@admin_required
+def admin_download_shipping_label(order_ref):
+    """Download stored ShipGlobal Base64 decoded PDF shipping label."""
+    import base64
+    from flask import Response
+    db = get_db()
+    clean_ref = str(order_ref).lstrip('#').strip()
+    order = db.execute(
+        "SELECT order_number, id, shipping_label_pdf, tracking_number FROM orders WHERE order_number = ? OR id = ? OR order_number = ?",
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+    db.close()
+
+    if not order or not order['shipping_label_pdf']:
+        flash('No shipping label found for this order.', 'error')
+        return redirect(url_for('admin_order_detail', order_ref=order_ref))
+
+    try:
+        raw_b64 = order['shipping_label_pdf'].strip()
+        if 'base64,' in raw_b64:
+            raw_b64 = raw_b64.split('base64,')[1]
+        pdf_bytes = base64.b64decode(raw_b64)
+    except Exception as b_err:
+        flash(f'Failed to decode shipping label PDF: {b_err}', 'error')
+        return redirect(url_for('admin_order_detail', order_ref=order_ref))
+
+    filename = f"ShipGlobal_Label_{order['tracking_number'] or order['order_number'] or order['id']}.pdf"
+    return Response(
+        pdf_bytes,
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'inline; filename="{filename}"'
+        }
     )
