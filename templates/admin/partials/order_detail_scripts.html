@@ -14,6 +14,8 @@
     'fedex': 'https://www.fedex.com/fedextrack/?trknbr={awb}',
     'dhl': 'https://www.dhl.com/in-en/home/tracking/tracking-express.html?submit=1&tracking-id={awb}',
     'shipglobal': 'https://www.shipglobal.in/tracking/?tracking_no={awb}',
+    'cirro': 'https://www.cirroparcel.com/tracking?nums={awb}',
+    'cirro-classic': 'https://www.cirroparcel.com/tracking?nums={awb}',
     'custom': '{awb}'
   }, {{ courier_url_map | tojson if courier_url_map else '{}' }});
 
@@ -136,7 +138,7 @@
         
         // Sync with ShipGlobal service dropdown if present
         const sgSelect = document.getElementById('sg-order-service');
-        if (sgSelect && ['DHLECS-CLASSIC', 'DPD-CLASSIC', 'UNIUNI-CLASSIC', 'VIPPARCEL-CLASSIC', 'UBI-CLASSIC'].includes(val)) {
+        if (sgSelect && ['DHLECS-CLASSIC', 'DPD-CLASSIC', 'UNIUNI-CLASSIC', 'VIPPARCEL-CLASSIC', 'UBI-CLASSIC', 'CIRRO-CLASSIC'].includes(val)) {
           sgSelect.value = val;
         }
       } else if (provider === 'shiprocket') {

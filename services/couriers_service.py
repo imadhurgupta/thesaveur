@@ -159,6 +159,27 @@ COURIER_PARTNERS = {
         'icon_type': 'truck',
         'sample_format': 'e.g. UBI000000 / AWB'
     },
+    'cirro-classic': {
+        'name': 'CIRRO Parcel',
+        'code': 'CIRRO-CLASSIC',
+        'service_code': 'CIRRO-CLASSIC',
+        'provider': 'ShipGlobal',
+        'url_pattern': 'https://www.cirroparcel.com/tracking?nums={tracking_number}',
+        'color': '#2563EB',
+        'bg_color': 'rgba(37, 99, 235, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. CIR000000 / AWB'
+    },
+    'cirro': {
+        'name': 'CIRRO E-Commerce',
+        'code': 'cirro',
+        'provider': 'Direct',
+        'url_pattern': 'https://www.cirroparcel.com/tracking?nums={tracking_number}',
+        'color': '#2563EB',
+        'bg_color': 'rgba(37, 99, 235, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. 926129000000000000'
+    },
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
@@ -187,6 +208,7 @@ LOGISTICS_PROVIDERS = [
             {'code': 'UNIUNI-CLASSIC', 'name': 'UniUni (UNIUNI-CLASSIC)', 'carrier_name': 'UniUni', 'provider': 'shipglobal', 'format': 'e.g. UUN000000'},
             {'code': 'VIPPARCEL-CLASSIC', 'name': 'VipParcel (VIPPARCEL-CLASSIC)', 'carrier_name': 'VipParcel', 'provider': 'shipglobal', 'format': 'e.g. VIP000000'},
             {'code': 'UBI-CLASSIC', 'name': 'UBI eTower (UBI-CLASSIC)', 'carrier_name': 'UBI (eTower)', 'provider': 'shipglobal', 'format': 'e.g. UBI000000'},
+            {'code': 'CIRRO-CLASSIC', 'name': 'CIRRO Parcel (CIRRO-CLASSIC)', 'carrier_name': 'CIRRO Parcel', 'provider': 'shipglobal', 'format': 'e.g. CIR000000'},
         ]
     },
     {
@@ -255,6 +277,8 @@ def normalize_courier_code(courier_partner):
         return 'vipparcel-classic'
     elif 'ubi' in key or 'etower' in key:
         return 'ubi-classic'
+    elif 'cirro' in key:
+        return 'cirro-classic'
     elif 'delhivery' in key:
         return 'delhivery'
     elif 'blue' in key or 'dart' in key:

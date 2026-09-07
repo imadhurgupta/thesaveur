@@ -275,6 +275,7 @@
                         <option value="UNIUNI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UNIUNI-CLASSIC') else '' }}>UniUni (UNIUNI-CLASSIC)</option>
                         <option value="VIPPARCEL-CLASSIC" {{ 'selected' if (shipglobal_service == 'VIPPARCEL-CLASSIC') else '' }}>VipParcel (VIPPARCEL-CLASSIC)</option>
                         <option value="UBI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UBI-CLASSIC') else '' }}>UBI eTower (UBI-CLASSIC)</option>
+                        <option value="CIRRO-CLASSIC" {{ 'selected' if (shipglobal_service == 'CIRRO-CLASSIC') else '' }}>CIRRO Parcel (CIRRO-CLASSIC)</option>
                       </select>
                       <button type="button" id="btn-gen-sg-label" onclick="generateShipGlobalLabel('{{ order.order_number or order.id }}')"
                               style="display:inline-flex; align-items:center; gap:4px; background:#0066cc; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:0.75rem; font-weight:700; cursor:pointer;">
@@ -502,6 +503,7 @@
               <option value="UNIUNI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UNIUNI-CLASSIC') else '' }}>UniUni (UNIUNI-CLASSIC)</option>
               <option value="VIPPARCEL-CLASSIC" {{ 'selected' if (shipglobal_service == 'VIPPARCEL-CLASSIC') else '' }}>VipParcel (VIPPARCEL-CLASSIC)</option>
               <option value="UBI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UBI-CLASSIC') else '' }}>UBI eTower (UBI-CLASSIC)</option>
+              <option value="CIRRO-CLASSIC" {{ 'selected' if (shipglobal_service == 'CIRRO-CLASSIC') else '' }}>CIRRO Parcel (CIRRO-CLASSIC)</option>
             </select>
           </div>
 

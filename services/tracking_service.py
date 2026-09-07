@@ -374,6 +374,7 @@ SHIPGLOBAL_SERVICES = {
     'UNIUNI-CLASSIC':   'UniUni (UNIUNI-CLASSIC)',
     'VIPPARCEL-CLASSIC':'VipParcel (VIPPARCEL-CLASSIC)',
     'UBI-CLASSIC':      'UBI eTower (UBI-CLASSIC)',
+    'CIRRO-CLASSIC':    'CIRRO Parcel (CIRRO-CLASSIC)',
 }
 
 _shipglobal_auth_cache = {'token': None, 'expires_at': 0}
