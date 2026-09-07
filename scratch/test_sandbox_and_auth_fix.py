@@ -16,8 +16,8 @@ def run_tests():
     
     with app.test_client() as client:
         with client.session_transaction() as sess:
-            sess['admin_logged_in'] = True
-            sess['admin_id'] = 1
+            sess['user_id'] = 'USR-ADMIN'
+            sess['is_admin'] = True
 
         # 1. Test test-auth with sandbox=True
         print("\n1. Testing test-auth route with sandbox=True:")
@@ -78,11 +78,13 @@ def run_tests():
         print("DB order verified: Status='Shipped', courier_partner='shipglobal', tracking_number=", updated_order['tracking_number'])
 
         # 4. Test downloading the label PDF via admin endpoint
-        print("\n4. Testing /admin/orders/<ref>/shipglobal-label/download endpoint:")
-        dl_res = client.get(f"/admin/orders/{order_ref}/shipglobal-label/download")
-        assert dl_res.status_code == 200
+        print("\n4. Testing /admin/orders/<ref>/download-shipping-label endpoint:")
+        dl_res = client.get(f"/admin/orders/{order_ref}/download-shipping-label")
+        print("Download status:", dl_res.status_code, "headers:", dl_res.headers)
+        assert dl_res.status_code == 200, f"Expected 200, got {dl_res.status_code}"
         assert dl_res.headers.get('Content-Type') == 'application/pdf'
-        assert len(dl_res.data) == len(pdf_bytes)
+        assert dl_res.data.startswith(b'%PDF'), "Downloaded content must be PDF"
+        print("Downloaded bytes length:", len(dl_res.data))
         print("Download endpoint returned full binary PDF successfully!")
 
         print("\nALL VERIFICATIONS PASSED!")

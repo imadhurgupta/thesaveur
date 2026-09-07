@@ -514,14 +514,14 @@ def generate_shipglobal_thermal_label_pdf(
     return base64.b64encode(pdf_data).decode('ascii')
 
 
-def get_shipglobal_auth_token(email: str = None, password: str = None, token: str = None):
+def get_shipglobal_auth_token(email: str = None, password: str = None, token: str = None, allow_sandbox: bool = True):
     """
     Authenticate via POST /api/v1/customers.php to obtain Bearer JWT token.
     Supports Sandbox Simulation Mode and Direct API Token bypass.
     Returns (token, error_msg).
     """
     # 1. Check if Sandbox Mode is active
-    if get_system_setting('SHIPGLOBAL_SANDBOX_MODE', '0') == '1':
+    if allow_sandbox and get_system_setting('SHIPGLOBAL_SANDBOX_MODE', '0') == '1':
         return 'sandbox_token_sg_demo', None
 
     # 2. Check direct static API Token if provided or stored
@@ -720,7 +720,7 @@ def create_shipglobal_shipment(order_id: int, service_code: str = 'DHLECS-CLASSI
         prefix = 'CIR' if 'CIRRO' in svc_code else ('UUS' if 'UNIUNI' in svc_code or 'VIP' in svc_code else 'SGB')
         waybill = f"{prefix}{int(time.time()) % 10000000:07d}{order['id']:04d}"
 
-        items_names = [it['product_name'] for it in items if it.get('product_name')]
+        items_names = [it['product_name'] for it in items if it['product_name']]
         items_desc = ", ".join(items_names[:2]) if items_names else "Gourmet Artisan Food Selection"
         total_val_str = f"INR {float(order['total_amount'] or 50):,.2f}" if c_country == 'IN' else f"USD {max(15.0, float(order['total_amount'] or 50) / 85.0):,.2f}"
 

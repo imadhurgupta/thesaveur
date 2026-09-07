@@ -96,7 +96,8 @@ def admin_test_shipglobal_auth():
             'message': 'ShipGlobal Sandbox Mode is active! You can generate real 4x6 thermal test labels and waybills immediately.'
         })
 
-    token, err = get_shipglobal_auth_token(email=email, password=password, token=token)
+    # When sandbox is explicitly False or disabled, test the live API connection
+    token, err = get_shipglobal_auth_token(email=email, password=password, token=token, allow_sandbox=False)
     if token:
         return jsonify({'success': True, 'message': 'Successfully authenticated with ShipGlobal API!'})
 

@@ -318,15 +318,15 @@ def admin_create_shipglobal_label(order_ref):
     db = get_db()
     clean_ref = str(order_ref).lstrip('#').strip()
     order = db.execute(
-        "SELECT id FROM orders WHERE order_number = ? OR id = ? OR order_number = ?",
+        "SELECT id, order_number FROM orders WHERE order_number = ? OR id = ? OR order_number = ? ORDER BY id DESC LIMIT 1",
         (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
     ).fetchone()
     db.close()
 
     if not order:
-        return jsonify({'success': False, 'error': 'Order not found'}), 404
+        return jsonify({'success': False, 'error': f"Order not found: {order_ref}"}), 404
 
-    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    data = request.get_json(silent=True) or {}
     service_code = data.get('service_code') or get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'DHLECS-CLASSIC')
 
     res = create_shipglobal_shipment(order['id'], service_code=service_code, host_url=request.host_url)
@@ -342,7 +342,7 @@ def admin_download_shipping_label(order_ref):
     db = get_db()
     clean_ref = str(order_ref).lstrip('#').strip()
     order = db.execute(
-        "SELECT order_number, id, shipping_label_pdf, tracking_number FROM orders WHERE order_number = ? OR id = ? OR order_number = ?",
+        "SELECT order_number, id, shipping_label_pdf, tracking_number FROM orders WHERE order_number = ? OR id = ? OR order_number = ? ORDER BY id DESC LIMIT 1",
         (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
     ).fetchone()
     db.close()
