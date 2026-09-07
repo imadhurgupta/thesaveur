@@ -687,9 +687,15 @@
     timeline.innerHTML = html;
   }
 
-  function renderRefundCard(refundInfo) {
-    if (!refundInfo) return;
+  function renderRefundCard(refundInfo, targetStatus) {
     let card = document.getElementById('admin-refund-card');
+    if (targetStatus !== 'Cancelled') {
+      if (card) {
+        card.style.display = 'none';
+      }
+      return;
+    }
+    if (!refundInfo) return;
     const isCod = refundInfo.refund_status === 'No Refund (COD)' || (refundInfo.payment_method && refundInfo.payment_method.toLowerCase().includes('cod'));
     
     const badgeHtml = isCod 
@@ -868,9 +874,7 @@
           updateTimelineUI(targetStatus);
         }
 
-        if (targetStatus === 'Cancelled' || data.refund_info || data.refund_status) {
-          renderRefundCard(data.refund_info || data);
-        }
+        renderRefundCard(data.refund_info || data, targetStatus);
 
         // Update current courier status headline
         const statusText = document.getElementById('shiprocket-current-status-text');
@@ -948,9 +952,7 @@
               showToast('success', `Live Courier Update: ${currentStatus}`);
             }
 
-            if (currentStatus === 'Cancelled' || data.refund_info || data.refund_status) {
-              renderRefundCard(data.refund_info || data);
-            }
+            renderRefundCard(data.refund_info || data, currentStatus);
 
             if (data.raw_courier_status) {
               const statusText = document.getElementById('shiprocket-current-status-text');

@@ -10,7 +10,7 @@
         </div>
         <div class="od-card-body">
           <!-- Cancellation & Refund Information Card -->
-          {% if order.status == 'Cancelled' or order.refund_status %}
+          {% if order.status == 'Cancelled' and (order.refund_id or order.refund_status or order.payment_method) %}
           <div id="admin-refund-card" style="margin-bottom: 16px; background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 10px; padding: 14px 16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
               <div style="display:flex; align-items:center; gap:6px;">

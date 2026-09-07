@@ -120,6 +120,21 @@ def admin_update_order_status(order_ref):
         """,
         (status, final_courier, final_awb, final_tracking_url, final_edd, order_id)
     )
+    
+    # If the admin changes status to something other than Cancelled, clear any existing refund data
+    if status != 'Cancelled' and current_order.get('refund_id'):
+        db.execute(
+            """
+            UPDATE orders 
+            SET refund_id = NULL,
+                refund_status = NULL,
+                refund_amount = NULL,
+                refund_created_at = NULL
+            WHERE id = ?
+            """,
+            (order_id,)
+        )
+        
     db.commit()
     db.close()
 

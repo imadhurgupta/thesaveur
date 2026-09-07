@@ -435,6 +435,10 @@ def update_order_from_tracking(order_id: int, host_url: str = '') -> dict:
     if new_status == 'Cancelled' and old_status != 'Cancelled':
         final_status = 'Cancelled'
         status_changed = True
+    elif old_status == 'Cancelled' and new_status != 'Cancelled':
+        # Do NOT resurrect a cancelled order via automated background sync
+        final_status = 'Cancelled'
+        status_changed = False
     elif new_weight > old_weight:
         final_status = new_status
         status_changed = True
