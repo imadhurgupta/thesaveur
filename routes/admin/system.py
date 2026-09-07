@@ -177,7 +177,7 @@ def api_admin_get_tracking_settings():
     mock_mode = get_system_setting('SHIPROCKET_MOCK_MODE', '1') == '1'
     last_sync = get_system_setting('SHIPROCKET_LAST_BULK_SYNC', '')
 
-    webhook_url = f"{request.host_url.rstrip('/')}/api/webhooks/shiprocket/tracking"
+    webhook_url = f"{request.host_url.rstrip('/')}/api/webhooks/delivery/push"
 
     return jsonify({
         'success': True,
