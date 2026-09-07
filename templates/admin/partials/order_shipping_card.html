@@ -119,7 +119,10 @@
                 <!-- Courier Partner Dropdown -->
                 <div class="od-form-group">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
-                    <label class="od-form-label" for="courier-select" style="margin-bottom:0;">Courier Partner (Auto-detected)</label>
+                    <label class="od-form-label" for="courier-select" style="margin-bottom:0; display:inline-flex; align-items:center; gap:6px;">
+                      <span>Courier Partner</span>
+                      <span id="courier-partner-badge" style="display:none; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:0.68rem; font-weight:700; padding:1px 6px; border-radius:4px;"></span>
+                    </label>
                     <div style="display:inline-flex; align-items:center; gap:8px;">
                       <button type="button" id="btn-edit-selected-courier" onclick="editCurrentSelectedCourier()" style="display:none; background:none; border:none; color:#2563eb; font-size:0.75rem; font-weight:700; cursor:pointer; padding:0; align-items:center; gap:3px;" title="Edit this custom courier's name &amp; tracking URL">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -147,11 +150,16 @@
                               data-url="{{ c.url_pattern or '' }}" 
                               data-custom="{% if c.is_custom %}true{% else %}false{% endif %}"
                               data-db-custom="{% if c.is_db_custom %}true{% else %}false{% endif %}"
-                              {% if (order.courier_partner and order.courier_partner.lower() == c.code) or (courier_meta and courier_meta.code == c.code) %}selected{% endif %}>
+                              {% if (order.courier_partner and (order.courier_partner.lower() == c.code.lower() or order.courier_partner.lower() == c.name.lower())) or (courier_meta and courier_meta.code == c.code) %}selected{% endif %}>
                         {{ c.name }} {% if c.is_db_custom %}(Custom Partner){% endif %}
                       </option>
                     {% endfor %}
-                    <option value="__custom__" {% if order.courier_partner and (order.courier_partner.lower() not in courier_codes or courier_meta.code == 'custom') %}selected{% endif %}>
+                    {% if order.courier_partner and (order.courier_partner.lower() not in courier_codes) and order.courier_partner != 'Courier Partner' %}
+                      <option value="{{ order.courier_partner }}" data-name="{{ order.courier_partner }}" selected>
+                        {{ order.courier_partner }}
+                      </option>
+                    {% endif %}
+                    <option value="__custom__">
                       + Add Custom / Other Courier...
                     </option>
                   </select>

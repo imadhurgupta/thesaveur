@@ -524,31 +524,70 @@
           fetchBtn.innerHTML = originalBtnHtml;
         }
         if (data.success && data.courier_name) {
-          // 1. Select the courier partner in dropdown
+          // 1. Visibly show and select the courier partner in the Choose Courier box
           const courierSelect = document.getElementById('courier-select');
-          let matched = false;
           if (courierSelect) {
-            const targetCode = (data.courier_code || '').toLowerCase();
-            const targetName = (data.courier_name || '').toLowerCase();
+            const targetCode = (data.courier_code || '').toLowerCase().trim();
+            const targetName = (data.courier_name || '').toLowerCase().trim();
+            let matched = false;
+
             for (let i = 0; i < courierSelect.options.length; i++) {
               const opt = courierSelect.options[i];
-              const optVal = (opt.value || '').toLowerCase();
-              const optName = (opt.dataset.name || opt.text || '').toLowerCase();
-              if (optVal === targetCode || optName.includes(targetName) || targetName.includes(optVal) || (targetCode && optVal.includes(targetCode))) {
+              if (!opt.value || opt.value === '__custom__') continue;
+              const optVal = (opt.value || '').toLowerCase().trim();
+              const optName = (opt.dataset.name || opt.text || '').toLowerCase().trim();
+              if (
+                (targetCode && optVal === targetCode) ||
+                (targetName && optName === targetName) ||
+                (targetName && optVal === targetName) ||
+                (targetCode && optName.includes(targetCode)) ||
+                (targetName && (optName.includes(targetName) || targetName.includes(optName)))
+              ) {
                 courierSelect.selectedIndex = i;
                 matched = true;
                 break;
               }
             }
+
             if (!matched) {
-              // Custom courier partner
-              courierSelect.value = '__custom__';
-              openCourierPanel('add');
-              const nameInp = document.getElementById('custom-courier-name');
-              if (nameInp) nameInp.value = data.courier_name;
-              const urlInp = document.getElementById('custom-courier-url');
-              if (urlInp && data.tracking_url) urlInp.value = data.tracking_url;
+              // Add option directly into the Choose Courier box so the fetched name is visibly shown
+              const newOpt = document.createElement('option');
+              newOpt.value = data.courier_name;
+              newOpt.dataset.name = data.courier_name;
+              newOpt.dataset.url = data.tracking_url || `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`;
+              newOpt.text = data.courier_name;
+              const customOpt = courierSelect.querySelector('option[value="__custom__"]');
+              if (customOpt) {
+                courierSelect.insertBefore(newOpt, customOpt);
+              } else {
+                courierSelect.appendChild(newOpt);
+              }
+              newOpt.selected = true;
+              courierSelect.value = newOpt.value;
             }
+
+            // Close custom courier box if open
+            const customBox = document.getElementById('custom-courier-box');
+            if (customBox) customBox.style.display = 'none';
+
+            // Visually highlight the choose courier box so admin clearly sees the fetched partner
+            courierSelect.style.transition = 'all 0.3s ease';
+            courierSelect.style.borderColor = '#10b981';
+            courierSelect.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.25)';
+            setTimeout(() => {
+              courierSelect.style.borderColor = '';
+              courierSelect.style.boxShadow = '';
+            }, 2200);
+
+            // Update badge next to Choose Courier box label
+            const partnerBadge = document.getElementById('courier-partner-badge');
+            if (partnerBadge) {
+              partnerBadge.textContent = `✓ ${data.courier_name}`;
+              partnerBadge.style.display = 'inline-block';
+            }
+
+            // Trigger courier change handler to refresh helper format & preview
+            onCourierChange();
           }
 
           // 2. Populate EDD if returned
