@@ -457,6 +457,7 @@
       .replace(/'/g, '&#039;');
   }
 
+  let awbLookupDebounce = null;
   function onAwbInput(val) {
     updateTrackingPreview();
     const awb = (val || '').trim();
@@ -483,7 +484,104 @@
         pulseStatus.style.color = '#059669';
         pulseStatus.textContent = 'Active (Real-time)';
       }
+
+      // Automatically query courier API to fetch complete courier partner details
+      if (awbLookupDebounce) clearTimeout(awbLookupDebounce);
+      if (awb.length >= 6) {
+        const awbHelp = document.getElementById('awb-help');
+        if (awbHelp) {
+          awbHelp.innerHTML = `<span style="color:#0284c7; font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="animation:spin 0.8s linear infinite; display:inline-block; vertical-align:middle;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Fetching courier partner info from API...</span>`;
+        }
+        awbLookupDebounce = setTimeout(() => {
+          fetchCourierInfoByAwb(awb);
+        }, 500);
+      }
     }
+  }
+
+  function fetchCourierInfoByAwb(awb) {
+    if (!awb || awb.length < 5) return;
+    const fetchBtn = document.getElementById('btn-fetch-awb');
+    const originalBtnHtml = fetchBtn ? fetchBtn.innerHTML : '';
+    if (fetchBtn) {
+      fetchBtn.disabled = true;
+      fetchBtn.innerHTML = `<span>Fetching...</span>`;
+    }
+
+    fetch(`/api/admin/couriers/lookup-awb?awb=${encodeURIComponent(awb)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (fetchBtn) {
+          fetchBtn.disabled = false;
+          fetchBtn.innerHTML = originalBtnHtml;
+        }
+        if (data.success && data.courier_name) {
+          // 1. Select the courier partner in dropdown
+          const courierSelect = document.getElementById('courier-select');
+          let matched = false;
+          if (courierSelect) {
+            const targetCode = (data.courier_code || '').toLowerCase();
+            const targetName = (data.courier_name || '').toLowerCase();
+            for (let i = 0; i < courierSelect.options.length; i++) {
+              const opt = courierSelect.options[i];
+              const optVal = (opt.value || '').toLowerCase();
+              const optName = (opt.dataset.name || opt.text || '').toLowerCase();
+              if (optVal === targetCode || optName.includes(targetName) || targetName.includes(optVal) || (targetCode && optVal.includes(targetCode))) {
+                courierSelect.selectedIndex = i;
+                matched = true;
+                break;
+              }
+            }
+            if (!matched) {
+              // Custom courier partner
+              courierSelect.value = '__custom__';
+              openCourierPanel('add');
+              const nameInp = document.getElementById('custom-courier-name');
+              if (nameInp) nameInp.value = data.courier_name;
+              const urlInp = document.getElementById('custom-courier-url');
+              if (urlInp && data.tracking_url) urlInp.value = data.tracking_url;
+            }
+          }
+
+          // 2. Populate EDD if returned
+          if (data.edd) {
+            const eddInput = document.getElementById('edd-input');
+            if (eddInput && !eddInput.value) {
+              eddInput.value = data.edd;
+            }
+          }
+
+          // 3. Populate tracking link if returned
+          if (data.tracking_url) {
+            const linkInput = document.getElementById('courier-link-input');
+            if (linkInput && !linkInput.value) {
+              linkInput.value = data.tracking_url;
+            }
+          }
+
+          // 4. Update preview block
+          updateTrackingPreview();
+
+          // 5. Update helper text
+          const awbHelp = document.getElementById('awb-help');
+          if (awbHelp) {
+            awbHelp.innerHTML = `<span style="color:#059669; font-weight:700;">✓ Identified Partner: ${escapeHtml(data.courier_name)}</span>`;
+          }
+
+          showToast('success', `Identified Courier Partner: ${data.courier_name}`);
+        } else {
+          const awbHelp = document.getElementById('awb-help');
+          if (awbHelp) {
+            awbHelp.textContent = 'Enter courier tracking ID';
+          }
+        }
+      })
+      .catch(() => {
+        if (fetchBtn) {
+          fetchBtn.disabled = false;
+          fetchBtn.innerHTML = originalBtnHtml;
+        }
+      });
   }
 
   function onCourierLinkInput(urlStr) {

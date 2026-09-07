@@ -61,7 +61,22 @@ def admin_update_order_status(order_ref):
     else:
         final_courier = current_order['courier_partner'] or 'Courier Partner'
 
-    final_edd = estimated_delivery_date if estimated_delivery_date is not None else (current_order['estimated_delivery_date'] or '')
+    final_edd = estimated_delivery_date if estimated_delivery_date is not None and estimated_delivery_date.strip() else (current_order['estimated_delivery_date'] or '')
+
+    # If AWB is entered and courier partner is not explicitly set, fetch complete information from API
+    if final_awb and (not final_courier or final_courier in ['Courier Partner', '', '__custom__', 'custom']):
+        try:
+            from services.tracking_service import ShiprocketClient
+            client = ShiprocketClient()
+            track_res = client.track_awb(final_awb)
+            if track_res.get('success') and track_res.get('courier_name'):
+                final_courier = track_res['courier_name']
+                if not final_edd and track_res.get('edd'):
+                    final_edd = track_res['edd']
+                if not custom_tracking_url and track_res.get('track_url'):
+                    custom_tracking_url = track_res['track_url']
+        except Exception as e:
+            print(f"[AWB FETCH PARTNER ERROR] {e}")
 
     # Auto-advance status to 'Shipped' when tracking number/AWB is entered
     if final_awb:

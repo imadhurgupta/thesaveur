@@ -245,10 +245,16 @@
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <!-- AWB / Tracking ID -->
                 <div class="od-form-group">
-                  <label class="od-form-label" for="awb-input">Tracking / AWB Number *</label>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <label class="od-form-label" for="awb-input" style="margin-bottom:0;">Tracking / AWB Number *</label>
+                    <button type="button" id="btn-fetch-awb" onclick="fetchCourierInfoByAwb(document.getElementById('awb-input').value.trim())" style="background:none; border:none; color:#2563eb; font-size:0.72rem; font-weight:700; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:3px;" title="Query courier API to fetch complete partner info">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <span>Fetch Partner</span>
+                    </button>
+                  </div>
                   <input type="text" id="awb-input" name="tracking_number" class="od-form-control" 
                          placeholder="e.g. 140123456789" value="{{ order.tracking_number or '' }}" 
-                         oninput="onAwbInput(this.value)" />
+                         oninput="onAwbInput(this.value)" onchange="fetchCourierInfoByAwb(this.value.trim())" />
                   <small id="awb-help" style="display:block; font-size:0.7rem; color:#94a3b8; margin-top:2px;">
                     {{ courier_meta.sample_format if courier_meta else 'Enter courier tracking ID' }}
                   </small>

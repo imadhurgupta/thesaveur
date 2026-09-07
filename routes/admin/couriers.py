@@ -155,3 +155,94 @@ def api_admin_delete_courier(id=None):
     except Exception as e:
         db.close()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@admin_couriers_bp.route('/api/admin/couriers/lookup-awb', methods=['GET', 'POST'], endpoint='api_admin_lookup_awb')
+@admin_required
+def api_admin_lookup_awb():
+    """
+    Look up complete courier partner information (courier name, code, official tracking URL, EDD)
+    from an AWB / Tracking number via courier APIs & patterns.
+    """
+    data = request.get_json(silent=True) or request.args or request.form.to_dict() or {}
+    awb = str(data.get('awb') or data.get('tracking_number') or '').strip()
+    if not awb:
+        return jsonify({'success': False, 'error': 'AWB number is required.'}), 400
+
+    from services.tracking_service import ShiprocketClient
+    from services.couriers_service import COURIER_PARTNERS, get_courier_metadata, generate_tracking_url, normalize_courier_code
+
+    courier_name = None
+    courier_code = None
+    track_url = None
+    edd = None
+    origin = None
+    destination = None
+    current_status = None
+    raw_data = {}
+
+    # 1. Query courier tracking API
+    try:
+        client = ShiprocketClient()
+        track_res = client.track_awb(awb)
+        if track_res.get('success'):
+            courier_name = track_res.get('courier_name')
+            track_url = track_res.get('track_url')
+            edd = track_res.get('edd')
+            origin = track_res.get('origin')
+            destination = track_res.get('destination')
+            current_status = track_res.get('current_status')
+            raw_data = track_res
+    except Exception as e:
+        print(f"[LOOKUP AWB API ERROR] {e}")
+
+    # 2. Pattern-based fallback identification if courier name not returned by API
+    if not courier_name or courier_name == 'Courier Partner':
+        awb_upper = awb.upper()
+        if awb_upper.startswith('SF'):
+            courier_code = 'shadowfax'
+        elif re.match(r'^E[A-Z][0-9]{9}IN$', awb_upper):
+            courier_code = 'indiapost'
+        elif awb_upper.startswith('FMPC') or awb_upper.startswith('EKART'):
+            courier_code = 'ekart'
+        elif awb_upper.startswith('TBA'):
+            courier_code = 'amazon'
+        elif re.match(r'^[DZ][0-9]{8}$', awb_upper):
+            courier_code = 'dtdc'
+        elif awb.isdigit():
+            if len(awb) == 10:
+                courier_code = 'dhl'
+            elif len(awb) == 11:
+                courier_code = 'bluedart'
+            elif len(awb) == 12:
+                courier_code = 'fedex'
+            elif len(awb) in [13, 14]:
+                courier_code = 'delhivery'
+        
+        if courier_code and courier_code in COURIER_PARTNERS:
+            meta = COURIER_PARTNERS[courier_code]
+            courier_name = meta['name']
+            if not track_url:
+                track_url = generate_tracking_url(courier_code, awb)
+
+    if not courier_code and courier_name:
+        courier_code = normalize_courier_code(courier_name)
+
+    if not track_url and (courier_code or courier_name):
+        track_url = generate_tracking_url(courier_code or courier_name, awb)
+
+    courier_meta = get_courier_metadata(courier_code or courier_name or 'custom')
+
+    return jsonify({
+        'success': True,
+        'awb': awb,
+        'courier_name': courier_name or courier_meta.get('name') or 'Courier Partner',
+        'courier_code': courier_code or courier_meta.get('code') or 'custom',
+        'tracking_url': track_url or generate_tracking_url(courier_meta.get('code', 'custom'), awb),
+        'edd': edd or '',
+        'origin': origin or '',
+        'destination': destination or '',
+        'current_status': current_status or 'Ready for Pickup',
+        'courier_meta': courier_meta,
+        'raw_data': raw_data
+    })
