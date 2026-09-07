@@ -70,13 +70,6 @@ def create_app():
     # Trust standard reverse proxy headers (Nginx X-Forwarded-Proto, Host, For)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-    # Start automated background courier tracking scheduler (zero-config in-process)
-    try:
-        from services.tracking_service import start_in_app_tracking_scheduler
-        start_in_app_tracking_scheduler()
-    except Exception as e:
-        print(f"[TRACKING SCHEDULER] Could not start thread: {e}")
-
     return app
 
 

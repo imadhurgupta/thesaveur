@@ -78,35 +78,25 @@
                     </div>
                   </div>
                   <select id="courier-select" name="courier_partner" class="od-form-control" onchange="onCourierChange()">
-                    <option value="">-- Choose Courier Partner --</option>
-                    {% if logistics_providers %}
-                      {% for prov in logistics_providers %}
-                        <optgroup label="{% if prov.id == 'shipglobal' %}🌐{% elif prov.id == 'shiprocket' %}🚀{% else %}📦{% endif %} {{ prov.name }} — {{ prov.badge }}">
-                          {% for c in prov.carriers %}
-                            {% set is_sel = (order.courier_partner and order.courier_partner|lower in [c.code|lower, c.name|lower, c.carrier_name|lower]) or (courier_meta and courier_meta.code|lower == c.code|lower) or (order.shipglobal_service_code and order.shipglobal_service_code == c.code) %}
-                            <option value="{{ c.code }}"
-                                    data-provider="{{ prov.id }}"
-                                    data-provider-name="{{ prov.name }}"
-                                    data-name="{{ c.name }}"
-                                    data-carrier-name="{{ c.carrier_name }}"
-                                    data-format="{{ c.format }}"
-                                    data-custom="{% if c.is_custom %}true{% else %}false{% endif %}"
-                                    {% if is_sel %}selected{% endif %}>
-                              {{ c.name }}
-                            </option>
-                          {% endfor %}
-                        </optgroup>
-                      {% endfor %}
-                    {% else %}
-                      {% for c in couriers %}
-                        <option value="{{ c.code }}" data-name="{{ c.name }}">{{ c.name }}</option>
-                      {% endfor %}
-                    {% endif %}
-                    <option value="__custom__" {% if order.courier_partner and (courier_meta and courier_meta.code == 'custom') %}selected{% endif %}>
+                    <option value="">-- Choose Courier --</option>
+                    {% set courier_codes = [] %}
+                    {% for c in couriers %}
+                      {% set _ = courier_codes.append(c.code.lower()) %}
+                      <option value="{{ c.code }}" 
+                              data-id="{{ c.id or '' }}" 
+                              data-name="{{ c.name }}" 
+                              data-format="{{ c.sample_format }}" 
+                              data-url="{{ c.url_pattern or '' }}" 
+                              data-custom="{% if c.is_custom %}true{% else %}false{% endif %}"
+                              data-db-custom="{% if c.is_db_custom %}true{% else %}false{% endif %}"
+                              {% if (order.courier_partner and order.courier_partner.lower() == c.code) or (courier_meta and courier_meta.code == c.code) %}selected{% endif %}>
+                        {{ c.name }} {% if c.is_db_custom %}(Custom Partner){% endif %}
+                      </option>
+                    {% endfor %}
+                    <option value="__custom__" {% if order.courier_partner and (order.courier_partner.lower() not in courier_codes or courier_meta.code == 'custom') %}selected{% endif %}>
                       + Add Custom / Other Courier...
                     </option>
                   </select>
-                  <div id="provider-carrier-pill" style="display:none; font-size:0.75rem; margin-top:5px; padding:3px 8px; border-radius:6px; font-weight:600; align-items:center; gap:6px;"></div>
                 </div>
 
                 <!-- Order Status Dropdown -->
@@ -228,69 +218,6 @@
                 </div>
               </div>
 
-              <!-- ShipGlobal Integration & Label Generation Bar -->
-              {% if order.shipping_label_pdf %}
-              <div style="margin-top:12px; padding:10px 14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="background:#0066cc; color:#fff; font-size:0.7rem; font-weight:700; padding:2px 6px; border-radius:4px;">ShipGlobal</span>
-                  <span style="font-size:0.8rem; font-weight:600; color:#166534;">Official Shipping Label Generated</span>
-                  {% if order.shipglobal_service_code %}
-                  <span style="font-size:0.72rem; color:#64748b;">({{ order.shipglobal_service_code }})</span>
-                  {% endif %}
-                </div>
-                <a href="{{ url_for('admin_orders_bp.admin_download_shipping_label', order_ref=order.order_number if order.order_number else order.id) }}"
-                   target="_blank"
-                   style="display:inline-flex; align-items:center; gap:6px; background:#059669; color:#fff; padding:6px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; text-decoration:none;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Print / Download Label (PDF)
-                </a>
-              </div>
-              {% else %}
-                {% if not has_shipglobal_creds %}
-                <div style="margin-top:12px; padding:12px 14px; background:#eff6ff; border:1.5px dashed #3b82f6; border-radius:10px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="background:#0066cc; color:#fff; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;">ShipGlobal</span>
-                      <span style="font-size:0.82rem; font-weight:700; color:#1e40af;">API Credentials Not Set</span>
-                    </div>
-                    <button type="button" onclick="openShipGlobalCredsModal()"
-                            style="display:inline-flex; align-items:center; gap:5px; background:#0066cc; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:0.75rem; font-weight:700; cursor:pointer;">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                      Add Credentials to Enable Labels
-                    </button>
-                  </div>
-                </div>
-                {% else %}
-                <div style="margin-top:12px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="background:#0066cc; color:#fff; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px;">ShipGlobal</span>
-                      <span style="font-size:0.8rem; font-weight:700; color:#1e293b;">1-Click Automated Label</span>
-                      {% if shipglobal_sandbox == '1' %}
-                      <span style="background:#dbeafe; color:#1d4ed8; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid #bfdbfe;" title="Simulation Mode Active: Generates authentic 4x6 thermal labels">SANDBOX ACTIVE</span>
-                      {% endif %}
-                      <button type="button" onclick="openShipGlobalCredsModal()" style="background:none; border:none; color:#0066cc; font-size:0.72rem; cursor:pointer; text-decoration:underline; padding:0; margin-left:4px;" title="Edit ShipGlobal login email/password">⚙️ Settings</button>
-                    </div>
-                    <div style="display:inline-flex; align-items:center; gap:8px;">
-                      <select id="sg-order-service" style="padding:4px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.75rem; background:#fff;">
-                        <option value="DHLECS-CLASSIC" {{ 'selected' if (shipglobal_service == 'DHLECS-CLASSIC') else '' }}>DHL E-Commerce (DHLECS-CLASSIC)</option>
-                        <option value="DPD-CLASSIC" {{ 'selected' if (shipglobal_service == 'DPD-CLASSIC') else '' }}>DPD (DPD-CLASSIC)</option>
-                        <option value="UNIUNI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UNIUNI-CLASSIC') else '' }}>UniUni (UNIUNI-CLASSIC)</option>
-                        <option value="VIPPARCEL-CLASSIC" {{ 'selected' if (shipglobal_service == 'VIPPARCEL-CLASSIC') else '' }}>VipParcel (VIPPARCEL-CLASSIC)</option>
-                        <option value="UBI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UBI-CLASSIC') else '' }}>UBI eTower (UBI-CLASSIC)</option>
-                        <option value="CIRRO-CLASSIC" {{ 'selected' if (shipglobal_service == 'CIRRO-CLASSIC') else '' }}>CIRRO Parcel (CIRRO-CLASSIC)</option>
-                      </select>
-                      <button type="button" id="btn-gen-sg-label" onclick="generateShipGlobalLabel('{{ order.order_number or order.id }}')"
-                              style="display:inline-flex; align-items:center; gap:4px; background:#0066cc; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:0.75rem; font-weight:700; cursor:pointer;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        Generate Label
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                {% endif %}
-              {% endif %}
-
               <!-- Actions Row -->
               <div style="display:flex; gap:10px; align-items:center; margin-top:14px; flex-wrap:wrap;">
                 <button type="submit" class="btn-dispatch" id="dispatch-btn" style="flex:1;">
@@ -308,86 +235,6 @@
 
         </div>
       </div>
-
-
-      <!-- ══ Live Courier Scans Panel ══════════════════════════════════════ -->
-      {% if order.tracking_number %}
-      <div class="od-card" id="live-scans-card" style="margin-top: 12px;">
-        <div class="od-card-header" style="padding: 12px 16px;">
-          <div class="od-card-icon" style="width:28px; height:28px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
-          </div>
-          <h2 style="font-size: 0.9rem;">Live Courier Scans</h2>
-          <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-            <span id="live-scan-last-fetch" style="font-size:0.72rem; color:#64748b;">
-              {% if order.last_tracking_fetch %}Last fetched: {{ order.last_tracking_fetch[:16] }}{% else %}Not yet fetched{% endif %}
-            </span>
-            <button type="button" id="btn-refresh-tracking"
-                    onclick="refreshCourierTracking('{{ order.order_number or order.id }}')"
-                    style="display:inline-flex; align-items:center; gap:5px; background:rgba(16,185,129,0.1); color:#059669; border:1px solid rgba(16,185,129,0.25); border-radius:7px; padding:5px 11px; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.2s;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13" id="refresh-icon"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Refresh Now
-            </button>
-            <button type="button" onclick="toggleAddCheckpointBox()"
-                    style="display:inline-flex; align-items:center; gap:4px; background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; border-radius:7px; padding:5px 10px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:all 0.2s;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              + Add Scan
-            </button>
-          </div>
-        </div>
-
-        <!-- Inline Checkpoint Drawer for Any Delivery Partner -->
-        <div id="add-checkpoint-box" style="display:none; background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:12px 16px;">
-          <div style="font-size:0.78rem; font-weight:700; color:#064e3b; margin-bottom:8px;">Record Live Delivery Checkpoint (Any Courier Partner)</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
-            <div>
-              <label style="font-size:0.72rem; color:#64748b; display:block; margin-bottom:2px;">Scan Status *</label>
-              <select id="cp-status-input" style="width:100%; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.78rem; background:#fff;">
-                <option value="In Transit">In Transit</option>
-                <option value="Out for Delivery">Out for Delivery</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:0.72rem; color:#64748b; display:block; margin-bottom:2px;">Location / Hub</label>
-              <input type="text" id="cp-location-input" placeholder="e.g. Jaipur Sorting Facility" style="width:100%; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.78rem; background:#fff; box-sizing:border-box;">
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <label style="font-size:0.72rem; color:#64748b; display:block; margin-bottom:2px;">Checkpoint Message</label>
-            <input type="text" id="cp-message-input" placeholder="e.g. Package arrived at local hub, scheduled for dispatch" style="width:100%; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.78rem; background:#fff; box-sizing:border-box;">
-          </div>
-          <div style="display:flex; justify-content:flex-end; gap:6px;">
-            <button type="button" onclick="toggleAddCheckpointBox()" style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:5px 10px; font-size:0.75rem; cursor:pointer;">Cancel</button>
-            <button type="button" id="btn-save-checkpoint" onclick="submitManualCheckpoint('{{ order.order_number or order.id }}')" style="background:#059669; color:#fff; border:none; border-radius:6px; padding:5px 12px; font-size:0.75rem; font-weight:700; cursor:pointer;">Save Checkpoint</button>
-          </div>
-        </div>
-
-        <div class="od-card-body" style="padding: 12px 16px; max-height: 220px; overflow-y: auto;" id="live-scans-body">
-          {% if tracking_events %}
-          <div style="display:flex; flex-direction:column; gap:10px; padding-left:14px; border-left:2px solid #e2e8f0; margin-left:4px;">
-            {% for ev in tracking_events %}
-            <div style="position:relative;">
-              <div style="position:absolute; left:-19px; top:3px; width:10px; height:10px; border-radius:50%; background:{% if loop.first %}#10b981{% else %}#cbd5e1{% endif %}; border:2px solid #fff; box-shadow:0 0 0 2px {% if loop.first %}#10b981{% else %}#e2e8f0{% endif %};"></div>
-              <div style="font-size:0.82rem; font-weight:700; color:#1e293b;">{{ ev.status_raw or ev.status_mapped }}</div>
-              <div style="font-size:0.72rem; color:#64748b; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap;">
-                {% if ev.location %}<span>📍 {{ ev.location }}</span>{% endif %}
-                {% if ev.event_time %}<span>🕐 {{ ev.event_time[:16] }}</span>{% endif %}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div style="text-align:center; padding:20px 0; color:#94a3b8; font-size:0.82rem;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="display:block; margin:0 auto 8px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            No courier scans yet. Click <strong>Refresh Now</strong> to fetch live updates from the courier.
-          </div>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
 
 
       <!-- Customer & Shipping details side-by-side card -->
@@ -467,85 +314,4 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ══ Modal: ShipGlobal Credentials Quick Setup ══ -->
-    <div id="shipglobal-creds-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-      <div style="background:#fff; border-radius:14px; width:100%; max-width:480px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="background:#0066cc; color:#fff; font-size:0.75rem; font-weight:800; padding:2px 7px; border-radius:4px;">SHIPGLOBAL</span>
-            <strong style="font-size:0.95rem; color:#0f172a;">API Login &amp; Simulator Settings</strong>
-          </div>
-          <button type="button" onclick="closeShipGlobalCredsModal()" style="background:none; border:none; color:#64748b; font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
-        </div>
-        
-        <div style="padding:20px;">
-          <!-- Sandbox Mode Banner Toggle -->
-          <div style="margin-bottom:14px; padding:10px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; display:flex; align-items:flex-start; gap:10px;">
-            <input type="checkbox" id="modal-sg-sandbox" value="1" {{ 'checked' if (shipglobal_sandbox == '1') else '' }}
-                   style="width:17px; height:17px; cursor:pointer; accent-color:#0066cc; margin-top:2px;">
-            <div>
-              <label for="modal-sg-sandbox" style="font-size:0.84rem; font-weight:700; color:#1e40af; cursor:pointer; display:block;">
-                Enable Sandbox / Simulation Mode
-              </label>
-              <span style="font-size:0.73rem; color:#3b82f6; display:block; margin-top:2px;">
-                Bypasses HTTP 401 error. Instantly generates authentic 4x6" thermal printable PDF labels with real barcodes and waybills.
-              </span>
-            </div>
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">ShipGlobal Account Email</label>
-            <input type="email" id="modal-sg-email" value="{{ shipglobal_email or '' }}" placeholder="e.g. albertmassey99@gmail.com"
-                   style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box;">
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">ShipGlobal Password</label>
-            <input type="password" id="modal-sg-password" placeholder="{{ '•••••••• (Kept)' if has_shipglobal_creds else 'Your ShipGlobal portal password...' }}"
-                   style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box;">
-            <span style="font-size:0.72rem; color:#64748b; margin-top:3px; display:block;">Leave blank if already configured and unchanged.</span>
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">
-              Direct API Token <span style="font-weight:400; color:#64748b;">(Optional - if provided by ShipGlobal)</span>
-            </label>
-            <input type="password" id="modal-sg-token" placeholder="{{ '•••••••• (Kept)' if shipglobal_token else 'Direct Bearer / API token...' }}"
-                   style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box;">
-          </div>
-
-          <div style="margin-bottom:16px;">
-            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">Default Carrier Service</label>
-            <select id="modal-sg-service" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box; background:#fff;">
-              <option value="DHLECS-CLASSIC" {{ 'selected' if (shipglobal_service == 'DHLECS-CLASSIC') else '' }}>DHL E-Commerce (DHLECS-CLASSIC)</option>
-              <option value="DPD-CLASSIC" {{ 'selected' if (shipglobal_service == 'DPD-CLASSIC') else '' }}>DPD (DPD-CLASSIC)</option>
-              <option value="UNIUNI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UNIUNI-CLASSIC') else '' }}>UniUni (UNIUNI-CLASSIC)</option>
-              <option value="VIPPARCEL-CLASSIC" {{ 'selected' if (shipglobal_service == 'VIPPARCEL-CLASSIC') else '' }}>VipParcel (VIPPARCEL-CLASSIC)</option>
-              <option value="UBI-CLASSIC" {{ 'selected' if (shipglobal_service == 'UBI-CLASSIC') else '' }}>UBI eTower (UBI-CLASSIC)</option>
-              <option value="CIRRO-CLASSIC" {{ 'selected' if (shipglobal_service == 'CIRRO-CLASSIC') else '' }}>CIRRO Parcel (CIRRO-CLASSIC)</option>
-            </select>
-          </div>
-
-          <div id="modal-sg-result" style="display:none; font-size:0.8rem; padding:8px 12px; border-radius:6px; margin-bottom:14px;"></div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-            <button type="button" onclick="testShipGlobalModalAuth()" id="btn-modal-test-sg"
-                    style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; border-radius:7px; padding:8px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;">
-              ⚡ Test Connection
-            </button>
-            <div style="display:inline-flex; gap:8px;">
-              <button type="button" onclick="closeShipGlobalCredsModal()"
-                      style="background:none; border:1px solid #cbd5e1; border-radius:7px; padding:8px 14px; font-size:0.8rem; color:#64748b; cursor:pointer;">
-                Cancel
-              </button>
-              <button type="button" onclick="saveShipGlobalModalCreds()" id="btn-modal-save-sg"
-                      style="background:#0066cc; color:#fff; border:none; border-radius:7px; padding:8px 16px; font-size:0.8rem; font-weight:700; cursor:pointer;">
-                Save Credentials
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
