@@ -224,9 +224,9 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
                   Update &amp; Dispatch Order
                 </button>
-                <button type="button" class="btn-shiprocket-sync" id="btn-sync-shiprocket" onclick="syncShiprocketTracking()" style="background:#0284c7; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Save and synchronize live delivery checkpoints">
+                <button type="button" class="btn-shiprocket-sync" id="btn-sync-shiprocket" onclick="syncShiprocketTracking()" style="background:#0284c7; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Save and synchronize live delivery checkpoints from Shiprocket">
                   <svg id="sync-spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                  <span id="btn-sync-label">{% if (order.courier_partner or '').lower() == 'shiprocket' %}Sync Shiprocket{% elif order.courier_partner %}Sync {{ courier_meta.name if courier_meta else order.courier_partner }} Details{% else %}Sync Live Details{% endif %}</span>
+                  <span>Sync Shiprocket</span>
                 </button>
                 <button type="button" class="btn-danger" onclick="cancelOrder()" title="Cancel this order">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -236,14 +236,12 @@
             </form>
           </div>
 
-          <!-- Live Courier Checkpoints Console -->
+          <!-- Shiprocket Live Courier Checkpoints Console -->
           <div id="shiprocket-checkpoints-card" style="margin-top:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; {% if not order.tracking_number %}display:none;{% endif %}">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
               <div style="display:inline-flex; align-items:center; gap:6px;">
                 <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 2px rgba(16,185,129,0.2);"></span>
-                <strong style="font-size:0.8rem; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">
-                  <span id="live-scans-carrier-name">{{ courier_meta.name if courier_meta else (order.courier_partner or 'Courier') }}</span> Live Courier Scans
-                </strong>
+                <strong style="font-size:0.8rem; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Shiprocket Live Courier Scans</strong>
               </div>
               <span id="sync-last-timestamp" style="font-size:0.72rem; color:#64748b;">
                 {% if live_tracking and live_tracking.last_synced_at %}Synced: {{ live_tracking.last_synced_at }}{% elif order.last_tracking_fetch %}Synced: {{ order.last_tracking_fetch }}{% else %}Awaiting sync{% endif %}

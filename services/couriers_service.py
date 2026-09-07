@@ -94,33 +94,6 @@ COURIER_PARTNERS = {
         'icon_type': 'truck',
         'sample_format': 'e.g. 1234567890 (10 digits)'
     },
-    'shiprocket': {
-        'name': 'Shiprocket',
-        'code': 'shiprocket',
-        'url_pattern': 'https://shiprocket.co/tracking/{tracking_number}',
-        'color': '#7C3AED',
-        'bg_color': 'rgba(124, 58, 237, 0.08)',
-        'icon_type': 'truck',
-        'sample_format': 'e.g. 1401234567890 (AWB / Tracking ID)'
-    },
-    'cirro': {
-        'name': 'CIRRO Parcel',
-        'code': 'cirro',
-        'url_pattern': 'https://m.cirrotrack.com/{tracking_number}',
-        'color': '#0284C7',
-        'bg_color': 'rgba(2, 132, 199, 0.08)',
-        'icon_type': 'package',
-        'sample_format': 'e.g. GFUS01071582334210'
-    },
-    'shipglobal': {
-        'name': 'ShipGlobal',
-        'code': 'shipglobal',
-        'url_pattern': 'https://shipglobal.in/tracking/?awb={tracking_number}',
-        'color': '#059669',
-        'bg_color': 'rgba(5, 150, 105, 0.08)',
-        'icon_type': 'truck',
-        'sample_format': 'e.g. SG123456789IN / AWB'
-    },
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
@@ -152,13 +125,7 @@ def normalize_courier_code(courier_partner):
     key = courier_partner.lower().strip()
     key = key.replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '')
     
-    if 'shiprocket' in key:
-        return 'shiprocket'
-    elif 'cirro' in key:
-        return 'cirro'
-    elif 'shipglobal' in key:
-        return 'shipglobal'
-    elif 'delhivery' in key:
+    if 'delhivery' in key:
         return 'delhivery'
     elif 'blue' in key or 'dart' in key:
         return 'bluedart'
@@ -209,51 +176,16 @@ def get_courier_metadata(courier_partner):
     return meta
 
 
-def format_tracking_url(pattern: str, tracking_number: str) -> str:
-    """
-    Format a tracking URL pattern with the given tracking number.
-    Handles placeholders ({awb}, {tracking_number}), trailing '=', '/', '?',
-    existing query params, or clean append.
-    """
-    clean_tn = str(tracking_number).strip() if tracking_number else ''
-    if not pattern or not str(pattern).strip():
-        return clean_tn if clean_tn.startswith(('http://', 'https://')) else ''
-        
-    url = str(pattern).strip()
-    
-    # If no tracking number, return base URL pattern or cleaned url
-    if not clean_tn:
-        return url
-
-    # 1. Standard placeholders
-    if '{tracking_number}' in url or '{awb}' in url:
-        return url.replace('{tracking_number}', clean_tn).replace('{awb}', clean_tn)
-
-    # 2. If the tracking number is already present in the URL, don't duplicate
-    if clean_tn in url:
-        return url
-
-    # 3. If URL ends with an assignment, query delimiter, or path separator
-    if url.endswith(('=', '/', '?')):
-        return url + clean_tn
-
-    # 4. If URL has query parameters
-    if '?' in url:
-        return f"{url}&awb={clean_tn}"
-
-    # 5. Normal URL path
-    if url.startswith(('http://', 'https://')):
-        return f"{url.rstrip('/')}/?awb={clean_tn}"
-
-    return url
-
-
 def generate_tracking_url(courier_partner, tracking_number, custom_url=None):
     """Generate live official tracking URL for a given courier and tracking ID."""
     clean_tn = str(tracking_number).strip() if tracking_number else ''
 
     if custom_url and custom_url.strip():
-        return format_tracking_url(custom_url.strip(), clean_tn)
+        url_pat = custom_url.strip()
+        if '{tracking_number}' in url_pat or '{awb}' in url_pat:
+            return url_pat.replace('{tracking_number}', clean_tn).replace('{awb}', clean_tn)
+        if url_pat.startswith(('http://', 'https://')):
+            return url_pat
 
     if not clean_tn:
         return ''
@@ -261,7 +193,10 @@ def generate_tracking_url(courier_partner, tracking_number, custom_url=None):
     code = normalize_courier_code(courier_partner)
     if code in COURIER_PARTNERS:
         meta = COURIER_PARTNERS[code]
-        return format_tracking_url(meta['url_pattern'], clean_tn)
+        pat = meta['url_pattern']
+        if '{tracking_number}' in pat or '{awb}' in pat:
+            return pat.replace('{tracking_number}', clean_tn).replace('{awb}', clean_tn)
+        return pat
 
     # Check custom couriers
     custom_list = get_custom_couriers_from_db()
@@ -269,7 +204,9 @@ def generate_tracking_url(courier_partner, tracking_number, custom_url=None):
         if cc['code'].lower() == str(code).lower() or cc['name'].lower() == str(courier_partner).lower():
             pat = cc.get('url_pattern') or ''
             if pat:
-                return format_tracking_url(pat, clean_tn)
+                if '{tracking_number}' in pat or '{awb}' in pat:
+                    return pat.replace('{tracking_number}', clean_tn).replace('{awb}', clean_tn)
+                return pat
 
     if clean_tn.startswith(('http://', 'https://')):
         return clean_tn
