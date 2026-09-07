@@ -65,38 +65,53 @@ def shiprocket_tracking_webhook():
     # Extract tracking details from varying Shiprocket webhook structures
     tracking_data = payload.get('tracking_data') or payload.get('data') or payload
 
-    awb = (
+    raw_awb = (
         tracking_data.get('awb') or 
         tracking_data.get('awb_code') or 
         payload.get('awb') or 
         payload.get('awb_code') or ''
+    )
+    awb = str(raw_awb).strip()
+
+    channel_order_id = str(
+        tracking_data.get('channel_order_id') or 
+        payload.get('channel_order_id') or ''
     ).strip()
 
     order_ref = str(
         tracking_data.get('order_id') or 
         payload.get('order_id') or 
+        tracking_data.get('order_number') or 
         payload.get('order_number') or ''
     ).strip()
 
-    raw_status = (
+    raw_status = str(
         tracking_data.get('current_status') or 
         payload.get('current_status') or 
+        tracking_data.get('shipment_status') or 
+        payload.get('shipment_status') or 
         tracking_data.get('status') or ''
     ).strip()
 
     status_code = (
         tracking_data.get('current_status_id') or 
+        payload.get('current_status_id') or 
+        tracking_data.get('shipment_status_id') or 
+        payload.get('shipment_status_id') or 
         tracking_data.get('shipment_status') or 
         payload.get('shipment_status')
     )
 
-    courier_name = (
+    raw_courier = str(
         tracking_data.get('courier_name') or 
         payload.get('courier_name') or ''
     ).strip()
+    courier_name = '' if raw_courier.lower() in ['enter courier_name', 'enter your courier name', 'none', 'null'] else raw_courier
 
-    edd = (
+    edd = str(
+        tracking_data.get('etd') or 
         tracking_data.get('edd') or 
+        payload.get('etd') or 
         payload.get('edd') or ''
     ).strip()
 
@@ -104,10 +119,24 @@ def shiprocket_tracking_webhook():
     db = get_db()
     order = None
 
-    if awb:
+    # 1. Search by AWB tracking number
+    if awb and awb not in ['0', 'None', 'null']:
         order = db.execute("SELECT * FROM orders WHERE tracking_number = ? LIMIT 1", (awb,)).fetchone()
 
-    if not order and order_ref:
+    # 2. Search by channel_order_id (Merchant's Store Order Number)
+    if not order and channel_order_id and channel_order_id.lower() not in ['enter your channel order id', 'none', 'null', '']:
+        clean_channel = channel_order_id.lstrip('#').strip()
+        order = db.execute(
+            """
+            SELECT * FROM orders 
+            WHERE (order_number = ? OR id = ? OR order_number = ?)
+            LIMIT 1
+            """,
+            (channel_order_id, int(clean_channel) if clean_channel.isdigit() else -1, f"#{clean_channel}")
+        ).fetchone()
+
+    # 3. Search by order_id / order_number reference
+    if not order and order_ref and order_ref.lower() not in ['enter your order id', 'none', 'null', '']:
         clean_ref = order_ref.lstrip('#').strip()
         order = db.execute(
             """
@@ -120,10 +149,10 @@ def shiprocket_tracking_webhook():
 
     if not order:
         db.close()
-        print(f"[SHIPROCKET WEBHOOK] Order not found for AWB='{awb}', Ref='{order_ref}'. Acknowledging reception.")
+        print(f"[SHIPROCKET WEBHOOK] Order not found for AWB='{awb}', Channel='{channel_order_id}', Ref='{order_ref}'. Acknowledging reception.")
         return jsonify({
             'success': True,
-            'message': f"Order not found for AWB {awb}, webhook acknowledged."
+            'message': f"Order not found for AWB '{awb}', webhook acknowledged successfully."
         }), 200
 
     order_id = order['id']
