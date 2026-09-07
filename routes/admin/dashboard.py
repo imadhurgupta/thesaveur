@@ -39,9 +39,11 @@ def admin_dashboard():
     # Get all confirmed orders (exclude abandoned uncompleted payment attempts)
     orders_raw = db.execute(
         """
-        SELECT o.*, u.full_name as user_name, u.email as user_email 
+        SELECT o.*, 
+               COALESCE(u.full_name, o.contact_name, 'Customer') as user_name, 
+               COALESCE(u.email, o.contact_email, 'N/A') as user_email 
         FROM orders o
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.user_id = u.id
         WHERE o.status != 'Pending Payment'
         ORDER BY o.created_at DESC
         """

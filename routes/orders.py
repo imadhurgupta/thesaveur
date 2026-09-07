@@ -55,9 +55,12 @@ def track_order(order_ref=None):
             clean_ref = ref.lstrip('#').strip()
             order = db.execute(
                 """
-                SELECT o.*, u.full_name as customer_name, u.email as customer_email, u.phone as customer_phone
+                SELECT o.*, 
+                       COALESCE(u.full_name, o.contact_name, 'Customer') as customer_name, 
+                       COALESCE(u.email, o.contact_email, 'N/A') as customer_email, 
+                       COALESCE(u.phone, o.contact_phone, '') as customer_phone
                 FROM orders o
-                JOIN users u ON o.user_id = u.id
+                LEFT JOIN users u ON o.user_id = u.id
                 WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?) AND o.status != 'Pending Payment'
                 LIMIT 1
                 """,
@@ -75,9 +78,12 @@ def track_order(order_ref=None):
         clean_ref = str(order_ref).lstrip('#').strip()
         order = db.execute(
             """
-            SELECT o.*, u.full_name as customer_name, u.email as customer_email, u.phone as customer_phone
+            SELECT o.*, 
+                   COALESCE(u.full_name, o.contact_name, 'Customer') as customer_name, 
+                   COALESCE(u.email, o.contact_email, 'N/A') as customer_email, 
+                   COALESCE(u.phone, o.contact_phone, '') as customer_phone
             FROM orders o
-            JOIN users u ON o.user_id = u.id
+            LEFT JOIN users u ON o.user_id = u.id
             WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?) AND o.status != 'Pending Payment'
             LIMIT 1
             """,
@@ -144,11 +150,11 @@ def customer_invoice(order_ref):
     order = db.execute(
         """
         SELECT o.*,
-               u.full_name AS user_name,
-               u.email     AS user_email,
-               u.phone     AS user_phone
+               COALESCE(u.full_name, o.contact_name, 'Customer') AS user_name,
+               COALESCE(u.email, o.contact_email, 'N/A') AS user_email,
+               COALESCE(u.phone, o.contact_phone, '') AS user_phone
         FROM orders o
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.user_id = u.id
         WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
           AND o.status != 'Pending Payment'
         LIMIT 1

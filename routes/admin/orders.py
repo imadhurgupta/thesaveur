@@ -164,10 +164,10 @@ def admin_order_detail(order_ref):
     order = db.execute(
         """
         SELECT o.*,
-               u.full_name  AS user_name,
-               u.email      AS user_email
+               COALESCE(u.full_name, o.contact_name, 'Customer') AS user_name,
+               COALESCE(u.email, o.contact_email, 'N/A') AS user_email
         FROM orders o
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.user_id = u.id
         WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
           AND o.status != 'Pending Payment'
         LIMIT 1
@@ -265,10 +265,10 @@ def admin_invoice(order_ref):
     order = db.execute(
         """
         SELECT o.*,
-               u.full_name AS user_name,
-               u.email     AS user_email
+               COALESCE(u.full_name, o.contact_name, 'Customer') AS user_name,
+               COALESCE(u.email, o.contact_email, 'N/A') AS user_email
         FROM orders o
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.user_id = u.id
         WHERE (o.order_number = ? OR o.id = ? OR o.order_number = ?)
           AND o.status != 'Pending Payment'
         LIMIT 1
