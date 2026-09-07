@@ -791,8 +791,9 @@
   let liveCustomerPolling = null;
   function startCustomerLiveTracking() {
     const orderId = {{ order.id }};
+    const orderNum = '{{ order.order_number or order.id }}';
     liveCustomerPolling = setInterval(() => {
-      fetch(`/api/orders/${orderId}/live-tracking-status?force=0`)
+      fetch(`/api/orders/${orderId}/live-tracking-status?order_number=${encodeURIComponent(orderNum)}&force=0`)
         .then(r => r.json())
         .then(data => {
           if (data.success && data.changed) {

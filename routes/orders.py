@@ -255,7 +255,11 @@ def api_order_live_tracking_status(order_id):
     if not order:
         return jsonify({'success': False, 'error': 'Order not found'}), 404
 
+    req_num = (request.args.get('order_number') or request.args.get('order_ref') or '').strip()
     is_authorized, auth_msg = verify_order_access(order, session, request)
+    if not is_authorized and req_num and (req_num.upper() == (order['order_number'] or '').upper() or req_num == str(order['id'])):
+        is_authorized = True
+
     if not is_authorized:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
