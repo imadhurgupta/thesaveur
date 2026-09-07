@@ -103,6 +103,12 @@ def send_otp_email(receiver_email, otp, purpose='reset'):
         heading = "Admin Login Verification"
         body_text = ("An administrator login attempt was detected for your account. Enter the 6-digit code "
                      "below to verify your identity and complete the login. This OTP is valid for 10 minutes.")
+    elif purpose == 'order_deletion':
+        subject = f"{otp} is your order deletion verification code – The Saveur"
+        heading = "Authorize Permanent Order Deletion"
+        body_text = ("A security request was initiated to permanently delete an order record from The Saveur system. "
+                     "Enter the 6-digit code below to confirm and authorize permanent deletion. "
+                     "This OTP is valid for 10 minutes. If you did not initiate this action, do not share this code.")
     else:
         subject = f"{otp} is your password reset code – The Saveur"
         heading = "Password Reset Request"
