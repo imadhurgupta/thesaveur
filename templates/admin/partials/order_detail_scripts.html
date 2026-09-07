@@ -511,6 +511,10 @@
     if (statusSelect && (statusSelect.value === 'Order Confirmed' || statusSelect.value === 'Processing')) {
       statusSelect.value = 'Shipped';
     }
+
+    // Show live Shiprocket checkpoints card when AWB is entered
+    const cpCard = document.getElementById('shiprocket-checkpoints-card');
+    if (cpCard) cpCard.style.display = 'block';
   }
 
   function updateTimelineUI(status) {
@@ -616,13 +620,28 @@
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Update &amp; Dispatch Order`;
       if (data.success) {
-        updateTimelineUI(status);
+        updateTimelineUI(data.status || status);
         if (data.courier_name) {
           const previewName = document.getElementById('preview-courier-name');
           if (previewName) previewName.textContent = data.courier_name;
         }
+        if (data.tracking_url) {
+          const previewLink = document.getElementById('preview-url-link');
+          const previewText = document.getElementById('preview-url-text');
+          if (previewLink) previewLink.href = data.tracking_url;
+          if (previewText) previewText.textContent = data.tracking_url;
+        }
         updateTrackingPreview();
-        showToast('success', `Order ${ORDER_NUMBER} updated successfully (Status: ${status})`);
+
+        // Render live courier scans immediately if AWB was provided
+        if (data.live_tracking && (data.live_tracking.shipment_track_activities || data.live_tracking.current_status)) {
+          renderLiveTrackingUI(data.live_tracking, (data.sync_result && data.sync_result.raw_courier_status) || data.live_tracking.current_status);
+        }
+
+        const msg = (data.live_tracking && data.live_tracking.shipment_track_activities && data.live_tracking.shipment_track_activities.length > 0)
+          ? `Order ${ORDER_NUMBER} dispatched & live courier tracking synced!`
+          : `Order ${ORDER_NUMBER} updated successfully (Status: ${data.status || status})`;
+        showToast('success', msg);
       } else {
         showToast('error', data.error || 'Update failed');
       }
@@ -655,10 +674,63 @@
     .catch(() => showToast('error', 'Network error.'));
   }
 
+  // ── Helper: Render Live Tracking Scans & Status ───────────────────────
+  function renderLiveTrackingUI(liveTracking, currentStatus, lastSynced) {
+    if (!liveTracking && !currentStatus) return;
+
+    const checkpointsCard = document.getElementById('shiprocket-checkpoints-card');
+    if (checkpointsCard) checkpointsCard.style.display = 'block';
+
+    const statusText = document.getElementById('shiprocket-current-status-text');
+    if (statusText) {
+      statusText.textContent = currentStatus || (liveTracking && liveTracking.current_status) || 'Active in Transit';
+    }
+
+    const timeEl = document.getElementById('sync-last-timestamp');
+    if (timeEl) {
+      timeEl.textContent = lastSynced || `Synced: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    }
+
+    const scansList = document.getElementById('shiprocket-scans-list');
+    if (scansList && liveTracking && liveTracking.shipment_track_activities && liveTracking.shipment_track_activities.length > 0) {
+      let html = '';
+      liveTracking.shipment_track_activities.forEach((act, idx) => {
+        const isLatest = idx === 0;
+        const dotColor = isLatest ? '#0284c7' : '#94a3b8';
+        html += `
+          <div style="position:relative;">
+            <div style="position:absolute; left:-21px; top:4px; width:10px; height:10px; border-radius:50%; background:${dotColor}; border:2px solid #ffffff;"></div>
+            <div style="font-size:0.8rem; font-weight:700; color:#1e293b;">
+              ${escapeHtml(act.activity || act.status || 'In Transit')}
+            </div>
+            <div style="font-size:0.7rem; color:#64748b; margin-top:1px;">
+              ${escapeHtml(act.location || 'Courier Hub')} • ${escapeHtml(act.date || act.time || '')}
+            </div>
+          </div>
+        `;
+      });
+      scansList.innerHTML = html;
+    }
+  }
+
   // ── Shiprocket Live Tracking Synchronization ───────────────────────────
   function syncShiprocketTracking() {
+    const courier_partner = document.getElementById('courier-select').value;
+    const tracking_number = document.getElementById('awb-input').value.trim();
+    const estimated_delivery_date = document.getElementById('edd-input').value;
+    const customNameInp = document.getElementById('custom-courier-name');
+    const customUrlInp  = document.getElementById('custom-courier-url');
+    const custom_courier_name = customNameInp ? customNameInp.value.trim() : '';
+    const tracking_url = customUrlInp ? customUrlInp.value.trim() : '';
+
+    if (!tracking_number) {
+      showToast('error', 'Please enter a Tracking / AWB Number first to sync live courier checkpoints.');
+      const awbInput = document.getElementById('awb-input');
+      if (awbInput) awbInput.focus();
+      return;
+    }
+
     const btn = document.getElementById('btn-sync-shiprocket');
-    const icon = document.getElementById('sync-spinner-icon');
     const originalText = btn ? btn.innerHTML : '';
 
     if (btn) {
@@ -670,9 +742,17 @@
       `;
     }
 
+    // Send latest tracking number and URL so newly typed values are saved & synced immediately
     fetch(`/admin/orders/${ORDER_ID}/sync-tracking`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        courier_partner,
+        custom_courier_name,
+        tracking_number,
+        tracking_url,
+        estimated_delivery_date
+      })
     })
     .then(r => r.json())
     .then(data => {
@@ -690,42 +770,18 @@
           updateTimelineUI(data.new_status);
         }
 
-        // Update current courier status headline
-        const statusText = document.getElementById('shiprocket-current-status-text');
-        if (statusText) {
-          statusText.textContent = data.raw_courier_status || data.new_status || 'In Transit';
+        // Update tracking preview URL if returned
+        if (data.tracking_url) {
+          const previewLink = document.getElementById('preview-url-link');
+          const previewText = document.getElementById('preview-url-text');
+          if (previewLink) previewLink.href = data.tracking_url;
+          if (previewText) previewText.textContent = data.tracking_url;
         }
 
-        // Update timestamp
-        const timeEl = document.getElementById('sync-last-timestamp');
-        if (timeEl) {
-          timeEl.textContent = `Synced: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-        }
+        // Render scans and status headline
+        renderLiveTrackingUI(data.live_tracking, data.raw_courier_status);
 
-        // Update scans list
-        const scansList = document.getElementById('shiprocket-scans-list');
-        const lt = data.live_tracking;
-        if (scansList && lt && lt.shipment_track_activities && lt.shipment_track_activities.length > 0) {
-          let html = '';
-          lt.shipment_track_activities.forEach((act, idx) => {
-            const isLatest = idx === 0;
-            const dotColor = isLatest ? '#0284c7' : '#94a3b8';
-            html += `
-              <div style="position:relative;">
-                <div style="position:absolute; left:-21px; top:4px; width:10px; height:10px; border-radius:50%; background:${dotColor}; border:2px solid #ffffff;"></div>
-                <div style="font-size:0.8rem; font-weight:700; color:#1e293b;">
-                  ${escapeHtml(act.activity || act.status || 'In Transit')}
-                </div>
-                <div style="font-size:0.7rem; color:#64748b; margin-top:1px;">
-                  ${escapeHtml(act.location || 'Courier Hub')} • ${escapeHtml(act.date || act.time || '')}
-                </div>
-              </div>
-            `;
-          });
-          scansList.innerHTML = html;
-        }
-
-        const msg = data.changed ? `Status advanced to "${data.new_status}"!` : 'Shiprocket tracking is up-to-date.';
+        const msg = data.changed ? `Status advanced to "${data.new_status}"!` : 'Shiprocket tracking synced successfully!';
         showToast('success', msg);
       } else {
         showToast('error', data.error || 'Failed to sync with Shiprocket.');

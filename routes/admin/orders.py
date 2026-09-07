@@ -139,6 +139,19 @@ def admin_update_order_status(order_ref):
     except Exception as mail_err:
         print(f"[MAIL ALERT ERROR] Failed to send status update email: {mail_err}")
 
+    # Live synchronize courier checkpoints if AWB is provided
+    live_tracking = {}
+    sync_result = {}
+    if final_awb:
+        try:
+            from services.tracking_service import update_order_from_tracking, get_order_live_tracking
+            sync_result = update_order_from_tracking(order_id, host_url=request.host_url)
+            live_tracking = get_order_live_tracking(order_id)
+            if sync_result.get('new_status'):
+                status = sync_result['new_status']
+        except Exception as sync_err:
+            print(f"[AUTO SYNC ON DISPATCH ERROR] {sync_err}")
+
     if request.is_json:
         courier_meta = get_courier_metadata(final_courier)
         return jsonify({
@@ -148,7 +161,9 @@ def admin_update_order_status(order_ref):
             'courier_name': courier_meta['name'],
             'tracking_number': final_awb,
             'tracking_url': final_tracking_url,
-            'estimated_delivery_date': final_edd
+            'estimated_delivery_date': final_edd,
+            'live_tracking': live_tracking,
+            'sync_result': sync_result
         })
 
     label = current_order['order_number'] if current_order['order_number'] else f'#{order_id}'
@@ -237,14 +252,61 @@ def admin_sync_order_tracking(order_ref):
         """,
         (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
     ).fetchone()
-    db.close()
 
     if not order:
+        db.close()
         return jsonify({'success': False, 'error': 'Order not found.'}), 404
 
+    order_id = order['id']
+    data = request.get_json(silent=True) or {}
+
+    # If new tracking number or courier partner or custom URL was sent from form, save first
+    new_awb = (data.get('tracking_number') or '').strip()
+    new_courier = (data.get('courier_partner') or '').strip()
+    custom_courier_name = (data.get('custom_courier_name') or '').strip()
+    new_url = (data.get('tracking_url') or '').strip()
+    new_edd = (data.get('estimated_delivery_date') or '').strip()
+
+    if new_courier in ['__custom__', 'custom', ''] and custom_courier_name:
+        final_courier = custom_courier_name
+    elif new_courier:
+        final_courier = new_courier
+    else:
+        final_courier = order['courier_partner'] or ''
+
+    final_awb = new_awb if new_awb else (order['tracking_number'] or '')
+    final_edd = new_edd if new_edd else (order['estimated_delivery_date'] or '')
+    
+    if new_url:
+        final_url = generate_tracking_url(final_courier, final_awb, custom_url=new_url)
+    elif final_awb:
+        final_url = generate_tracking_url(final_courier, final_awb)
+    else:
+        final_url = order['tracking_url'] or ''
+
+    if final_awb != order['tracking_number'] or final_courier != order['courier_partner'] or final_url != order['tracking_url'] or final_edd != order['estimated_delivery_date']:
+        db.execute(
+            """
+            UPDATE orders 
+            SET courier_partner = ?, tracking_number = ?, tracking_url = ?, estimated_delivery_date = ?
+            WHERE id = ?
+            """,
+            (final_courier, final_awb, final_url, final_edd, order_id)
+        )
+        db.commit()
+
+    db.close()
+
+    if not final_awb:
+        return jsonify({
+            'success': False,
+            'error': 'Please enter a Tracking / AWB Number first to sync live courier checkpoints.'
+        }), 400
+
     from services.tracking_service import update_order_from_tracking, get_order_live_tracking
-    sync_result = update_order_from_tracking(order['id'], host_url=request.host_url)
-    live_tracking = get_order_live_tracking(order['id'])
+    sync_result = update_order_from_tracking(order_id, host_url=request.host_url)
+    live_tracking = get_order_live_tracking(order_id)
+    courier_meta = get_courier_metadata(final_courier)
 
     return jsonify({
         'success': sync_result.get('success', False),
@@ -252,6 +314,10 @@ def admin_sync_order_tracking(order_ref):
         'old_status': sync_result.get('old_status'),
         'new_status': sync_result.get('new_status'),
         'raw_courier_status': sync_result.get('raw_courier_status', ''),
+        'courier_partner': final_courier,
+        'courier_name': courier_meta['name'],
+        'tracking_number': final_awb,
+        'tracking_url': final_url,
         'live_tracking': live_tracking,
         'error': sync_result.get('error')
     })
