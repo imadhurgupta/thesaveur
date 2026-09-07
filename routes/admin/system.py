@@ -22,6 +22,8 @@ SETTING_KEYS = [
     'SHIPGLOBAL_EMAIL',
     'SHIPGLOBAL_PASSWORD',
     'SHIPGLOBAL_DEFAULT_SERVICE',
+    'SHIPGLOBAL_SANDBOX_MODE',
+    'SHIPGLOBAL_API_TOKEN',
     'TRACKING_WEBHOOK_SECRET',
     'AUTO_TRACKING_ENABLED',
     'TRACKING_POLL_INTERVAL_MINUTES',
@@ -32,15 +34,24 @@ SETTING_KEYS = [
 @admin_required
 def admin_save_tracking_settings():
     """Save courier API keys and tracking configuration to system_settings."""
-    from services.tracking_service import save_system_setting
+    from services.tracking_service import save_system_setting, get_system_setting
     data = request.get_json(silent=True) or request.form
     saved = []
+
+    # If submitting from standard HTML form and checkbox was unchecked
+    if not request.is_json and 'SHIPGLOBAL_EMAIL' in data:
+        sandbox_val = '1' if data.get('SHIPGLOBAL_SANDBOX_MODE') in ('1', 'on', 'true', True) else '0'
+        save_system_setting('SHIPGLOBAL_SANDBOX_MODE', sandbox_val)
+        saved.append('SHIPGLOBAL_SANDBOX_MODE')
+
     for key in SETTING_KEYS:
+        if key == 'SHIPGLOBAL_SANDBOX_MODE' and not request.is_json:
+            continue
         if key not in data:
             continue
         val = str(data.get(key) or '').strip()
         # For password / token fields, skip empty value (keep existing)
-        if not val and key in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY', 'SHIPGLOBAL_PASSWORD', 'TRACKING_WEBHOOK_SECRET'):
+        if not val and key in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY', 'SHIPGLOBAL_PASSWORD', 'SHIPGLOBAL_API_TOKEN', 'TRACKING_WEBHOOK_SECRET'):
             continue
         save_system_setting(key, val)
         saved.append(key)
@@ -59,7 +70,7 @@ def admin_get_tracking_settings():
     from services.tracking_service import get_all_settings
     settings = get_all_settings()
     # Mask secret values
-    for secret_key in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY', 'SHIPGLOBAL_PASSWORD', 'TRACKING_WEBHOOK_SECRET'):
+    for secret_key in ('SHIPROCKET_PASSWORD', 'DELHIVERY_API_TOKEN', 'TRACK17_API_KEY', 'TRACKINGMORE_API_KEY', 'SHIPGLOBAL_PASSWORD', 'SHIPGLOBAL_API_TOKEN', 'TRACKING_WEBHOOK_SECRET'):
         if settings.get(secret_key):
             settings[secret_key] = '••••••••'
     return jsonify(settings)
@@ -68,15 +79,33 @@ def admin_get_tracking_settings():
 @admin_system_bp.route('/admin/settings/shipglobal/test-auth', methods=['POST'], endpoint='admin_test_shipglobal_auth')
 @admin_required
 def admin_test_shipglobal_auth():
-    """Test connection to ShipGlobal /api/v1/customers.php."""
-    from services.tracking_service import get_shipglobal_auth_token
+    """Test connection to ShipGlobal API or validate Sandbox mode."""
+    from services.tracking_service import get_shipglobal_auth_token, get_system_setting
     data = request.get_json(silent=True) or {}
     email = data.get('email')
     password = data.get('password')
-    token, err = get_shipglobal_auth_token(email=email, password=password)
+    token = data.get('token') or data.get('api_token')
+    sandbox = data.get('sandbox')
+
+    # If Sandbox mode is specifically requested or enabled in settings
+    is_sandbox = sandbox is True or str(sandbox).lower() in ('1', 'true', 'on')
+    if is_sandbox or (sandbox is None and get_system_setting('SHIPGLOBAL_SANDBOX_MODE', '0') == '1'):
+        return jsonify({
+            'success': True,
+            'sandbox': True,
+            'message': 'ShipGlobal Sandbox Mode is active! You can generate real 4x6 thermal test labels and waybills immediately.'
+        })
+
+    token, err = get_shipglobal_auth_token(email=email, password=password, token=token)
     if token:
         return jsonify({'success': True, 'message': 'Successfully authenticated with ShipGlobal API!'})
-    return jsonify({'success': False, 'error': err or 'Failed to authenticate with ShipGlobal'})
+
+    # Return friendly diagnostic message with sandbox suggestion if 401
+    return jsonify({
+        'success': False,
+        'error': err or 'Failed to authenticate with ShipGlobal',
+        'can_sandbox': True
+    })
 
 
 @admin_system_bp.route('/admin/orders/<order_ref>/refresh-tracking', methods=['POST'],

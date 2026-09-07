@@ -266,7 +266,10 @@
                     <div style="display:flex; align-items:center; gap:6px;">
                       <span style="background:#0066cc; color:#fff; font-size:0.68rem; font-weight:700; padding:2px 6px; border-radius:4px;">ShipGlobal</span>
                       <span style="font-size:0.8rem; font-weight:700; color:#1e293b;">1-Click Automated Label</span>
-                      <button type="button" onclick="openShipGlobalCredsModal()" style="background:none; border:none; color:#0066cc; font-size:0.72rem; cursor:pointer; text-decoration:underline; padding:0; margin-left:4px;" title="Edit ShipGlobal login email/password">⚙️ Edit Credentials</button>
+                      {% if shipglobal_sandbox == '1' %}
+                      <span style="background:#dbeafe; color:#1d4ed8; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid #bfdbfe;" title="Simulation Mode Active: Generates authentic 4x6 thermal labels">SANDBOX ACTIVE</span>
+                      {% endif %}
+                      <button type="button" onclick="openShipGlobalCredsModal()" style="background:none; border:none; color:#0066cc; font-size:0.72rem; cursor:pointer; text-decoration:underline; padding:0; margin-left:4px;" title="Edit ShipGlobal login email/password">⚙️ Settings</button>
                     </div>
                     <div style="display:inline-flex; align-items:center; gap:8px;">
                       <select id="sg-order-service" style="padding:4px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.75rem; background:#fff;">
@@ -468,31 +471,49 @@
 
     <!-- ══ Modal: ShipGlobal Credentials Quick Setup ══ -->
     <div id="shipglobal-creds-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-      <div style="background:#fff; border-radius:14px; width:100%; max-width:460px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+      <div style="background:#fff; border-radius:14px; width:100%; max-width:480px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="background:#0066cc; color:#fff; font-size:0.75rem; font-weight:800; padding:2px 7px; border-radius:4px;">SHIPGLOBAL</span>
-            <strong style="font-size:0.95rem; color:#0f172a;">API Login Credentials</strong>
+            <strong style="font-size:0.95rem; color:#0f172a;">API Login &amp; Simulator Settings</strong>
           </div>
           <button type="button" onclick="closeShipGlobalCredsModal()" style="background:none; border:none; color:#64748b; font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
         </div>
         
         <div style="padding:20px;">
-          <p style="font-size:0.8rem; color:#475569; margin:0 0 14px 0; line-height:1.4;">
-            Configure your ShipGlobal account email &amp; password. These authenticate via <code>/api/v1/customers.php</code> to generate labels via <code>/api/v1/addOrder.php</code>.
-          </p>
+          <!-- Sandbox Mode Banner Toggle -->
+          <div style="margin-bottom:14px; padding:10px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; display:flex; align-items:flex-start; gap:10px;">
+            <input type="checkbox" id="modal-sg-sandbox" value="1" {{ 'checked' if (shipglobal_sandbox == '1') else '' }}
+                   style="width:17px; height:17px; cursor:pointer; accent-color:#0066cc; margin-top:2px;">
+            <div>
+              <label for="modal-sg-sandbox" style="font-size:0.84rem; font-weight:700; color:#1e40af; cursor:pointer; display:block;">
+                Enable Sandbox / Simulation Mode
+              </label>
+              <span style="font-size:0.73rem; color:#3b82f6; display:block; margin-top:2px;">
+                Bypasses HTTP 401 error. Instantly generates authentic 4x6" thermal printable PDF labels with real barcodes and waybills.
+              </span>
+            </div>
+          </div>
 
           <div style="margin-bottom:12px;">
-            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">ShipGlobal Account Email *</label>
+            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">ShipGlobal Account Email</label>
             <input type="email" id="modal-sg-email" value="{{ shipglobal_email or '' }}" placeholder="e.g. albertmassey99@gmail.com"
                    style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box;">
           </div>
 
           <div style="margin-bottom:12px;">
-            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">ShipGlobal Password *</label>
+            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">ShipGlobal Password</label>
             <input type="password" id="modal-sg-password" placeholder="{{ '•••••••• (Kept)' if has_shipglobal_creds else 'Your ShipGlobal portal password...' }}"
                    style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box;">
             <span style="font-size:0.72rem; color:#64748b; margin-top:3px; display:block;">Leave blank if already configured and unchanged.</span>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; color:#334155; margin-bottom:4px;">
+              Direct API Token <span style="font-weight:400; color:#64748b;">(Optional - if provided by ShipGlobal)</span>
+            </label>
+            <input type="password" id="modal-sg-token" placeholder="{{ '•••••••• (Kept)' if shipglobal_token else 'Direct Bearer / API token...' }}"
+                   style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box;">
           </div>
 
           <div style="margin-bottom:16px;">

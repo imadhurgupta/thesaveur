@@ -231,7 +231,9 @@ def admin_order_detail(order_ref):
     shipglobal_email = get_system_setting('SHIPGLOBAL_EMAIL', '')
     shipglobal_pass = get_system_setting('SHIPGLOBAL_PASSWORD', '')
     shipglobal_service = get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'DHLECS-CLASSIC')
-    has_shipglobal_creds = bool(shipglobal_email and shipglobal_pass)
+    shipglobal_sandbox = get_system_setting('SHIPGLOBAL_SANDBOX_MODE', '0')
+    shipglobal_token = get_system_setting('SHIPGLOBAL_API_TOKEN', '')
+    has_shipglobal_creds = bool((shipglobal_email and shipglobal_pass) or shipglobal_token or (shipglobal_sandbox == '1'))
 
     from services.couriers_service import get_logistics_providers
     logistics_providers = get_logistics_providers()
@@ -248,6 +250,8 @@ def admin_order_detail(order_ref):
         has_shipglobal_creds=has_shipglobal_creds,
         shipglobal_email=shipglobal_email,
         shipglobal_service=shipglobal_service,
+        shipglobal_sandbox=shipglobal_sandbox,
+        shipglobal_token=shipglobal_token,
         logistics_providers=logistics_providers
     )
 

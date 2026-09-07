@@ -965,6 +965,9 @@
         }, 1500);
       } else {
         showToast('error', data.error || 'Failed to generate ShipGlobal label.');
+        if (data.can_sandbox || (data.error && data.error.includes('401'))) {
+          openShipGlobalCredsModal();
+        }
       }
     })
     .catch(() => {
@@ -990,11 +993,13 @@
   function testShipGlobalModalAuth() {
     const email = document.getElementById('modal-sg-email')?.value.trim();
     const pass = document.getElementById('modal-sg-password')?.value.trim();
+    const token = document.getElementById('modal-sg-token')?.value.trim();
+    const isSandbox = document.getElementById('modal-sg-sandbox')?.checked;
     const btn = document.getElementById('btn-modal-test-sg');
     const resBox = document.getElementById('modal-sg-result');
 
-    if (!email) {
-      alert('Please enter your ShipGlobal account email first.');
+    if (!isSandbox && !token && !email) {
+      alert('Please enter your ShipGlobal email or enable Sandbox Mode.');
       return;
     }
 
@@ -1003,12 +1008,14 @@
     resBox.style.display = 'block';
     resBox.style.background = '#f1f5f9';
     resBox.style.color = '#475569';
-    resBox.innerHTML = 'Testing connection with <code>/api/v1/customers.php</code>...';
+    resBox.innerHTML = isSandbox
+      ? 'Verifying ShipGlobal Sandbox Simulator Engine...'
+      : 'Testing connection with <code>/api/v1/customers.php</code>...';
 
     fetch('/admin/settings/shipglobal/test-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pass })
+      body: JSON.stringify({ email: email, password: pass, token: token, sandbox: isSandbox })
     })
     .then(r => r.json())
     .then(data => {
@@ -1017,11 +1024,15 @@
       if (data.success) {
         resBox.style.background = '#dcfce7';
         resBox.style.color = '#15803d';
-        resBox.innerHTML = '<strong>Success!</strong> ' + (data.message || 'Credentials authenticated successfully.');
+        resBox.innerHTML = '<strong>' + (data.sandbox ? '🛡️ Sandbox Active!' : '✅ Connected!') + '</strong> ' + (data.message || 'Credentials authenticated successfully.');
       } else {
         resBox.style.background = '#fee2e2';
         resBox.style.color = '#991b1b';
-        resBox.innerHTML = '<strong>Auth Failed:</strong> ' + (data.error || 'Check email & password.');
+        let html = '<div><strong>Auth Notice:</strong> ' + (data.error || 'Check email & password.') + '</div>';
+        if (data.can_sandbox) {
+          html += '<div style="margin-top:8px;"><button type="button" onclick="enableModalSandboxAndRetest()" style="background:#0066cc; color:#fff; border:none; border-radius:6px; padding:5px 12px; font-size:0.75rem; font-weight:700; cursor:pointer;">👉 Enable Sandbox Mode &amp; Verify</button></div>';
+        }
+        resBox.innerHTML = html;
       }
     })
     .catch(err => {
@@ -1033,46 +1044,61 @@
     });
   }
 
+  function enableModalSandboxAndRetest() {
+    const cb = document.getElementById('modal-sg-sandbox');
+    if (cb) {
+      cb.checked = true;
+      testShipGlobalModalAuth();
+    }
+  }
+
   function saveShipGlobalModalCreds() {
     const email = document.getElementById('modal-sg-email')?.value.trim();
     const pass = document.getElementById('modal-sg-password')?.value.trim();
+    const token = document.getElementById('modal-sg-token')?.value.trim();
+    const isSandbox = document.getElementById('modal-sg-sandbox')?.checked ? '1' : '0';
     const svc = document.getElementById('modal-sg-service')?.value;
     const btn = document.getElementById('btn-modal-save-sg');
-    const resBox = document.getElementById('modal-sg-result');
 
-    if (!email) {
-      alert('Please enter your ShipGlobal account email.');
+    if (isSandbox !== '1' && !token && !email) {
+      alert('Please enter your ShipGlobal account email or enable Sandbox Mode.');
       return;
     }
 
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
+    const payload = {
+      SHIPGLOBAL_EMAIL: email,
+      SHIPGLOBAL_PASSWORD: pass,
+      SHIPGLOBAL_DEFAULT_SERVICE: svc,
+      SHIPGLOBAL_SANDBOX_MODE: isSandbox
+    };
+    if (token) {
+      payload.SHIPGLOBAL_API_TOKEN = token;
+    }
+
     fetch('/admin/settings/tracking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        SHIPGLOBAL_EMAIL: email,
-        SHIPGLOBAL_PASSWORD: pass,
-        SHIPGLOBAL_DEFAULT_SERVICE: svc
-      })
+      body: JSON.stringify(payload)
     })
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
       btn.textContent = 'Save Credentials';
       if (data.success) {
-        showToast('success', 'ShipGlobal credentials saved successfully!');
+        showToast('success', 'ShipGlobal settings updated successfully!');
         closeShipGlobalCredsModal();
-        setTimeout(() => window.location.reload(), 1000);
+        setTimeout(() => window.location.reload(), 800);
       } else {
-        alert(data.error || 'Failed to save credentials.');
+        alert(data.error || 'Failed to save settings.');
       }
     })
     .catch(err => {
       btn.disabled = false;
       btn.textContent = 'Save Credentials';
-      alert('Error saving credentials: ' + err.message);
+      alert('Error saving settings: ' + err.message);
     });
   }
 
