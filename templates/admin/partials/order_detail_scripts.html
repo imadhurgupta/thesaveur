@@ -466,6 +466,13 @@
         statusSelect.value = 'Shipped';
         updateTimelineUI('Shipped');
       }
+      const cancelBtn = document.getElementById('btn-cancel-order');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      const cancelOpt = document.getElementById('opt-status-cancelled');
+      if (cancelOpt) {
+        cancelOpt.disabled = true;
+        cancelOpt.style.display = 'none';
+      }
       const pulseDot = document.getElementById('live-pulse-dot');
       const pulseStatus = document.getElementById('live-pulse-status');
       if (pulseDot) {
@@ -555,6 +562,13 @@
       statusSelect.value = 'Shipped';
       updateTimelineUI('Shipped');
     }
+    const cancelBtn = document.getElementById('btn-cancel-order');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    const cancelOpt = document.getElementById('opt-status-cancelled');
+    if (cancelOpt) {
+      cancelOpt.disabled = true;
+      cancelOpt.style.display = 'none';
+    }
 
     updateTrackingPreview();
   }
@@ -627,6 +641,22 @@
       const cleanClass = status.toLowerCase().replace(/\s+/g, '-');
       badge.className = `od-status-badge ${cleanClass}`;
       badge.innerHTML = `<span class="dot"></span>${status}`;
+    }
+
+    const cancelBtn = document.getElementById('btn-cancel-order');
+    const cancelOpt = document.getElementById('opt-status-cancelled');
+    if (['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'].includes(status)) {
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      if (cancelOpt) {
+        cancelOpt.disabled = true;
+        cancelOpt.style.display = 'none';
+      }
+    } else if (status !== 'Cancelled') {
+      if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+      if (cancelOpt) {
+        cancelOpt.disabled = false;
+        cancelOpt.style.display = '';
+      }
     }
 
     const timeline = document.getElementById('timeline-container');
@@ -792,13 +822,17 @@
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> Update &amp; Dispatch Order`;
       if (data.success) {
         const newStatus = data.status || status;
+        const statusSelect = document.getElementById('status-select');
+        if (statusSelect) statusSelect.value = newStatus;
         updateTimelineUI(newStatus);
         if (data.courier_name) {
           const previewName = document.getElementById('preview-courier-name');
           if (previewName) previewName.textContent = data.courier_name;
         }
-        if (data.refund_info) {
-          renderRefundCard(data.refund_info);
+        if (newStatus === 'Cancelled' && (data.refund_id || data.refund_status)) {
+          renderRefundCard(data, 'Cancelled');
+        } else {
+          renderRefundCard(null, newStatus);
         }
         updateTrackingPreview();
         startLiveCourierAutoSync();
@@ -815,6 +849,11 @@
   }
 
   function cancelOrder() {
+    const currentStatus = document.getElementById('status-select')?.value || '';
+    if (['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'].includes(currentStatus)) {
+      showToast('error', 'Order cannot be cancelled once it has been shipped.');
+      return;
+    }
     if (!confirm(`Are you sure you want to cancel Order ${ORDER_NUMBER}? This cannot be undone.`)) return;
     document.getElementById('status-select').value = 'Cancelled';
     
@@ -827,9 +866,14 @@
     .then(data => {
       if (data.success) {
         updateTimelineUI('Cancelled');
-        if (data.refund_info) {
-          renderRefundCard(data.refund_info);
-        }
+        const refundObj = {
+          refund_id: data.refund_id,
+          refund_status: data.refund_status,
+          refund_amount: {{ order.total_amount }},
+          is_cod: data.is_cod,
+          payment_method: '{{ order.payment_method or "" }}'
+        };
+        renderRefundCard(refundObj, 'Cancelled');
         if (livePollingInterval) clearInterval(livePollingInterval);
         showToast('success', `Order ${ORDER_NUMBER} has been cancelled.`);
       } else {
@@ -983,5 +1027,8 @@
     onCourierChange();
     updateTrackingPreview();
     startLiveCourierAutoSync();
+    document.getElementById('status-select')?.addEventListener('change', function() {
+      updateTimelineUI(this.value);
+    });
   });
 </script>

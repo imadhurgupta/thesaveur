@@ -78,6 +78,15 @@ def admin_update_order_status(order_ref):
         flash("Invalid order status.", "error")
         return redirect(url_for('admin_dashboard'))
 
+    # Strict workflow rule: Once shipped or in transit, cancellation is NOT available
+    if status == 'Cancelled' and current_order['status'] in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
+        db.close()
+        msg = "Order cannot be cancelled once it has been shipped."
+        if request.is_json:
+            return jsonify({'success': False, 'error': msg}), 400
+        flash(msg, "error")
+        return redirect(url_for('admin_order_detail', order_ref=current_order['order_number'] if current_order['order_number'] else order_id))
+
     # Save to custom_couriers table if requested
     if save_courier_permanently and custom_courier_name:
         c_code = re.sub(r'[^a-zA-Z0-9_]', '', custom_courier_name.lower().replace(' ', '_'))
@@ -143,19 +152,6 @@ def admin_update_order_status(order_ref):
     if status == 'Cancelled':
         from services.refund_service import process_order_cancellation_refund
         refund_info = process_order_cancellation_refund(order_id, reason="Admin order cancellation", host_url=request.host_url)
-    elif final_awb:
-        # Immediately trigger live courier sync to advance status from courier live checkpoints
-        try:
-            from services.tracking_service import update_order_from_tracking
-            live_sync = update_order_from_tracking(order_id, host_url=request.host_url)
-            if live_sync.get('new_status'):
-                status = live_sync['new_status']
-                if status == 'Cancelled':
-                    from services.refund_service import process_order_cancellation_refund
-                    refund_info = process_order_cancellation_refund(order_id, reason=f"Courier checkpoint: {live_sync.get('raw_courier_status')}", host_url=request.host_url)
-                print(f"[LIVE COURIER AUTO-ADVANCE] Order #{order_id} automatically set to '{status}' by live courier status.")
-        except Exception as sync_err:
-            print(f"[AUTO COURIER SYNC ERROR] {sync_err}")
 
     # Send status email notification if not cancelled (refund service handles cancellation email)
     if status != 'Cancelled':
@@ -290,7 +286,7 @@ def admin_sync_order_tracking(order_ref):
     db.close()
 
     refund_info = {}
-    if refreshed_order and (refreshed_order['status'] == 'Cancelled' or refreshed_order['refund_status']):
+    if refreshed_order and refreshed_order['status'] == 'Cancelled':
         refund_info = {
             'refund_id': refreshed_order['refund_id'],
             'refund_status': refreshed_order['refund_status'],

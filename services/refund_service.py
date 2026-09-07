@@ -21,7 +21,7 @@ def is_cod_payment(payment_method: str) -> bool:
     if not payment_method:
         return False
     pm = payment_method.strip().lower()
-    return pm in ['cod', 'cash on delivery', 'cash_on_delivery', 'cash']
+    return any(k in pm for k in ['cod', 'cash on delivery', 'cash_on_delivery', 'cash'])
 
 
 def process_order_cancellation_refund(order_id: int, reason: str = "Order Cancelled by System/Courier", host_url: str = "") -> dict:

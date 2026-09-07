@@ -276,6 +276,14 @@
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            {% if order.status in ['Processing', 'Order Confirmed', 'Placed'] %}
+            <form method="POST" action="{{ url_for('customer_cancel_order', order_ref=order.order_number if order.order_number else order.id) }}" onsubmit="return confirm('Are you sure you want to cancel this order? This cannot be undone.');" style="display:inline; margin:0;">
+              <button type="submit" style="display:inline-flex; align-items:center; gap:5px; padding:8px 14px; background:#fff1f2; color:#be123c; border:1.5px solid #fecdd3; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff1f2'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Cancel Order
+              </button>
+            </form>
+            {% endif %}
             <a href="{{ url_for('track_order', order_ref=order.order_number if order.order_number else order.id) }}"
                style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#ffffff; border-radius:8px; font-size:0.8rem; font-weight:700; text-decoration:none; box-shadow:0 3px 10px rgba(16,185,129,0.25); transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">

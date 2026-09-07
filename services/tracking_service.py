@@ -439,10 +439,17 @@ def update_order_from_tracking(order_id: int, host_url: str = '') -> dict:
         # Do NOT resurrect a cancelled order via automated background sync
         final_status = 'Cancelled'
         status_changed = False
+    elif new_status == 'Delivered':
+        final_status = 'Delivered'
+        status_changed = (old_status != 'Delivered')
+    elif old_status == 'Shipped' and (raw_status or tracking_res.get('shipment_track_activities')):
+        # Step 2 -> Step 3: Courier picked from admin & one status fetched from courier -> Order In Transit!
+        final_status = 'In Transit'
+        status_changed = True
     elif new_weight > old_weight:
         final_status = new_status
         status_changed = True
-    elif old_status == 'Processing' and new_weight >= 2:
+    elif old_status in ['Processing', 'Order Confirmed', 'Placed'] and new_weight >= 2:
         final_status = new_status
         status_changed = True
 
@@ -647,10 +654,10 @@ def get_order_live_tracking_status(order_id: int, force_refresh: bool = False, h
         'estimated_delivery_date': o.get('estimated_delivery_date', ''),
         'last_tracking_fetch': o.get('last_tracking_fetch', ''),
         'tracking_status_raw': o.get('tracking_status_raw', ''),
-        'refund_id': o.get('refund_id'),
-        'refund_status': o.get('refund_status'),
-        'refund_amount': o.get('refund_amount', 0.0),
-        'refund_created_at': o.get('refund_created_at'),
+        'refund_id': o.get('refund_id') if current_st == 'Cancelled' else None,
+        'refund_status': o.get('refund_status') if current_st == 'Cancelled' else None,
+        'refund_amount': o.get('refund_amount', 0.0) if current_st == 'Cancelled' else 0.0,
+        'refund_created_at': o.get('refund_created_at') if current_st == 'Cancelled' else None,
         'tracking_data': tracking_data
     }
 

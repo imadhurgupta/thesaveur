@@ -111,7 +111,7 @@
               <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 <span style="font-size:0.75rem; color:#1e40af;">
-                  <strong>Quick Fulfillment:</strong> Simply enter <strong>AWB Number</strong> and <strong>Courier Link</strong> below. Courier partner and live status update automatically.
+                  <strong>Quick Fulfillment:</strong> Enter <strong>AWB Number</strong>: status sets to <strong>Shipped</strong> (cancellation locked). Live courier scans will advance status to <strong>In Transit</strong> and <strong>Delivered</strong> automatically.
                 </span>
               </div>
 
@@ -166,7 +166,7 @@
                     <option value="In Transit"        {% if order.status == 'In Transit' %}selected{% endif %}>In Transit</option>
                     <option value="Out for Delivery"  {% if order.status == 'Out for Delivery' %}selected{% endif %}>Out for Delivery</option>
                     <option value="Delivered"        {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
-                    <option value="Cancelled"        {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                    <option value="Cancelled" id="opt-status-cancelled" {% if order.status == 'Cancelled' %}selected{% elif order.status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] %}disabled style="display:none;"{% endif %}>Cancelled</option>
                   </select>
                 </div>
 
@@ -312,7 +312,7 @@
                   <span>Sync Shiprocket</span>
                 </button>
                 {% endif %}
-                <button type="button" class="btn-danger" onclick="cancelOrder()" title="Cancel this order">
+                <button type="button" class="btn-danger" id="btn-cancel-order" onclick="cancelOrder()" title="Cancel this order" {% if order.status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] %}style="display:none;"{% endif %}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   Cancel
                 </button>

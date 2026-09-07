@@ -226,7 +226,12 @@ def customer_cancel_order(order_ref):
         flash("Order not found.", "error")
         return redirect(url_for('my_orders'))
 
-    if order['status'] != 'Processing':
+    if order['status'] in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
+        db.close()
+        flash("Order cannot be cancelled once it has been shipped.", "error")
+        return redirect(url_for('my_orders'))
+
+    if order['status'] not in ['Processing', 'Order Confirmed', 'Placed']:
         db.close()
         flash(f"Order cannot be cancelled because it is already {order['status'].lower()}.", "error")
         return redirect(url_for('my_orders'))
