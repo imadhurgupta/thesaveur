@@ -220,7 +220,7 @@ class ShiprocketClient:
         edd = first_track.get('edd') or tracking_data.get('edd') or ''
         origin = first_track.get('origin') or ''
         destination = first_track.get('destination') or ''
-        track_url = tracking_data.get('track_url') or ''
+        track_url = tracking_data.get('track_url') or f"https://shiprocket.co/tracking/{awb}"
 
         return {
             'success': True,
@@ -254,7 +254,7 @@ class ShiprocketClient:
             'edd': edd_date,
             'origin': 'Jaipur Central Hub, RJ',
             'destination': 'Customer Delivery Station',
-            'track_url': f"https://www.delhivery.com/track/package/{awb}",
+            'track_url': f"https://shiprocket.co/tracking/{awb}",
             'shipment_track': [{
                 'id': 9901,
                 'awb_code': awb,

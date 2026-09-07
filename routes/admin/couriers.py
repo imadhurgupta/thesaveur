@@ -228,8 +228,9 @@ def api_admin_lookup_awb():
     if not courier_code and courier_name:
         courier_code = normalize_courier_code(courier_name)
 
-    if not track_url and (courier_code or courier_name):
-        track_url = generate_tracking_url(courier_code or courier_name, awb)
+    shiprocket_default_url = f"https://shiprocket.co/tracking/{awb}"
+    if not track_url:
+        track_url = shiprocket_default_url
 
     courier_meta = get_courier_metadata(courier_code or courier_name or 'custom')
 
@@ -238,7 +239,8 @@ def api_admin_lookup_awb():
         'awb': awb,
         'courier_name': courier_name or courier_meta.get('name') or 'Courier Partner',
         'courier_code': courier_code or courier_meta.get('code') or 'custom',
-        'tracking_url': track_url or generate_tracking_url(courier_meta.get('code', 'custom'), awb),
+        'tracking_url': track_url or shiprocket_default_url,
+        'shiprocket_url': shiprocket_default_url,
         'edd': edd or '',
         'origin': origin or '',
         'destination': destination or '',

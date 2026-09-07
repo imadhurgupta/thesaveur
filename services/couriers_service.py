@@ -106,11 +106,11 @@ COURIER_PARTNERS = {
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
-        'url_pattern': '{tracking_number}',
+        'url_pattern': 'https://shiprocket.co/tracking/{tracking_number}',
         'color': '#16A34A',
         'bg_color': 'rgba(22, 163, 74, 0.08)',
-        'icon_type': 'package',
-        'sample_format': 'Enter Tracking Number or Website URL'
+        'icon_type': 'truck',
+        'sample_format': 'e.g. AWB / Consignment No'
     }
 }
 
@@ -220,7 +220,7 @@ def generate_tracking_url(courier_partner, tracking_number, custom_url=None):
     if clean_tn.startswith(('http://', 'https://')):
         return clean_tn
 
-    return ''
+    return f"https://shiprocket.co/tracking/{clean_tn}" if clean_tn else ''
 
 
 def get_courier_list():

@@ -264,11 +264,11 @@
                 <div class="od-form-group">
                   <label class="od-form-label" for="courier-link-input">Courier Tracking Link / Webpage URL</label>
                   <input type="url" id="courier-link-input" name="tracking_url" class="od-form-control" 
-                         placeholder="Paste tracking URL (e.g. https://...)" 
+                         placeholder="https://shiprocket.co/tracking/..." 
                          value="{{ order.tracking_url or '' }}" 
                          oninput="onCourierLinkInput(this.value)" />
                   <small style="display:block; font-size:0.7rem; color:#64748b; margin-top:2px;">
-                    Auto-detects courier partner &amp; extracts AWB if embedded
+                    Defaults to https://shiprocket.co/tracking/{awb} for all Shiprocket shipments
                   </small>
                 </div>
               </div>

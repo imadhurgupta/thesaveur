@@ -71,12 +71,14 @@ def admin_update_order_status(order_ref):
             track_res = client.track_awb(final_awb)
             if track_res.get('success') and track_res.get('courier_name'):
                 final_courier = track_res['courier_name']
-                if not final_edd and track_res.get('edd'):
-                    final_edd = track_res['edd']
-                if not custom_tracking_url and track_res.get('track_url'):
-                    custom_tracking_url = track_res['track_url']
+                if not custom_tracking_url:
+                    custom_tracking_url = track_res.get('track_url') or f"https://shiprocket.co/tracking/{final_awb}"
         except Exception as e:
             print(f"[AWB FETCH PARTNER ERROR] {e}")
+
+    # Default tracking URL for all Shiprocket couriers
+    if final_awb and not custom_tracking_url:
+        custom_tracking_url = f"https://shiprocket.co/tracking/{final_awb}"
 
     # Auto-advance status to 'Shipped' when tracking number/AWB is entered
     if final_awb:
