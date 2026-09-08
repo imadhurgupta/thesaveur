@@ -13,8 +13,10 @@ __pycache__/
 
 # ── Database (persistent data, not in Git) ─────────────────
 *.db
+*.db*
 *.sqlite
 *.sqlite3
+thesaveur.db*
 
 # ── Docker volumes & build artifacts ──────────────────────
 *.tar
