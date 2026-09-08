@@ -752,7 +752,7 @@ button:active:not(:disabled),
   max-width: 1440px;
   margin: 0 auto 32px;
   width: calc(100% - 48px);
-  padding: 28px 32px 32px;
+  padding: 28px 32px 42px;
   text-align: center;
   background: var(--cream);
 }
@@ -810,7 +810,7 @@ button:active:not(:disabled),
 
 /* ── Free Shipping Continuous Glow Below Carousel Button ── */
 .hero-free-shipping-wrap {
-  margin-top: 20px;
+  margin-top: 36px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1975,7 +1975,7 @@ button:active:not(:disabled),
     margin-bottom: 10px !important;
   }
   .hero-free-shipping-wrap {
-    margin-top: 14px !important;
+    margin-top: 24px !important;
   }
   .hero-free-shipping-badge {
     padding: 8px 20px !important;
