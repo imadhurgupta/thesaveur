@@ -133,7 +133,7 @@
                   </a>
 
                   <button type="button"
-                          title="Delete Order Permanently"
+                          title="Delete Order Permanently (Requires OTP)"
                           onclick="openDeleteOrderModal('{{ ord.order_number if ord.order_number else ord.id }}', '{{ ord.order_number if ord.order_number else '#' ~ ord.id }}', '{{ ord.user_name|e }}', '{{ ord.total_amount }}')"
                           style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; background:rgba(239,68,68,0.1); color:#dc2626; border:1px solid rgba(239,68,68,0.2); cursor:pointer; transition:all 0.2s;"
                           onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">
