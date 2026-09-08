@@ -821,8 +821,8 @@ button:active:not(:disabled),
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 30px;
+  gap: 14px;
+  padding: 13px 36px;
   border-radius: var(--radius-pill, 999px);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 240, 226, 0.94) 100%);
   border: 2px solid rgba(197, 160, 89, 0.8);
@@ -872,8 +872,8 @@ button:active:not(:disabled),
 .shipping-live-dot {
   position: relative;
   display: inline-block;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #10b981;
   box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
@@ -883,8 +883,8 @@ button:active:not(:disabled),
 
 /* Animated shipping truck icon */
 .shipping-truck-icon {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
   stroke: #16a34a;
   flex-shrink: 0;
   display: inline-block;
@@ -894,21 +894,22 @@ button:active:not(:disabled),
 .shipping-text-content {
   display: inline-flex;
   align-items: baseline;
-  gap: 7px;
+  gap: 8px;
   line-height: 1.1;
 }
 
 .shipping-text-bold {
-  font-weight: 800;
+  font-weight: 900;
   color: #15803d;
-  letter-spacing: 0.03em;
-  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  font-size: 1.35rem;
+  text-transform: uppercase;
 }
 
 .shipping-text-sub {
   font-weight: 600;
   color: #475569;
-  font-size: 0.84rem;
+  font-size: 0.90rem;
   letter-spacing: 0.02em;
 }
 
@@ -1978,18 +1979,19 @@ button:active:not(:disabled),
     margin-top: 24px !important;
   }
   .hero-free-shipping-badge {
-    padding: 8px 20px !important;
-    gap: 9px !important;
+    padding: 9px 22px !important;
+    gap: 10px !important;
   }
   .shipping-truck-icon {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
   .shipping-text-bold {
-    font-size: 0.98rem !important;
+    font-size: 1.12rem !important;
+    letter-spacing: 0.05em !important;
   }
   .shipping-text-sub {
-    font-size: 0.74rem !important;
+    font-size: 0.78rem !important;
   }
   .shipping-live-dot {
     width: 8px !important;
