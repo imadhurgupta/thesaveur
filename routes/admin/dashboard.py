@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, render_template, redirect, url_for
 from database import get_db
 from services.auth_service import admin_required
+from services.tracking_service import get_system_setting
 
 admin_dashboard_bp = Blueprint('admin_dashboard_bp', __name__)
 
@@ -88,6 +89,7 @@ def admin_dashboard():
         users=users_list,
         orders=orders_list,
         carousel_slides=carousel_slides,
+        carousel_shuffle_storefront=(get_system_setting('carousel_shuffle_storefront', 'false') == 'true'),
         categories=categories,
         subcategories=subcategories,
         promo_codes=promo_codes,
