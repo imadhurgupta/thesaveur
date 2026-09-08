@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, Response
 from database import get_db
+from services.tracking_service import get_system_setting
 
 storefront_bp = Blueprint('storefront', __name__)
 
@@ -24,8 +25,10 @@ def home():
         p_dict['avg_rating'] = round(stats['avg'], 1) if stats and stats['avg'] else 0.0
         bestsellers.append(p_dict)
 
+    shuffle_storefront = (get_system_setting('carousel_shuffle_storefront', 'false') == 'true')
+    order_clause = "RANDOM()" if shuffle_storefront else "slide_order ASC"
     carousel_slides = db.execute(
-        "SELECT * FROM carousel_slides ORDER BY slide_order ASC"
+        f"SELECT * FROM carousel_slides ORDER BY {order_clause}"
     ).fetchall()
     categories = db.execute(
         "SELECT * FROM categories ORDER BY display_order ASC"
