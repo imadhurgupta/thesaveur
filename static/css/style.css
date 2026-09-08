@@ -893,20 +893,23 @@ button:active:not(:disabled),
 
 .shipping-text-content {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  line-height: 1;
+  align-items: baseline;
+  gap: 7px;
+  line-height: 1.1;
 }
 
 .shipping-text-bold {
   font-weight: 800;
   color: #15803d;
-  letter-spacing: 0.04em;
-  font-size: 1.08rem;
+  letter-spacing: 0.03em;
+  font-size: 1.15rem;
 }
 
 .shipping-text-sub {
-  display: none;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
 }
 
 @keyframes heroGlowPulse {
@@ -1975,15 +1978,18 @@ button:active:not(:disabled),
     margin-top: 14px !important;
   }
   .hero-free-shipping-badge {
-    padding: 8px 22px !important;
-    gap: 10px !important;
+    padding: 8px 20px !important;
+    gap: 9px !important;
   }
   .shipping-truck-icon {
     width: 18px !important;
     height: 18px !important;
   }
   .shipping-text-bold {
-    font-size: 0.95rem !important;
+    font-size: 0.98rem !important;
+  }
+  .shipping-text-sub {
+    font-size: 0.74rem !important;
   }
   .shipping-live-dot {
     width: 8px !important;
