@@ -807,6 +807,171 @@ button:active:not(:disabled),
   flex-wrap: wrap;
   justify-content: center;
 }
+
+/* ── Free Shipping Continuous Glow Below Carousel Button ── */
+.hero-free-shipping-wrap {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-free-shipping-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 22px;
+  border-radius: var(--radius-pill, 999px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 240, 226, 0.92) 100%);
+  border: 1.5px solid rgba(197, 160, 89, 0.75);
+  color: var(--green-primary, #1b4332);
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  cursor: default;
+  user-select: none;
+  z-index: 1;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: heroGlowPulse 2.6s ease-in-out infinite alternate;
+}
+
+/* Continuous ambient glowing aura behind the pill */
+.hero-free-shipping-badge::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: linear-gradient(120deg, #c5a059, #10b981, #d97706, #10b981, #c5a059);
+  background-size: 300% 300%;
+  filter: blur(8px);
+  opacity: 0.6;
+  z-index: -2;
+  animation: auraGlowShift 4s linear infinite;
+}
+
+/* Continuous specular light shine across badge */
+.hero-free-shipping-badge::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -70%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  animation: shimmerSweep 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Glowing live status radar dot */
+.shipping-live-dot {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: radarWave 1.8s infinite;
+  flex-shrink: 0;
+}
+
+/* Animated shipping truck icon */
+.shipping-truck-icon {
+  width: 17px;
+  height: 17px;
+  stroke: #16a34a;
+  flex-shrink: 0;
+  display: inline-block;
+  animation: truckBounce 2.2s ease-in-out infinite;
+}
+
+.shipping-text-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.shipping-text-bold {
+  font-weight: 800;
+  color: #15803d;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+
+.shipping-text-sub {
+  font-weight: 600;
+  color: var(--text-dark, #1c1917);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+@keyframes heroGlowPulse {
+  0% {
+    box-shadow: 
+      0 0 10px rgba(197, 160, 89, 0.35),
+      0 0 20px rgba(16, 185, 129, 0.25),
+      0 3px 10px rgba(27, 67, 50, 0.08);
+    transform: translateY(0);
+    border-color: rgba(197, 160, 89, 0.6);
+  }
+  50% {
+    box-shadow: 
+      0 0 24px rgba(197, 160, 89, 0.85),
+      0 0 42px rgba(16, 185, 129, 0.55),
+      0 5px 16px rgba(27, 67, 50, 0.15);
+    transform: translateY(-2px);
+    border-color: rgba(16, 185, 129, 0.9);
+  }
+  100% {
+    box-shadow: 
+      0 0 14px rgba(197, 160, 89, 0.45),
+      0 0 28px rgba(16, 185, 129, 0.35),
+      0 4px 12px rgba(27, 67, 50, 0.1);
+    transform: translateY(-1px);
+    border-color: rgba(197, 160, 89, 0.75);
+  }
+}
+
+@keyframes auraGlowShift {
+  0% { background-position: 0% 50%; opacity: 0.55; }
+  50% { background-position: 100% 50%; opacity: 0.85; }
+  100% { background-position: 0% 50%; opacity: 0.55; }
+}
+
+@keyframes shimmerSweep {
+  0% { left: -70%; }
+  35%, 100% { left: 160%; }
+}
+
+@keyframes radarWave {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.85);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes truckBounce {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
 /* Legacy hero-content (kept for fallback safety) */
 .hero-content { display: none; }
 .hero h1 { display: none; }
@@ -1810,6 +1975,24 @@ button:active:not(:disabled),
     padding: 4px 12px !important;
     font-size: 0.65rem !important;
     margin-bottom: 10px !important;
+  }
+  .hero-free-shipping-wrap {
+    margin-top: 12px !important;
+  }
+  .hero-free-shipping-badge {
+    padding: 6px 14px !important;
+    font-size: 0.74rem !important;
+    gap: 7px !important;
+  }
+  .shipping-truck-icon {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .shipping-text-bold {
+    font-size: 0.75rem !important;
+  }
+  .shipping-text-sub {
+    font-size: 0.72rem !important;
   }
 
   /* Trust Bar */
