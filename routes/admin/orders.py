@@ -385,115 +385,31 @@ def admin_invoice(order_ref):
     )
 
 
-# ── Secure Permanent Order Deletion (Requires OTP) ───────────────────────
-
-def _get_admin_email_for_otp():
-    """Retrieve administrator email to receive order deletion OTP."""
-    user_id = session.get('user_id')
-    db = get_db()
-    if user_id:
-        user_row = db.execute("SELECT email FROM users WHERE id = ?", (user_id,)).fetchone()
-        if user_row and user_row['email']:
-            db.close()
-            return user_row['email'].strip()
-
-    admin_row = db.execute("SELECT email FROM users WHERE is_admin = 1 AND email IS NOT NULL AND email != '' LIMIT 1").fetchone()
-    db.close()
-    if admin_row and admin_row['email']:
-        return admin_row['email'].strip()
-
-    return os.environ.get('ADMIN_NOTIFICATION_EMAIL') or os.environ.get('SMTP_USER') or 'admin@thesaveur.com'
-
-
-def _mask_email(email: str) -> str:
-    """Mask email address for user privacy in confirmation modals."""
-    if not email or '@' not in email:
-        return 'admin email'
-    parts = email.split('@', 1)
-    username = parts[0]
-    domain = parts[1]
-    if len(username) <= 2:
-        masked_user = username[0] + '*'
-    else:
-        masked_user = username[:2] + '*' * (len(username) - 2)
-    return f"{masked_user}@{domain}"
-
+# ── Permanent Order Deletion (Direct Admin Confirmation, No OTP) ──────
 
 @admin_orders_bp.route('/admin/orders/request-delete-otp', methods=['POST'], endpoint='admin_request_order_delete_otp')
 @admin_required
 def admin_request_order_delete_otp():
-    """Generate and email a 6-digit OTP to authorize permanent deletion of an order."""
+    """Kept for backward compatibility - returns success immediately."""
     data = request.get_json(silent=True) or request.form or {}
     order_ref = str(data.get('order_ref', '')).strip()
-
-    if not order_ref:
-        return jsonify({'success': False, 'error': 'Order reference is required.'}), 400
-
-    db = get_db()
-    clean_ref = order_ref.lstrip('#').strip()
-    order = db.execute(
-        """
-        SELECT id, order_number, total_amount, status 
-        FROM orders 
-        WHERE (order_number = ? OR id = ? OR order_number = ?)
-        LIMIT 1
-        """,
-        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
-    ).fetchone()
-    db.close()
-
-    if not order:
-        return jsonify({'success': False, 'error': f"Order '{order_ref}' not found."}), 404
-
-    admin_email = _get_admin_email_for_otp()
-    otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-    expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
-
-    # Persist in email_verifications table
-    db = get_db()
-    db.execute(
-        "INSERT INTO email_verifications (email, otp, purpose, expires_at) VALUES (?, ?, 'order_deletion', ?)",
-        (admin_email, otp, expires_at)
-    )
-    db.commit()
-    db.close()
-
-    # Also store in admin session
-    session['order_delete_otp'] = {
-        'otp': otp,
-        'order_id': order['id'],
-        'order_number': order['order_number'] or f"#{order['id']}",
-        'expires_at': expires_at,
-        'email': admin_email
-    }
-
-    # Dispatch email
-    queue_otp_email(admin_email, otp, purpose='order_deletion')
-    print(f"[ORDER DELETION OTP] OTP for Order #{order['id']} sent to {admin_email}: {otp}")
-
-    masked = _mask_email(admin_email)
     return jsonify({
         'success': True,
-        'message': f"A 6-digit OTP code has been dispatched to {masked}.",
-        'email_masked': masked,
-        'order_id': order['id'],
-        'order_number': order['order_number'] or f"#{order['id']}"
+        'message': 'Ready for deletion.',
+        'order_ref': order_ref
     }), 200
 
 
 @admin_orders_bp.route('/admin/orders/confirm-delete', methods=['POST'], endpoint='admin_confirm_order_delete')
+@admin_orders_bp.route('/admin/orders/delete', methods=['POST'], endpoint='admin_delete_order')
 @admin_required
 def admin_confirm_order_delete():
-    """Verify the 6-digit OTP and permanently purge the order and its items."""
+    """Permanently delete an order and its associated records without requiring OTP."""
     data = request.get_json(silent=True) or request.form or {}
     order_ref = str(data.get('order_ref', '')).strip()
-    submitted_otp = str(data.get('otp', '')).strip()
 
     if not order_ref:
         return jsonify({'success': False, 'error': 'Order reference is required.'}), 400
-
-    if not submitted_otp or len(submitted_otp) != 6 or not submitted_otp.isdigit():
-        return jsonify({'success': False, 'error': 'Please enter a valid 6-digit numeric OTP.'}), 400
 
     db = get_db()
     clean_ref = order_ref.lstrip('#').strip()
@@ -514,46 +430,11 @@ def admin_confirm_order_delete():
     order_id = order['id']
     order_num = order['order_number'] or f"#{order_id}"
 
-    # Verify OTP
-    is_valid_otp = False
-    sess_data = session.get('order_delete_otp')
-    if sess_data and sess_data.get('otp') == submitted_otp:
-        try:
-            exp_time = datetime.fromisoformat(sess_data.get('expires_at', ''))
-            if datetime.utcnow() <= exp_time:
-                if str(sess_data.get('order_id')) == str(order_id) or sess_data.get('order_number') == order_num:
-                    is_valid_otp = True
-        except Exception:
-            pass
-
-    if not is_valid_otp:
-        # Fallback check against email_verifications table
-        verification = db.execute(
-            """
-            SELECT * FROM email_verifications 
-            WHERE otp = ? AND purpose = 'order_deletion'
-            ORDER BY id DESC LIMIT 1
-            """,
-            (submitted_otp,)
-        ).fetchone()
-
-        if verification:
-            try:
-                exp_time = datetime.fromisoformat(verification['expires_at'])
-                if datetime.utcnow() <= exp_time:
-                    is_valid_otp = True
-            except Exception:
-                pass
-
-    if not is_valid_otp:
-        db.close()
-        return jsonify({'success': False, 'error': 'Invalid or expired OTP code. Please verify and try again.'}), 400
-
     # Execute permanent deletion
     try:
         db.execute("DELETE FROM order_items WHERE order_id = ?", (order_id,))
+        db.execute("DELETE FROM tracking_events WHERE order_id = ?", (order_id,))
         db.execute("DELETE FROM orders WHERE id = ?", (order_id,))
-        db.execute("DELETE FROM email_verifications WHERE otp = ? AND purpose = 'order_deletion'", (submitted_otp,))
         db.commit()
     except Exception as del_err:
         db.rollback()
@@ -561,8 +442,7 @@ def admin_confirm_order_delete():
         return jsonify({'success': False, 'error': f"Database deletion failed: {str(del_err)}"}), 500
 
     db.close()
-    session.pop('order_delete_otp', None)
-    print(f"[ORDER PERMANENT DELETION] Order #{order_id} ({order_num}) permanently purged with OTP verification.")
+    print(f"[ORDER PERMANENT DELETION] Order #{order_id} ({order_num}) permanently purged by admin.")
 
     return jsonify({
         'success': True,
