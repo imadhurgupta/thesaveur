@@ -14,7 +14,7 @@
     'fedex': 'https://www.fedex.com/fedextrack/?trknbr={awb}',
     'dhl': 'https://www.dhl.com/in-en/home/tracking/tracking-express.html?submit=1&tracking-id={awb}',
     'shiprocket': 'https://shiprocket.co/tracking/{awb}',
-    'shipglobal': 'https://shipglobal.in/tracking?awb={awb}',
+    'shipglobal': 'https://shipglobal.in/tracking/?awb={awb}',
     'cirro': 'https://www.cirrotrack.com/parcelTracking?id={awb}',
     'custom': 'https://shiprocket.co/tracking/{awb}'
   }, {{ courier_url_map | tojson if courier_url_map else '{}' }});
@@ -518,7 +518,7 @@
         }
       }
       if (linkInput) {
-        linkInput.value = `https://shipglobal.in/tracking?awb=${encodeURIComponent(awb)}`;
+        linkInput.value = `https://shipglobal.in/tracking/?awb=${encodeURIComponent(awb)}`;
       }
     } else if (linkInput) {
       if (!linkInput.value || linkInput.value.includes('shiprocket.co/tracking/')) {

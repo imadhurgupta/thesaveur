@@ -261,12 +261,11 @@ def api_admin_sync_all_shipments():
 @admin_required
 def api_admin_get_shipglobal_settings():
     """Retrieve current ShipGlobal configuration and connection status."""
-    from services.shipglobal_service import get_system_setting, ShipGlobalClient, SUPPORTED_SERVICES
+    from services.shipglobal_service import get_system_setting, ShipGlobalClient
     client = ShipGlobalClient()
 
     email = get_system_setting('SHIPGLOBAL_EMAIL') or os.environ.get('SHIPGLOBAL_EMAIL', '')
     has_password = bool(get_system_setting('SHIPGLOBAL_PASSWORD') or os.environ.get('SHIPGLOBAL_PASSWORD', ''))
-    default_service = get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'CIRRO-CLASSIC')
     mock_mode = get_system_setting('SHIPGLOBAL_MOCK_MODE', '0') == '1'
     customer_name = get_system_setting('SHIPGLOBAL_CUSTOMER_NAME', '')
 
@@ -277,8 +276,6 @@ def api_admin_get_shipglobal_settings():
         'success': True,
         'email': email,
         'has_password': has_password,
-        'default_service': default_service,
-        'supported_services': SUPPORTED_SERVICES,
         'mock_mode': mock_mode,
         'auto_sync': auto_sync,
         'last_sync': last_sync,
@@ -290,14 +287,13 @@ def api_admin_get_shipglobal_settings():
 @admin_system_bp.route('/api/admin/shipglobal-settings', methods=['POST'], endpoint='api_admin_save_shipglobal_settings')
 @admin_required
 def api_admin_save_shipglobal_settings():
-    """Save ShipGlobal credentials and default logistics service into database."""
+    """Save ShipGlobal credentials and live synchronization settings into database."""
     from services.shipglobal_service import set_system_setting, ShipGlobalClient
 
     data = request.get_json(silent=True) or request.form.to_dict() or {}
 
     email = (data.get('email') or '').strip()
     password = (data.get('password') or '').strip()
-    service = (data.get('default_service') or 'CIRRO-CLASSIC').strip()
 
     if email:
         set_system_setting('SHIPGLOBAL_EMAIL', email)
@@ -305,9 +301,6 @@ def api_admin_save_shipglobal_settings():
         set_system_setting('SHIPGLOBAL_PASSWORD', password)
         set_system_setting('SHIPGLOBAL_TOKEN', '')
         set_system_setting('SHIPGLOBAL_TOKEN_EXPIRES', '')
-
-    if service:
-        set_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', service)
 
     if 'mock_mode' in data:
         mock_mode = '1' if data.get('mock_mode') in [True, '1', 'true', 'on'] else '0'

@@ -106,7 +106,7 @@ COURIER_PARTNERS = {
     'shipglobal': {
         'name': 'ShipGlobal (Live Logistics & International)',
         'code': 'shipglobal',
-        'url_pattern': 'https://shipglobal.in/tracking?awb={tracking_number}',
+        'url_pattern': 'https://shipglobal.in/tracking/?awb={tracking_number}',
         'color': '#0284c7',
         'bg_color': 'rgba(2, 132, 199, 0.08)',
         'icon_type': 'globe',

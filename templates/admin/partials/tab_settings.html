@@ -106,8 +106,8 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             </div>
             <div>
-              <h2 style="font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0;">ShipGlobal Live Logistics &amp; Label Generation</h2>
-              <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">Official ShipGlobal API integration (<code>https://labels.shipglobal.in/api/v1/</code>) for direct AWB dispatch, waybills, and Base64 PDF labels.</p>
+              <h2 style="font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0;">ShipGlobal &amp; CIRRO Live Tracking Integration</h2>
+              <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">Official ShipGlobal &amp; CIRRO integration for real-time waybill status and automated courier synchronization.</p>
             </div>
           </div>
           <div id="sg-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; font-size: 0.78rem; font-weight: 700; background: #f1f5f9; color: #475569;">
@@ -120,7 +120,7 @@
             <div>
               <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account Email / API Login</label>
               <input type="email" id="sg-email" class="od-form-control" autocomplete="off" placeholder="e.g. albertmassey890@gmail.com" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
-              <small style="color: #64748b; font-size: 0.73rem; display: block; margin-top: 4px;">Registered email / API login for ShipGlobal Label API.</small>
+              <small style="color: #64748b; font-size: 0.73rem; display: block; margin-top: 4px;">Registered email / API login for ShipGlobal tracking.</small>
             </div>
             <div>
               <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account / API Password</label>
@@ -134,27 +134,13 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div>
-              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Default Carrier Service</label>
-              <select id="sg-service" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #fff;">
-                <option value="UBI-CLASSIC">UBI (eTower) — UBI-CLASSIC</option>
-                <option value="CIRRO-CLASSIC" selected>CIRRO Parcel — CIRRO-CLASSIC (e.g. GFUS...)</option>
-                <option value="DPD-CLASSIC">DPD — DPD-CLASSIC</option>
-                <option value="UNIUNI-CLASSIC">UniUni — UNIUNI-CLASSIC</option>
-                <option value="VIPPARCEL-CLASSIC">VipParcel — VIPPARCEL-CLASSIC</option>
-                <option value="DHLECS-CLASSIC">DHL E-Commerce — DHLECS-CLASSIC</option>
-              </select>
-              <small style="color: #64748b; font-size: 0.73rem; display: block; margin-top: 4px;">Service code used for automated POST /addOrder.php and manifest destination handoff.</small>
-            </div>
-
-            <div style="display: flex; flex-direction: column; justify-content: center;">
-              <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
-                <input type="checkbox" id="sg-auto-sync" style="width: 18px; height: 18px; accent-color: #0284c7;" checked />
-                <span style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Enable Automated Live Courier Sync (ShipGlobal / CIRRO)</span>
-              </label>
-              <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; margin-left: 28px;">Continuously monitors active shipments and syncs live checkpoints via CIRRO &amp; ShipGlobal APIs.</small>
-            </div>
+          <!-- Automated Courier Sync Toggle Block -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px;">
+            <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="sg-auto-sync" style="width: 18px; height: 18px; accent-color: #0284c7;" checked />
+              <span style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">Enable Automated Live Courier Sync (ShipGlobal / CIRRO)</span>
+            </label>
+            <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 4px; margin-left: 28px;">Continuously monitors active shipments and synchronizes live checkpoints directly via CIRRO &amp; ShipGlobal APIs.</small>
           </div>
 
           <!-- Advanced Mode & Sync Status Bar -->
@@ -467,7 +453,6 @@
           if (data.email) emailInput.value = data.email;
         }
         if (passInput && data.has_password) passInput.placeholder = '•••••••••••••••• (Saved in secure database)';
-        if (serviceSelect && data.default_service) serviceSelect.value = data.default_service;
         if (mockCheck) mockCheck.checked = !!data.mock_mode;
         if (autoSyncCheck) autoSyncCheck.checked = (data.auto_sync !== false);
 
@@ -523,7 +508,6 @@
     if (e) e.preventDefault();
     const email = document.getElementById('sg-email').value.trim();
     const password = document.getElementById('sg-password').value.trim();
-    const default_service = document.getElementById('sg-service').value;
     const mock_mode = document.getElementById('sg-mock-mode').checked;
     const auto_sync = document.getElementById('sg-auto-sync') ? document.getElementById('sg-auto-sync').checked : true;
     const btn = document.getElementById('btn-save-sg-settings');
@@ -540,7 +524,6 @@
       body: JSON.stringify({
         email: email,
         password: password,
-        default_service: default_service,
         mock_mode: mock_mode,
         auto_sync: auto_sync
       })

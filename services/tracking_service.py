@@ -326,10 +326,10 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
         except (ValueError, TypeError):
             pass
 
-    if not raw_status:
-        return 'In Transit'
+    if not raw_status and status_code is None:
+        return 'Shipped'
 
-    status_upper = str(raw_status).upper().strip()
+    status_upper = str(raw_status or '').upper().strip()
 
     # 2. Cancellation and return checks FIRST (highest priority)
     if any(k in status_upper for k in [
@@ -339,36 +339,38 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
     ]):
         return 'Cancelled'
 
-    # 3. In Transit checks (All activities till delivery: out for delivery, hub arrivals, departures, transit)
-    # Note: Check this before Delivered so phrases like 'OUT FOR DELIVERY' or 'DISPATCHED FOR DELIVERY' aren't falsely treated as delivered
+    # 3. Delivered checks (Package received / delivery complete)
     if any(k in status_upper for k in [
-        'OUT FOR DELIVERY', 'OUT_FOR_DELIVERY', 'OFD', 'DISPATCHED FOR DELIVERY',
+        'DELIVERED', 'COMPLETED', 'SUCCESSFULLY DELIVERED', 'DELIVERY SUCCESSFUL'
+    ]):
+        return 'Delivered'
+
+    # 4. In Transit checks (All activities till delivery: out for delivery, hub arrivals, departures, transit)
+    if any(k in status_upper for k in [
+        'OUT FOR DELIVERY', 'OUT_FOR_DELIVERY', 'OFD', 'DISPATCHED FOR DELIVERY', 'DISPATCHED WITH',
         'IN TRANSIT', 'TRANSIT', 'REACHED', 'HUB', 'FACILITY', 'DEPARTED',
-        'LINE HAUL', 'CONNECTION', 'SORTING', 'ARRIVED', 'IN FLIGHT', 'CUSTOMS',
-        'ON THE WAY', 'NEAR DESTINATION'
+        'LINE HAUL', 'LINEHAUL', 'CONNECTION', 'SORTING', 'ARRIVED', 'IN FLIGHT', 'CUSTOMS',
+        'ON THE WAY', 'NEAR DESTINATION', 'STATION', 'AGENT', 'RIDER', 'DRIVER'
     ]):
         return 'In Transit'
-
-    # 4. Delivered checks (Only completed handover to recipient)
-    if any(k in status_upper for k in ['DELIVERED', 'COMPLETED', 'SUCCESSFULLY DELIVERED', 'DELIVERY SUCCESSFUL']):
-        return 'Delivered'
 
     # 5. Shipped checks (Order picked up / Manifested / Handed over to courier)
     if any(k in status_upper for k in [
         'PICKED UP', 'PICKED_UP', 'PICKUP COMPLETED', 'ORDER PICKED UP', 
         'PACKAGE PICKED UP', 'PICKED', 'SHIPPED', 'DISPATCHED', 
-        'MANIFEST', 'PICKUP SCHEDULED', 'READY FOR PICKUP'
+        'MANIFEST', 'PICKUP SCHEDULED', 'READY FOR PICKUP',
+        'LABEL CREATED', 'INFORMATION RECEIVED', 'CONSIGNMENT RECEIVED', 'ORDER CREATED'
     ]):
         return 'Shipped'
 
-    return 'In Transit'
+    return 'Shipped'
 
 
 # ── Order Synchronization Core ─────────────────────────────────────────
 def get_active_trackable_orders() -> list:
     """
-    Fetch all active shipped orders that have a tracking / AWB number.
-    Excludes completed (Delivered/Cancelled) orders.
+    Fetch all active trackable orders that have an assigned tracking / AWB number.
+    Excludes already completed (Delivered) and Cancelled orders.
     """
     db = get_db()
     rows = db.execute(
@@ -376,7 +378,7 @@ def get_active_trackable_orders() -> list:
         SELECT id, order_number, user_id, status, courier_partner, tracking_number,
                tracking_url, estimated_delivery_date, last_tracking_fetch, tracking_status_raw
         FROM orders
-        WHERE status IN ('Shipped', 'In Transit')
+        WHERE status NOT IN ('Delivered', 'Cancelled')
           AND tracking_number IS NOT NULL
           AND TRIM(tracking_number) != ''
         ORDER BY last_tracking_fetch ASC NULLS FIRST, id DESC
@@ -449,35 +451,44 @@ def update_order_from_tracking(order_id: int, host_url: str = '') -> dict:
 
     raw_status = tracking_res.get('current_status', '')
     status_code = tracking_res.get('shipment_status_code')
+    activities = tracking_res.get('shipment_track_activities') or []
+
+    # Map courier tracking to target status
     new_status = map_shiprocket_status_to_order_status(raw_status, status_code)
 
-    old_weight = STATUS_STAGE_WEIGHTS.get(old_status, 1)
-    new_weight = STATUS_STAGE_WEIGHTS.get(new_status, 1)
+    # If raw_status is ambiguous or generic, evaluate activity checkpoints
+    if activities and new_status not in ['Delivered', 'Cancelled']:
+        act_statuses = [a.get('status') for a in activities if a.get('status')]
+        if any(s == 'Delivered' for s in act_statuses):
+            new_status = 'Delivered'
+        elif any(s == 'In Transit' for s in act_statuses):
+            new_status = 'In Transit'
+        elif any(s == 'Shipped' for s in act_statuses):
+            new_status = 'Shipped'
 
-    # Status forward progression check
+    # Order status sync logic:
+    # 1. 'Shipped': Order picked up / manifest generated
+    # 2. 'In Transit': All checkpoints from pickup till delivery
+    # 3. 'Delivered': Product delivered to customer
+    # 4. 'Cancelled': RTO / failed delivery
     status_changed = False
     final_status = old_status
 
-    if new_status == 'Cancelled' and old_status != 'Cancelled':
-        final_status = 'Cancelled'
-        status_changed = True
-    elif old_status == 'Cancelled' and new_status != 'Cancelled':
-        # Do NOT resurrect a cancelled order via automated background sync
+    if new_status == 'Cancelled':
+        if old_status != 'Cancelled':
+            final_status = 'Cancelled'
+            status_changed = True
+    elif old_status == 'Cancelled':
+        # Guard: never resurrect an order explicitly cancelled in the system
         final_status = 'Cancelled'
         status_changed = False
-    elif new_status == 'Delivered':
+    elif old_status == 'Delivered' and new_status != 'Delivered':
+        # Guard: once confirmed delivered, do not regress unless cancelled
         final_status = 'Delivered'
-        status_changed = (old_status != 'Delivered')
-    elif old_status == 'Shipped' and (raw_status or tracking_res.get('shipment_track_activities')):
-        # Step 2 -> Step 3: Courier picked from admin & one status fetched from courier -> Order In Transit!
-        final_status = 'In Transit'
-        status_changed = True
-    elif new_weight > old_weight:
+        status_changed = False
+    elif new_status in ['Shipped', 'In Transit', 'Delivered']:
         final_status = new_status
-        status_changed = True
-    elif old_status in ['Processing', 'Order Confirmed', 'Placed'] and new_weight >= 2:
-        final_status = new_status
-        status_changed = True
+        status_changed = (old_status != new_status)
 
     # Check for EDD update
     edd_to_save = tracking_res.get('edd') or order_dict.get('estimated_delivery_date') or ''
@@ -576,9 +587,9 @@ def sync_all_active_orders(host_url: str = '') -> dict:
     return summary
 
 
-def get_order_live_tracking(order_id: int) -> dict:
+def get_order_live_tracking(order_id: int, force_refresh: bool = False) -> dict:
     """
-    Retrieve cached tracking scans for an order, fetching fresh data if empty or stale.
+    Retrieve tracking scans for an order, auto-refreshing live data if empty or stale (> 15 minutes).
     Returns dict ready for shop/partials/tracking_carrier.html.
     """
     db = get_db()
@@ -590,9 +601,21 @@ def get_order_live_tracking(order_id: int) -> dict:
 
     order_dict = dict(order)
     tracking_json = order_dict.get('tracking_data_json')
+    last_fetch = order_dict.get('last_tracking_fetch')
+    awb = (order_dict.get('tracking_number') or '').strip()
+    status = order_dict.get('status', '')
 
-    # If cached data exists, load it
-    if tracking_json:
+    is_stale = True
+    if last_fetch:
+        try:
+            fetch_dt = datetime.datetime.strptime(str(last_fetch).split('.')[0], '%Y-%m-%d %H:%M:%S')
+            if (datetime.datetime.now() - fetch_dt).total_seconds() < 900:  # 15 mins cache
+                is_stale = False
+        except Exception:
+            is_stale = True
+
+    # If already delivered or recently fetched, use cache
+    if not force_refresh and (not is_stale or status in ['Delivered', 'Cancelled']) and tracking_json:
         try:
             cached = json.loads(tracking_json)
             if cached.get('shipment_track_activities'):
@@ -600,8 +623,7 @@ def get_order_live_tracking(order_id: int) -> dict:
         except Exception:
             pass
 
-    # If order has tracking number, attempt live fetch
-    awb = (order_dict.get('tracking_number') or '').strip()
+    # Attempt fresh live fetch from courier provider
     if awb:
         sync_res = update_order_from_tracking(order_id)
         if sync_res.get('success') and sync_res.get('tracking_data'):
@@ -616,6 +638,13 @@ def get_order_live_tracking(order_id: int) -> dict:
                 'shipment_track_activities': td.get('shipment_track_activities', []),
                 'last_synced_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
+
+    # Fallback to cached if available
+    if tracking_json:
+        try:
+            return json.loads(tracking_json)
+        except Exception:
+            pass
 
     return {}
 
