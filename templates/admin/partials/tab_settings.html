@@ -97,6 +97,76 @@
       </div>
 
       <!-- ══════════════════════════════════════════════════════
+           SHIPGLOBAL LIVE LOGISTICS & LABEL GENERATION INTEGRATION
+           ══════════════════════════════════════════════════════ -->
+      <div style="background: #ffffff; border: 1.5px solid rgba(2, 132, 199, 0.25); border-radius: 20px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(2, 132, 199, 0.12); display: flex; align-items: center; justify-content: center; color: #0284c7;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div>
+              <h2 style="font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0;">ShipGlobal Live Logistics &amp; Label Generation</h2>
+              <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">Official ShipGlobal API integration (<code>https://labels.shipglobal.in/api/v1/</code>) for direct AWB dispatch, waybills, and Base64 PDF labels.</p>
+            </div>
+          </div>
+          <div id="sg-connection-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; font-size: 0.78rem; font-weight: 700; background: #f1f5f9; color: #475569;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span> Checking status...
+          </div>
+        </div>
+
+        <form id="shipglobal-settings-form" onsubmit="saveShipGlobalSettings(event)" style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account Email</label>
+              <input type="email" id="sg-email" class="od-form-control" placeholder="e.g. test@shipglobal.in" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account Password</label>
+              <input type="password" id="sg-password" class="od-form-control" placeholder="••••••••••••••••" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Default Carrier Service</label>
+              <select id="sg-service" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #fff;">
+                <option value="UBI-CLASSIC" selected>UBI (eTower) — UBI-CLASSIC (Recommended)</option>
+                <option value="DPD-CLASSIC">DPD — DPD-CLASSIC</option>
+                <option value="UNIUNI-CLASSIC">UniUni — UNIUNI-CLASSIC</option>
+                <option value="VIPPARCEL-CLASSIC">VipParcel — VIPPARCEL-CLASSIC</option>
+                <option value="DHLECS-CLASSIC">DHL E-Commerce — DHLECS-CLASSIC</option>
+              </select>
+              <small style="color: #64748b; font-size: 0.73rem; display: block; margin-top: 4px;">Service code used for automated POST /addOrder.php and manifest destination handoff.</small>
+            </div>
+
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+              <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="sg-mock-mode" style="width: 18px; height: 18px; accent-color: #0284c7;" checked />
+                <span style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Enable Sandbox / Simulated Mode</span>
+              </label>
+              <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; margin-left: 28px;">Allows seamless one-click test waybills and label generation without live balance.</small>
+            </div>
+          </div>
+
+          <!-- Action Buttons Row -->
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+            <button type="submit" id="btn-save-sg-settings" style="background: #0284c7; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save ShipGlobal Settings
+            </button>
+            <button type="button" id="btn-test-sg" onclick="testShipGlobalConnection()" style="background: #ffffff; color: #0284c7; border: 1.5px solid #0284c7; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Test Connection
+            </button>
+          </div>
+
+          <!-- Status Message Box -->
+          <div id="sg-feedback-box" style="display: none; border-radius: 8px; padding: 12px 16px; font-size: 0.82rem; line-height: 1.4;"></div>
+        </form>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
            SYSTEM BACKUP & RESTORE
            ══════════════════════════════════════════════════════ -->
       <div>
@@ -356,8 +426,148 @@
     });
   }
 
+  // ── ShipGlobal Settings Management ─────────────────────────────────────
+  function loadShipGlobalSettings() {
+    fetch('/api/admin/shipglobal-settings')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+
+        const emailInput = document.getElementById('sg-email');
+        const passInput = document.getElementById('sg-password');
+        const serviceSelect = document.getElementById('sg-service');
+        const mockCheck = document.getElementById('sg-mock-mode');
+        const badge = document.getElementById('sg-connection-badge');
+
+        if (emailInput && data.email) emailInput.value = data.email;
+        if (passInput && data.has_password) passInput.placeholder = '•••••••••••••••• (Saved in secure database)';
+        if (serviceSelect && data.default_service) serviceSelect.value = data.default_service;
+        if (mockCheck) mockCheck.checked = !!data.mock_mode;
+
+        if (badge) {
+          if (data.is_configured) {
+            badge.style.background = '#ecfdf5';
+            badge.style.color = '#059669';
+            badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Connected (Ready)';
+          } else {
+            badge.style.background = '#fffbeb';
+            badge.style.color = '#d97706';
+            badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Credentials Missing';
+          }
+        }
+      })
+      .catch(err => console.warn('Could not load ShipGlobal settings:', err));
+  }
+
+  function saveShipGlobalSettings(e) {
+    if (e) e.preventDefault();
+    const email = document.getElementById('sg-email').value.trim();
+    const password = document.getElementById('sg-password').value.trim();
+    const default_service = document.getElementById('sg-service').value;
+    const mock_mode = document.getElementById('sg-mock-mode').checked;
+    const btn = document.getElementById('btn-save-sg-settings');
+    const fb = document.getElementById('sg-feedback-box');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> Saving...';
+    }
+
+    fetch('/api/admin/shipglobal-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+        default_service: default_service,
+        mock_mode: mock_mode
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save ShipGlobal Settings';
+      }
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = '#ecfdf5';
+        fb.style.color = '#065f46';
+        fb.style.border = '1px solid #a7f3d0';
+        fb.innerHTML = `<strong>Success:</strong> ${data.message || 'Settings saved successfully.'}`;
+        setTimeout(() => fb.style.display = 'none', 4000);
+      }
+      loadShipGlobalSettings();
+      if (typeof showToast === 'function') showToast('success', 'ShipGlobal configuration saved!');
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Save ShipGlobal Settings';
+      }
+      if (typeof showToast === 'function') showToast('error', 'Failed to save ShipGlobal settings.');
+    });
+  }
+
+  function testShipGlobalConnection() {
+    const btn = document.getElementById('btn-test-sg');
+    const fb = document.getElementById('sg-feedback-box');
+    const email = document.getElementById('sg-email').value.trim();
+    const password = document.getElementById('sg-password').value.trim();
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> Testing API...';
+    }
+
+    fetch('/api/admin/shipglobal-settings/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Test Connection';
+      }
+      if (fb) {
+        fb.style.display = 'block';
+        if (data.success) {
+          fb.style.background = '#ecfdf5';
+          fb.style.color = '#065f46';
+          fb.style.border = '1px solid #a7f3d0';
+          fb.innerHTML = `<strong>Connected:</strong> ${data.message}`;
+        } else {
+          fb.style.background = '#fef2f2';
+          fb.style.color = '#991b1b';
+          fb.style.border = '1px solid #fecaca';
+          fb.innerHTML = `<strong>Connection Failed:</strong> ${data.message}`;
+        }
+      }
+      if (typeof showToast === 'function') {
+        showToast(data.success ? 'success' : 'error', data.message);
+      }
+      loadShipGlobalSettings();
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Test Connection';
+      }
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = '#fef2f2';
+        fb.style.color = '#991b1b';
+        fb.style.border = '1px solid #fecaca';
+        fb.textContent = 'Network error testing connection to ShipGlobal.';
+      }
+    });
+  }
+
   // Load tracking settings whenever settings tab is opened or page loads
   document.addEventListener('DOMContentLoaded', () => {
     loadShiprocketSettings();
+    loadShipGlobalSettings();
   });
 </script>

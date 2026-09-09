@@ -320,10 +320,23 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
                   Update &amp; Dispatch Order
                 </button>
+
+                <!-- ShipGlobal 1-Click Label Generation Button -->
+                <button type="button" class="btn-shipglobal-label" id="btn-generate-sg-label" onclick="generateShipGlobalLabel()" style="background:#0284c7; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Generate official ShipGlobal Waybill &amp; PDF Label via API (POST /addOrder.php)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>Generate ShipGlobal Label</span>
+                </button>
+
+                <!-- Printable Label PDF Link (if generated) -->
+                <a href="{{ order.shipping_label_url or '#' }}" id="btn-download-sg-label" target="_blank" rel="noopener" style="background:#10b981; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:0.82rem; text-decoration:none; display:{% if order.shipping_label_url %}inline-flex{% else %}none{% endif %}; align-items:center; gap:6px;" title="View &amp; Print ShipGlobal Shipping Label PDF">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  <span>Print Label PDF</span>
+                </a>
+
                 {% if order.tracking_number %}
-                <button type="button" class="btn-shiprocket-sync" id="btn-sync-shiprocket" onclick="syncShiprocketTracking()" style="background:#0284c7; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Sync live delivery checkpoints from Shiprocket">
+                <button type="button" class="btn-shiprocket-sync" id="btn-sync-shiprocket" onclick="syncShiprocketTracking()" style="background:#0f766e; color:#fff; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Sync live delivery checkpoints from Shiprocket / ShipGlobal">
                   <svg id="sync-spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                  <span>Sync Shiprocket</span>
+                  <span>Sync Live Courier Scans</span>
                 </button>
                 {% endif %}
                 <button type="button" class="btn-danger" id="btn-cancel-order" onclick="cancelOrder()" title="Cancel this order" {% if order.status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] %}style="display:none;"{% endif %}>
@@ -334,12 +347,12 @@
             </form>
           </div>
 
-          <!-- Shiprocket Live Courier Checkpoints Console -->
+          <!-- Shiprocket & ShipGlobal Live Courier Checkpoints Console -->
           <div id="shiprocket-checkpoints-card" style="margin-top:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; {% if not order.tracking_number %}display:none;{% endif %}">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
               <div style="display:inline-flex; align-items:center; gap:6px;">
                 <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 2px rgba(16,185,129,0.2);"></span>
-                <strong style="font-size:0.8rem; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Shiprocket Live Courier Scans</strong>
+                <strong style="font-size:0.8rem; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Live Courier Scans (Shiprocket / ShipGlobal)</strong>
               </div>
               <span id="sync-last-timestamp" style="font-size:0.72rem; color:#64748b;">
                 {% if live_tracking and live_tracking.last_synced_at %}Synced: {{ live_tracking.last_synced_at }}{% elif order.last_tracking_fetch %}Synced: {{ order.last_tracking_fetch }}{% else %}Awaiting sync{% endif %}

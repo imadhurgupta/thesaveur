@@ -356,6 +356,7 @@ def init_db():
         "ALTER TABLE orders ADD COLUMN refund_status TEXT DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN refund_amount REAL DEFAULT 0.0",
         "ALTER TABLE orders ADD COLUMN refund_created_at TIMESTAMP",
+        "ALTER TABLE orders ADD COLUMN shipping_label_url TEXT DEFAULT ''",
         "ALTER TABLE order_items ADD COLUMN original_price REAL DEFAULT 0",
         "ALTER TABLE order_items ADD COLUMN discount_percent REAL DEFAULT 0",
     ]

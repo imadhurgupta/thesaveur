@@ -336,6 +336,95 @@ def admin_sync_order_tracking(order_ref):
     })
 
 
+@admin_orders_bp.route('/admin/orders/<order_ref>/generate-shipglobal-label', methods=['POST'], endpoint='admin_generate_shipglobal_label')
+@admin_required
+def admin_generate_shipglobal_label(order_ref):
+    """Generate official ShipGlobal shipping label and assign waybill to order."""
+    clean_ref = str(order_ref).lstrip('#').strip()
+    db = get_db()
+    order = db.execute(
+        """
+        SELECT * FROM orders 
+        WHERE (order_number = ? OR id = ? OR order_number = ?)
+        LIMIT 1
+        """,
+        (order_ref, int(clean_ref) if clean_ref.isdigit() else -1, f"#{clean_ref}")
+    ).fetchone()
+
+    if not order:
+        db.close()
+        return jsonify({'success': False, 'error': 'Order not found.'}), 404
+
+    order_dict = dict(order)
+    order_id = order_dict['id']
+
+    # Fetch order items
+    items_raw = db.execute(
+        """
+        SELECT oi.*, p.name as product_name
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+        """,
+        (order_id,)
+    ).fetchall()
+    items = [dict(it) for it in items_raw]
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    service_code = data.get('service_code')
+
+    from services.shipglobal_service import ShipGlobalClient
+    client = ShipGlobalClient()
+
+    try:
+        label_res = client.generate_label(order_dict, items=items, service_code=service_code)
+        if not label_res.get('success'):
+            db.close()
+            return jsonify({'success': False, 'error': label_res.get('error', 'Label generation failed.')}), 400
+
+        waybill = label_res['waybill_number']
+        label_url = label_res.get('label_url', '')
+        track_url = f"https://shipglobal.in/tracking?awb={waybill}"
+
+        # Update order in DB
+        db.execute(
+            """
+            UPDATE orders 
+            SET courier_partner = 'ShipGlobal',
+                tracking_number = ?,
+                tracking_url = ?,
+                shipping_label_url = ?,
+                status = CASE WHEN status IN ('Processing', 'Order Confirmed', 'Placed') THEN 'Shipped' ELSE status END,
+                shipped_at = COALESCE(shipped_at, CURRENT_TIMESTAMP),
+                last_tracking_fetch = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (waybill, track_url, label_url, order_id)
+        )
+        db.commit()
+        db.close()
+
+        # Fetch initial checkpoints
+        from services.tracking_service import update_order_from_tracking, get_order_live_tracking
+        update_order_from_tracking(order_id, host_url=request.host_url)
+        live_tracking = get_order_live_tracking(order_id)
+
+        return jsonify({
+            'success': True,
+            'message': label_res.get('message', 'ShipGlobal label generated successfully!'),
+            'waybill_number': waybill,
+            'label_url': label_url,
+            'tracking_url': track_url,
+            'courier_partner': 'ShipGlobal',
+            'status': 'Shipped',
+            'live_tracking': live_tracking
+        })
+    except Exception as e:
+        db.close()
+        print(f"[SHIPGLOBAL LABEL ERROR] {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @admin_orders_bp.route('/admin/orders/<order_ref>/invoice', endpoint='admin_invoice')
 @admin_required
 def admin_invoice(order_ref):

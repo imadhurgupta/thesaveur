@@ -103,6 +103,15 @@ COURIER_PARTNERS = {
         'icon_type': 'package',
         'sample_format': 'e.g. SR123456789 / AWB'
     },
+    'shipglobal': {
+        'name': 'ShipGlobal (Live Logistics & International)',
+        'code': 'shipglobal',
+        'url_pattern': 'https://shipglobal.in/tracking?awb={tracking_number}',
+        'color': '#0284c7',
+        'bg_color': 'rgba(2, 132, 199, 0.08)',
+        'icon_type': 'globe',
+        'sample_format': 'e.g. UUS1234567890 / SG123456789 (ShipGlobal Waybill)'
+    },
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
@@ -134,7 +143,11 @@ def normalize_courier_code(courier_partner):
     key = courier_partner.lower().strip()
     key = key.replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '')
     
-    if 'delhivery' in key:
+    if 'shipglobal' in key or 'global' in key:
+        return 'shipglobal'
+    elif 'shiprocket' in key:
+        return 'shiprocket'
+    elif 'delhivery' in key:
         return 'delhivery'
     elif 'blue' in key or 'dart' in key:
         return 'bluedart'

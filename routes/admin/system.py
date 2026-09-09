@@ -252,3 +252,78 @@ def api_admin_sync_all_shipments():
         'message': f"Synced {summary.get('total', 0)} active shipments. {summary.get('updated', 0)} updated.",
         'summary': summary
     })
+
+
+# ══════════════════════════════════════════════════════════════════════
+# SHIPGLOBAL LIVE LOGISTICS & LABEL GENERATION SETTINGS API
+# ══════════════════════════════════════════════════════════════════════
+@admin_system_bp.route('/api/admin/shipglobal-settings', methods=['GET'], endpoint='api_admin_get_shipglobal_settings')
+@admin_required
+def api_admin_get_shipglobal_settings():
+    """Retrieve current ShipGlobal configuration and connection status."""
+    from services.shipglobal_service import get_system_setting, ShipGlobalClient, SUPPORTED_SERVICES
+    client = ShipGlobalClient()
+
+    email = get_system_setting('SHIPGLOBAL_EMAIL') or os.environ.get('SHIPGLOBAL_EMAIL', '')
+    has_password = bool(get_system_setting('SHIPGLOBAL_PASSWORD') or os.environ.get('SHIPGLOBAL_PASSWORD', ''))
+    default_service = get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'UBI-CLASSIC')
+    mock_mode = get_system_setting('SHIPGLOBAL_MOCK_MODE', '1') == '1'
+    customer_name = get_system_setting('SHIPGLOBAL_CUSTOMER_NAME', '')
+
+    return jsonify({
+        'success': True,
+        'email': email,
+        'has_password': has_password,
+        'default_service': default_service,
+        'supported_services': SUPPORTED_SERVICES,
+        'mock_mode': mock_mode,
+        'customer_name': customer_name,
+        'is_configured': client.is_configured()
+    })
+
+
+@admin_system_bp.route('/api/admin/shipglobal-settings', methods=['POST'], endpoint='api_admin_save_shipglobal_settings')
+@admin_required
+def api_admin_save_shipglobal_settings():
+    """Save ShipGlobal credentials and default logistics service into database."""
+    from services.shipglobal_service import set_system_setting, ShipGlobalClient
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+
+    email = (data.get('email') or '').strip()
+    password = (data.get('password') or '').strip()
+    service = (data.get('default_service') or 'UBI-CLASSIC').strip()
+
+    if email:
+        set_system_setting('SHIPGLOBAL_EMAIL', email)
+    if password:
+        set_system_setting('SHIPGLOBAL_PASSWORD', password)
+        set_system_setting('SHIPGLOBAL_TOKEN', '')
+        set_system_setting('SHIPGLOBAL_TOKEN_EXPIRES', '')
+
+    if service:
+        set_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', service)
+
+    if 'mock_mode' in data:
+        mock_mode = '1' if data.get('mock_mode') in [True, '1', 'true', 'on'] else '0'
+        set_system_setting('SHIPGLOBAL_MOCK_MODE', mock_mode)
+
+    return jsonify({
+        'success': True,
+        'message': 'ShipGlobal configuration saved successfully!'
+    })
+
+
+@admin_system_bp.route('/api/admin/shipglobal-settings/test', methods=['POST'], endpoint='api_admin_test_shipglobal_connection')
+@admin_required
+def api_admin_test_shipglobal_connection():
+    """Test authentication against ShipGlobal API (/customers.php)."""
+    from services.shipglobal_service import ShipGlobalClient
+    data = request.get_json(silent=True) or {}
+    email = data.get('email')
+    password = data.get('password')
+
+    client = ShipGlobalClient(email=email, password=password)
+    result = client.test_connection()
+    return jsonify(result)
+

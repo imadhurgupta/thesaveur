@@ -405,9 +405,29 @@ def update_order_from_tracking(order_id: int, host_url: str = '') -> dict:
         db.close()
         return {'success': False, 'changed': False, 'error': 'No tracking number assigned to this order.'}
 
-    # Fetch live Shiprocket checkpoints
-    client = ShiprocketClient()
-    tracking_res = client.track_awb(awb)
+    # Route to appropriate live logistics provider (ShipGlobal vs Shiprocket)
+    courier_p = (order_dict.get('courier_partner') or '').lower()
+    track_url_val = (order_dict.get('tracking_url') or '').lower()
+    is_shipglobal = (
+        'shipglobal' in courier_p or 
+        'global' in courier_p or 
+        awb.upper().startswith('SG') or 
+        awb.upper().startswith('UUS') or 
+        'shipglobal.in' in track_url_val
+    )
+
+    if is_shipglobal:
+        try:
+            from services.shipglobal_service import ShipGlobalClient
+            sg_client = ShipGlobalClient()
+            tracking_res = sg_client.track_waybill(awb)
+        except Exception as sg_err:
+            print(f"[SHIPGLOBAL TRACK ERROR] {sg_err}")
+            tracking_res = {'success': False, 'error': str(sg_err)}
+    else:
+        # Fetch live Shiprocket checkpoints
+        client = ShiprocketClient()
+        tracking_res = client.track_awb(awb)
 
     if not tracking_res.get('success'):
         # Still record fetch timestamp to prevent tight polling loops

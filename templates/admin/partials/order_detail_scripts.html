@@ -14,6 +14,7 @@
     'fedex': 'https://www.fedex.com/fedextrack/?trknbr={awb}',
     'dhl': 'https://www.dhl.com/in-en/home/tracking/tracking-express.html?submit=1&tracking-id={awb}',
     'shiprocket': 'https://shiprocket.co/tracking/{awb}',
+    'shipglobal': 'https://shipglobal.in/tracking?awb={awb}',
     'custom': 'https://shiprocket.co/tracking/{awb}'
   }, {{ courier_url_map | tojson if courier_url_map else '{}' }});
 
@@ -668,6 +669,7 @@
       { key: 'delhivery', pattern: /delhivery/i },
       { key: 'bluedart', pattern: /bluedart/i },
       { key: 'dtdc', pattern: /dtdc/i },
+      { key: 'shipglobal', pattern: /(shipglobal|labels\.shipglobal)/i },
       { key: 'shiprocket', pattern: /shiprocket/i },
       { key: 'indiapost', pattern: /(indiapost|speedpost)/i },
       { key: 'xpressbees', pattern: /xpressbees/i },
@@ -1123,10 +1125,10 @@
           scansList.innerHTML = html;
         }
 
-        const msg = data.changed ? `Status advanced to "${targetStatus}"!` : 'Shiprocket tracking is up-to-date.';
+        const msg = data.changed ? `Status advanced to "${targetStatus}"!` : 'Courier tracking is up-to-date.';
         showToast('success', msg);
       } else {
-        showToast('error', data.error || 'Failed to sync with Shiprocket.');
+        showToast('error', data.error || 'Failed to sync with courier service.');
       }
     })
     .catch(err => {
@@ -1135,7 +1137,97 @@
         btn.style.opacity = '1';
         btn.innerHTML = originalText;
       }
-      showToast('error', 'Network error while syncing Shiprocket.');
+      showToast('error', 'Network error while syncing courier tracking.');
+    });
+  }
+
+  // ── ShipGlobal Label Generation & AWB Assignment ─────────────────────────
+  function generateShipGlobalLabel() {
+    const btn = document.getElementById('btn-generate-sg-label');
+    const originalText = btn ? btn.innerHTML : '';
+
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.innerHTML = `
+        <span style="display:inline-block; animation: spin 0.8s linear infinite;">⏳</span>
+        <span>Calling ShipGlobal API...</span>
+      `;
+    }
+
+    fetch(`/admin/orders/${ORDER_ID}/generate-shipglobal-label`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = originalText;
+      }
+
+      if (data.success) {
+        showToast('success', data.message || 'ShipGlobal label & waybill generated!');
+
+        // Update AWB input
+        const awbInput = document.getElementById('awb-input');
+        if (awbInput && data.waybill_number) {
+          awbInput.value = data.waybill_number;
+          onAwbInput(data.waybill_number);
+        }
+
+        // Update Courier select to ShipGlobal
+        const courierSelect = document.getElementById('courier-select');
+        if (courierSelect) {
+          for (let i = 0; i < courierSelect.options.length; i++) {
+            if (courierSelect.options[i].value.toLowerCase() === 'shipglobal') {
+              courierSelect.selectedIndex = i;
+              break;
+            }
+          }
+        }
+
+        // Update Status to Shipped
+        const statusSelect = document.getElementById('status-select');
+        if (statusSelect) {
+          statusSelect.value = 'Shipped';
+          updateTimelineUI('Shipped');
+        }
+
+        // Update link
+        const linkInput = document.getElementById('courier-link-input');
+        if (linkInput && data.tracking_url) {
+          linkInput.value = data.tracking_url;
+          onCourierLinkInput(data.tracking_url);
+        }
+
+        // Show download button
+        const dlBtn = document.getElementById('btn-download-sg-label');
+        if (dlBtn && data.label_url) {
+          dlBtn.href = data.label_url;
+          dlBtn.style.display = 'inline-flex';
+        }
+
+        // Show live checkpoints card and reload cleanly
+        const checkpointsCard = document.getElementById('shiprocket-checkpoints-card');
+        if (checkpointsCard) checkpointsCard.style.display = 'block';
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        showToast('error', data.error || 'Failed to generate ShipGlobal label.');
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = originalText;
+      }
+      showToast('error', 'Network error while calling ShipGlobal API.');
     });
   }
 
