@@ -112,6 +112,15 @@ COURIER_PARTNERS = {
         'icon_type': 'globe',
         'sample_format': 'e.g. UUS1234567890 / SG123456789 (ShipGlobal Waybill)'
     },
+    'cirro': {
+        'name': 'CIRRO Parcel (ShipGlobal)',
+        'code': 'cirro',
+        'url_pattern': 'https://www.cirrotrack.com/parcelTracking?id={tracking_number}',
+        'color': '#0052cc',
+        'bg_color': 'rgba(0, 82, 204, 0.08)',
+        'icon_type': 'truck',
+        'sample_format': 'e.g. GFUS01071582334210 (CIRRO Tracking ID)'
+    },
     'custom': {
         'name': 'Local / Custom Courier',
         'code': 'custom',
@@ -143,7 +152,9 @@ def normalize_courier_code(courier_partner):
     key = courier_partner.lower().strip()
     key = key.replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '')
     
-    if 'shipglobal' in key or 'global' in key:
+    if 'cirro' in key:
+        return 'cirro'
+    elif 'shipglobal' in key or 'global' in key:
         return 'shipglobal'
     elif 'shiprocket' in key:
         return 'shiprocket'

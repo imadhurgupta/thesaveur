@@ -384,13 +384,18 @@ def admin_generate_shipglobal_label(order_ref):
 
         waybill = label_res['waybill_number']
         label_url = label_res.get('label_url', '')
-        track_url = f"https://shipglobal.in/tracking?awb={waybill}"
+        if waybill.upper().startswith(('GFUS', 'CIRRO')) or (service_code and 'CIRRO' in service_code.upper()):
+            track_url = f"https://www.cirrotrack.com/parcelTracking?id={waybill}"
+            courier_name = "CIRRO Parcel (ShipGlobal)"
+        else:
+            track_url = f"https://shipglobal.in/tracking?awb={waybill}"
+            courier_name = "ShipGlobal"
 
         # Update order in DB
         db.execute(
             """
             UPDATE orders 
-            SET courier_partner = 'ShipGlobal',
+            SET courier_partner = ?,
                 tracking_number = ?,
                 tracking_url = ?,
                 shipping_label_url = ?,
@@ -399,7 +404,7 @@ def admin_generate_shipglobal_label(order_ref):
                 last_tracking_fetch = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
-            (waybill, track_url, label_url, order_id)
+            (courier_name, waybill, track_url, label_url, order_id)
         )
         db.commit()
         db.close()

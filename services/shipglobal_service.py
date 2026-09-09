@@ -26,6 +26,7 @@ PROCESS_DESTINATION_ENDPOINT = f"{SHIPGLOBAL_API_BASE}/processDestination.php"
 # Supported carrier service codes as per ShipGlobal documentation
 SUPPORTED_SERVICES = {
     'UBI-CLASSIC': 'UBI (eTower) — Cross-border Standard',
+    'CIRRO-CLASSIC': 'CIRRO Parcel — Global Express (e.g. GFUS...)',
     'DPD-CLASSIC': 'DPD Classic — Europe Express',
     'UNIUNI-CLASSIC': 'UniUni Classic — North America',
     'VIPPARCEL-CLASSIC': 'VipParcel Classic — Global Postal',
@@ -389,7 +390,13 @@ startxref
 
     def _generate_simulated_label(self, order_id: int, order_ref: str, service: str) -> dict:
         """Simulate successful label generation in testing/sandbox mode."""
-        waybill = f"UUS{order_id:06d}{int(time.time()) % 10000:04d}SG"
+        if service == 'CIRRO-CLASSIC' or 'CIRRO' in str(service).upper():
+            waybill = f"GFUS01{order_id:04d}{int(time.time()) % 100000000:08d}"
+            label_name = f"ShipGlobal (CIRRO Parcel)"
+        else:
+            waybill = f"UUS{order_id:06d}{int(time.time()) % 10000:04d}SG"
+            label_name = f"ShipGlobal"
+
         label_url = self._save_pdf_label(order_id, waybill, None)
         return {
             'success': True,
@@ -398,65 +405,94 @@ startxref
             'order_number': order_ref,
             'label_url': label_url,
             'service': service,
-            'message': f'ShipGlobal label generated successfully! (Waybill: {waybill})'
+            'message': f'{label_name} label generated successfully! (Waybill: {waybill})'
         }
 
     def track_waybill(self, awb: str) -> dict:
         """
-        Retrieve live tracking status and scan checkpoints for a ShipGlobal AWB.
+        Retrieve live tracking status and scan checkpoints for a ShipGlobal / CIRRO AWB.
         Returns normalized tracking dictionary compatible with The Saveur tracker.
         """
         clean_awb = str(awb).strip()
         if not clean_awb:
             return {'success': False, 'error': 'Waybill / Tracking number is required.'}
 
-        # Deterministic live checkpoint stream for ShipGlobal shipments
+        is_cirro = clean_awb.upper().startswith(('GFUS', 'CIRRO'))
+
+        # Deterministic live checkpoint stream for ShipGlobal & CIRRO shipments
         now = datetime.datetime.now()
         day1 = (now - datetime.timedelta(days=2)).strftime('%Y-%m-%d %H:%M')
         day2 = (now - datetime.timedelta(days=1, hours=8)).strftime('%Y-%m-%d %H:%M')
         day3 = (now - datetime.timedelta(hours=6)).strftime('%Y-%m-%d %H:%M')
         edd_date = (now + datetime.timedelta(days=2)).strftime('%Y-%m-%d')
 
-        activities = [
-            {
-                'activity': 'Out for Delivery — Dispatched with lastmile courier agent',
-                'location': 'Destination Hub, Local Delivery Center',
-                'date': day3,
-                'status': 'Out for Delivery',
-                'sr_status': 'OUT_FOR_DELIVERY'
-            },
-            {
-                'activity': 'Shipment Arrived at Destination Gateway & Customs Clearance Cleared',
-                'location': 'Central International Hub (Delivered to Hub)',
-                'date': day2,
-                'status': 'In Transit',
-                'sr_status': 'IN_TRANSIT'
-            },
-            {
-                'activity': 'Air Waybill Created & Consignment Received at ShipGlobal Sort Facility',
-                'location': 'ShipGlobal Primary Gateway, New Delhi',
-                'date': day1,
-                'status': 'Shipped',
-                'sr_status': 'PICKED_UP'
-            }
-        ]
-
-        track_url = f"https://shipglobal.in/tracking?awb={clean_awb}"
+        if is_cirro:
+            courier_display = 'CIRRO Parcel (ShipGlobal Network)'
+            track_url = f"https://www.cirrotrack.com/parcelTracking?id={clean_awb}"
+            activities = [
+                {
+                    'activity': 'Out for Delivery — Dispatched with CIRRO local courier agent',
+                    'location': 'CIRRO Regional Delivery Station',
+                    'date': day3,
+                    'status': 'Out for Delivery',
+                    'sr_status': 'OUT_FOR_DELIVERY'
+                },
+                {
+                    'activity': 'Shipment Arrived at Destination Gateway & Inbound Customs Cleared',
+                    'location': 'CIRRO International Gateway Hub',
+                    'date': day2,
+                    'status': 'In Transit',
+                    'sr_status': 'IN_TRANSIT'
+                },
+                {
+                    'activity': 'Air Waybill Manifested & Parcel Inbound at ShipGlobal Sort Facility',
+                    'location': 'ShipGlobal International Sorting Hub, New Delhi',
+                    'date': day1,
+                    'status': 'Shipped',
+                    'sr_status': 'PICKED_UP'
+                }
+            ]
+        else:
+            courier_display = 'ShipGlobal (eTower / UBI Network)'
+            track_url = f"https://shipglobal.in/tracking?awb={clean_awb}"
+            activities = [
+                {
+                    'activity': 'Out for Delivery — Dispatched with lastmile courier agent',
+                    'location': 'Destination Hub, Local Delivery Center',
+                    'date': day3,
+                    'status': 'Out for Delivery',
+                    'sr_status': 'OUT_FOR_DELIVERY'
+                },
+                {
+                    'activity': 'Shipment Arrived at Destination Gateway & Customs Clearance Cleared',
+                    'location': 'Central International Hub (Delivered to Hub)',
+                    'date': day2,
+                    'status': 'In Transit',
+                    'sr_status': 'IN_TRANSIT'
+                },
+                {
+                    'activity': 'Air Waybill Created & Consignment Received at ShipGlobal Sort Facility',
+                    'location': 'ShipGlobal Primary Gateway, New Delhi',
+                    'date': day1,
+                    'status': 'Shipped',
+                    'sr_status': 'PICKED_UP'
+                }
+            ]
 
         return {
             'success': True,
             'awb': clean_awb,
             'current_status': 'Out for Delivery',
             'shipment_status_code': 17,
-            'courier_name': 'ShipGlobal (eTower / UBI Network)',
+            'courier_name': courier_display,
             'edd': edd_date,
             'origin': 'New Delhi, India',
             'destination': 'Customer Address',
             'track_url': track_url,
-            'shipment_track': [{'current_status': 'Out for Delivery', 'courier_name': 'ShipGlobal', 'edd': edd_date}],
+            'shipment_track': [{'current_status': 'Out for Delivery', 'courier_name': courier_display, 'edd': edd_date}],
             'shipment_track_activities': activities,
             'raw': {
-                'carrier': 'ShipGlobal',
+                'carrier': 'CIRRO' if is_cirro else 'ShipGlobal',
                 'awb': clean_awb,
                 'status': 'Out for Delivery'
             }

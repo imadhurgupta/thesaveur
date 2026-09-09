@@ -15,6 +15,7 @@
     'dhl': 'https://www.dhl.com/in-en/home/tracking/tracking-express.html?submit=1&tracking-id={awb}',
     'shiprocket': 'https://shiprocket.co/tracking/{awb}',
     'shipglobal': 'https://shipglobal.in/tracking?awb={awb}',
+    'cirro': 'https://www.cirrotrack.com/parcelTracking?id={awb}',
     'custom': 'https://shiprocket.co/tracking/{awb}'
   }, {{ courier_url_map | tojson if courier_url_map else '{}' }});
 
@@ -490,8 +491,36 @@
       return;
     }
 
-    // When AWB changes, automatically update the tracking URL to the new AWB
-    if (linkInput) {
+    // Auto-detect carrier and update tracking link
+    const cleanUpperAwb = awb.toUpperCase();
+    const courierSelect = document.getElementById('courier-select');
+
+    if (cleanUpperAwb.startsWith('GFUS') || cleanUpperAwb.startsWith('CIRRO')) {
+      if (courierSelect) {
+        for (let i = 0; i < courierSelect.options.length; i++) {
+          const val = courierSelect.options[i].value.toLowerCase();
+          if (val === 'cirro' || val.includes('cirro') || val === 'shipglobal') {
+            courierSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (linkInput) {
+        linkInput.value = `https://www.cirrotrack.com/parcelTracking?id=${encodeURIComponent(awb)}`;
+      }
+    } else if (cleanUpperAwb.startsWith('UUS') || cleanUpperAwb.startsWith('SG')) {
+      if (courierSelect) {
+        for (let i = 0; i < courierSelect.options.length; i++) {
+          if (courierSelect.options[i].value.toLowerCase() === 'shipglobal') {
+            courierSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (linkInput) {
+        linkInput.value = `https://shipglobal.in/tracking?awb=${encodeURIComponent(awb)}`;
+      }
+    } else if (linkInput) {
       if (!linkInput.value || linkInput.value.includes('shiprocket.co/tracking/')) {
         linkInput.value = `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`;
       }

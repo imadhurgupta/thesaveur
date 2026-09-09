@@ -405,15 +405,18 @@ def update_order_from_tracking(order_id: int, host_url: str = '') -> dict:
         db.close()
         return {'success': False, 'changed': False, 'error': 'No tracking number assigned to this order.'}
 
-    # Route to appropriate live logistics provider (ShipGlobal vs Shiprocket)
+    # Route to appropriate live logistics provider (ShipGlobal / CIRRO vs Shiprocket)
     courier_p = (order_dict.get('courier_partner') or '').lower()
     track_url_val = (order_dict.get('tracking_url') or '').lower()
+    clean_awb_up = awb.upper()
     is_shipglobal = (
         'shipglobal' in courier_p or 
         'global' in courier_p or 
-        awb.upper().startswith('SG') or 
-        awb.upper().startswith('UUS') or 
-        'shipglobal.in' in track_url_val
+        'cirro' in courier_p or
+        clean_awb_up.startswith(('SG', 'UUS', 'GFUS', 'CIRRO')) or 
+        'shipglobal.in' in track_url_val or
+        'cirrotrack.com' in track_url_val or
+        'cirro' in track_url_val
     )
 
     if is_shipglobal:
