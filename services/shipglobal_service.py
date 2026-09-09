@@ -468,13 +468,11 @@ startxref
                             if 'delivered' in low_content:
                                 ev_status = 'Delivered'
                                 sr_code = 'DELIVERED'
-                            elif 'out for delivery' in low_content:
-                                ev_status = 'Out for Delivery'
-                                sr_code = 'OUT_FOR_DELIVERY'
-                            elif any(k in low_content for k in ['label created', 'information received', 'manifest']):
+                            elif any(k in low_content for k in ['label created', 'information received', 'manifest', 'picked up', 'pickup']):
                                 ev_status = 'Shipped'
                                 sr_code = 'PICKED_UP'
                             else:
+                                # All statuses till delivery are shown in In-Transit
                                 ev_status = 'In Transit'
                                 sr_code = 'IN_TRANSIT'
 
@@ -493,10 +491,7 @@ startxref
                         if raw_status_code == 40 or 'delivered' in latest_content:
                             cur_status = 'Delivered'
                             status_code = 7
-                        elif raw_status_code == 30 or 'out for delivery' in latest_content:
-                            cur_status = 'Out for Delivery'
-                            status_code = 17
-                        elif any(k in latest_content for k in ['label created', 'information received']) and raw_status_code <= 20 and len(activities) <= 2:
+                        elif any(k in latest_content for k in ['label created', 'information received', 'manifest', 'picked up', 'pickup']) and raw_status_code <= 20 and len(activities) <= 2:
                             cur_status = 'Shipped'
                             status_code = 6
                         else:
@@ -551,13 +546,11 @@ startxref
                         if 'delivered' in low:
                             ev_st = 'Delivered'
                             sr_st = 'DELIVERED'
-                        elif 'out for delivery' in low:
-                            ev_st = 'Out for Delivery'
-                            sr_st = 'OUT_FOR_DELIVERY'
-                        elif any(k in low for k in ['manifest', 'pickup', 'created']):
+                        elif any(k in low for k in ['manifest', 'pickup', 'picked up', 'created']):
                             ev_st = 'Shipped'
                             sr_st = 'PICKED_UP'
                         else:
+                            # All intermediate activities till delivery shown as In Transit
                             ev_st = 'In Transit'
                             sr_st = 'IN_TRANSIT'
 
@@ -578,7 +571,7 @@ startxref
                         'live': True,
                         'awb': awb,
                         'current_status': latest_status,
-                        'shipment_status_code': 18 if latest_status == 'In Transit' else (17 if latest_status == 'Out for Delivery' else 7),
+                        'shipment_status_code': 7 if latest_status == 'Delivered' else (6 if latest_status == 'Shipped' else 18),
                         'courier_name': f"ShipGlobal ({last_mile_carrier})",
                         'edd': '',
                         'origin': 'India',
@@ -631,8 +624,8 @@ startxref
                     'activity': 'Out for Delivery — Dispatched with CIRRO local courier agent',
                     'location': 'CIRRO Regional Delivery Station',
                     'date': day3,
-                    'status': 'Out for Delivery',
-                    'sr_status': 'OUT_FOR_DELIVERY'
+                    'status': 'In Transit',
+                    'sr_status': 'IN_TRANSIT'
                 },
                 {
                     'activity': 'Shipment Arrived at Destination Gateway & Inbound Customs Cleared',
@@ -654,11 +647,11 @@ startxref
             track_url = f"https://shipglobal.in/tracking?awb={clean_awb}"
             activities = [
                 {
-                    'activity': 'Out for Delivery — Dispatched with lastmile courier agent',
+                    'activity': 'Package In Transit — Processing at regional delivery facility',
                     'location': 'Destination Hub, Local Delivery Center',
                     'date': day3,
-                    'status': 'Out for Delivery',
-                    'sr_status': 'OUT_FOR_DELIVERY'
+                    'status': 'In Transit',
+                    'sr_status': 'IN_TRANSIT'
                 },
                 {
                     'activity': 'Shipment Arrived at Destination Gateway & Customs Clearance Cleared',
@@ -680,19 +673,19 @@ startxref
             'success': True,
             'live': False,
             'awb': clean_awb,
-            'current_status': 'Out for Delivery',
-            'shipment_status_code': 17,
+            'current_status': 'In Transit',
+            'shipment_status_code': 18,
             'courier_name': courier_display,
             'edd': edd_date,
             'origin': 'New Delhi, India',
             'destination': 'Customer Address',
             'track_url': track_url,
-            'shipment_track': [{'current_status': 'Out for Delivery', 'courier_name': courier_display, 'edd': edd_date}],
+            'shipment_track': [{'current_status': 'In Transit', 'courier_name': courier_display, 'edd': edd_date}],
             'shipment_track_activities': activities,
             'raw': {
                 'carrier': 'CIRRO' if is_cirro else 'ShipGlobal',
                 'awb': clean_awb,
-                'status': 'Out for Delivery'
+                'status': 'In Transit'
             }
         }
 
@@ -707,7 +700,7 @@ def sync_all_active_shipglobal_orders(host_url: str = '') -> dict:
         """
         SELECT id, order_number, courier_partner, tracking_number, tracking_url
         FROM orders
-        WHERE status IN ('Shipped', 'In Transit', 'Out for Delivery')
+        WHERE status IN ('Shipped', 'In Transit')
           AND tracking_number IS NOT NULL
           AND TRIM(tracking_number) != ''
           AND (

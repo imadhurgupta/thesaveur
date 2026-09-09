@@ -85,7 +85,7 @@ def process_order_cancellation_refund(order_id: int, reason: str = "Order Cancel
             action_note = f"Online payment refund reference generated: {refund_id}"
 
     # Reverse product stock if cancelling an active unfulfilled order
-    if old_status in ['Placed', 'Processing', 'Order Confirmed', 'Shipped', 'In Transit', 'Out for Delivery']:
+    if old_status in ['Placed', 'Processing', 'Order Confirmed', 'Shipped', 'In Transit']:
         try:
             items = db.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
             for it in items:

@@ -844,7 +844,7 @@
 
     const cancelBtn = document.getElementById('btn-cancel-order');
     const cancelOpt = document.getElementById('opt-status-cancelled');
-    if (['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'].includes(status)) {
+    if (['Shipped', 'In Transit', 'Delivered'].includes(status)) {
       if (cancelBtn) cancelBtn.style.display = 'none';
       if (cancelOpt) {
         cancelOpt.disabled = true;
@@ -876,7 +876,7 @@
       return;
     }
 
-    const steps = ['Order Confirmed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
+    const steps = ['Order Confirmed', 'Shipped', 'In Transit', 'Delivered'];
     let currentIdx = steps.indexOf(status);
     if (currentIdx === -1 && status === 'Processing') currentIdx = 0;
     
@@ -1049,7 +1049,7 @@
 
   function cancelOrder() {
     const currentStatus = document.getElementById('status-select')?.value || '';
-    if (['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'].includes(currentStatus)) {
+    if (['Shipped', 'In Transit', 'Delivered'].includes(currentStatus)) {
       showToast('error', 'Order cannot be cancelled once it has been shipped.');
       return;
     }

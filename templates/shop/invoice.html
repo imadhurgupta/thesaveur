@@ -596,7 +596,6 @@
           {%- if order.status == 'Delivered' -%}#27ae60
           {%- elif order.status == 'Shipped' -%}#d35400
           {%- elif order.status == 'In Transit' -%}#7c3aed
-          {%- elif order.status == 'Out for Delivery' -%}#0d9488
           {%- elif order.status in ['Order Confirmed', 'Processing', 'Placed'] -%}#2980b9
           {%- else -%}#c0392b{%- endif -%};">
           {{ order.status }}

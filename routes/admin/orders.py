@@ -10,6 +10,8 @@ from services.email_service import queue_order_status_update_email, queue_otp_em
 
 admin_orders_bp = Blueprint('admin_orders_bp', __name__)
 
+VALID_STATUSES = ['Order Confirmed', 'Processing', 'Shipped', 'In Transit', 'Delivered', 'Cancelled']
+
 
 @admin_orders_bp.route('/admin/update-order-status/<order_ref>', methods=['POST'], endpoint='admin_update_order_status')
 @admin_required
@@ -46,7 +48,6 @@ def admin_update_order_status(order_ref):
         return redirect(url_for('admin_dashboard'))
 
     order_id = current_order['id']
-    VALID_STATUSES = ['Order Confirmed', 'Processing', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered', 'Cancelled']
 
     # Auto-detect courier & extract AWB from courier link if needed
     from services.couriers_service import detect_courier_info
@@ -105,7 +106,7 @@ def admin_update_order_status(order_ref):
         return redirect(url_for('admin_dashboard'))
 
     # Strict workflow rule: Once shipped or in transit, cancellation is NOT available
-    if status == 'Cancelled' and current_order['status'] in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
+    if status == 'Cancelled' and current_order['status'] in ['Shipped', 'In Transit', 'Delivered']:
         db.close()
         msg = "Order cannot be cancelled once it has been shipped."
         if request.is_json:
@@ -139,7 +140,7 @@ def admin_update_order_status(order_ref):
 
     # Shipped timestamp
     shipped_clause = ""
-    if status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] and not current_order['shipped_at']:
+    if status in ['Shipped', 'In Transit', 'Delivered'] and not current_order['shipped_at']:
         shipped_clause = ", shipped_at = CURRENT_TIMESTAMP"
 
     db.execute(

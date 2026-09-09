@@ -62,8 +62,8 @@
 
           <!-- Status Timeline Container -->
           <div class="od-timeline" id="timeline-container" style="margin-bottom: 16px;">
-            {% set steps = [('Order Confirmed', 'check'), ('Shipped', 'truck'), ('In Transit', 'navigation'), ('Out for Delivery', 'package'), ('Delivered', 'check-circle')] %}
-            {% set status_order = {'Order Confirmed': 0, 'Processing': 0, 'Placed': 0, 'Shipped': 1, 'In Transit': 2, 'Out for Delivery': 3, 'Delivered': 4, 'Cancelled': 99} %}
+            {% set steps = [('Order Confirmed', 'check'), ('Shipped', 'truck'), ('In Transit', 'navigation'), ('Delivered', 'check-circle')] %}
+            {% set status_order = {'Order Confirmed': 0, 'Processing': 0, 'Placed': 0, 'Shipped': 1, 'In Transit': 2, 'Delivered': 3, 'Cancelled': 99} %}
             {% set current_idx = status_order.get(order.status, 0) %}
 
             {% if order.status == 'Cancelled' %}
@@ -172,9 +172,8 @@
                     <option value="Order Confirmed" {% if order.status in ['Order Confirmed', 'Processing', 'Placed'] %}selected{% endif %}>Order Confirmed</option>
                     <option value="Shipped"          {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
                     <option value="In Transit"        {% if order.status == 'In Transit' %}selected{% endif %}>In Transit</option>
-                    <option value="Out for Delivery"  {% if order.status == 'Out for Delivery' %}selected{% endif %}>Out for Delivery</option>
                     <option value="Delivered"        {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
-                    <option value="Cancelled" id="opt-status-cancelled" {% if order.status == 'Cancelled' %}selected{% elif order.status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] %}disabled style="display:none;"{% endif %}>Cancelled</option>
+                    <option value="Cancelled" id="opt-status-cancelled" {% if order.status == 'Cancelled' %}selected{% elif order.status in ['Shipped', 'In Transit', 'Delivered'] %}disabled style="display:none;"{% endif %}>Cancelled</option>
                   </select>
                 </div>
 
@@ -339,7 +338,7 @@
                   <span>Sync Live Courier Scans</span>
                 </button>
                 {% endif %}
-                <button type="button" class="btn-danger" id="btn-cancel-order" onclick="cancelOrder()" title="Cancel this order" {% if order.status in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered'] %}style="display:none;"{% endif %}>
+                <button type="button" class="btn-danger" id="btn-cancel-order" onclick="cancelOrder()" title="Cancel this order" {% if order.status in ['Shipped', 'In Transit', 'Delivered'] %}style="display:none;"{% endif %}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   Cancel
                 </button>

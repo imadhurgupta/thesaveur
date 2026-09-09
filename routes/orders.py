@@ -226,7 +226,7 @@ def customer_cancel_order(order_ref):
         flash("Order not found.", "error")
         return redirect(url_for('my_orders'))
 
-    if order['status'] in ['Shipped', 'In Transit', 'Out for Delivery', 'Delivered']:
+    if order['status'] in ['Shipped', 'In Transit', 'Delivered']:
         db.close()
         flash("Order cannot be cancelled once it has been shipped.", "error")
         return redirect(url_for('my_orders'))

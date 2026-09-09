@@ -300,14 +300,13 @@ STATUS_STAGE_WEIGHTS = {
     'Placed': 1,
     'Shipped': 2,
     'In Transit': 3,
-    'Out for Delivery': 4,
-    'Delivered': 5
+    'Delivered': 4
 }
 
 def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> str:
     """
-    Map Shiprocket status code or text to The Saveur's 5 core statuses:
-    'Order Confirmed' -> 'Shipped' -> 'In Transit' -> 'Out for Delivery' -> 'Delivered' (or 'Cancelled').
+    Map Shiprocket status code or text to The Saveur's 4 core tracking milestones:
+    'Order Confirmed' -> 'Shipped' (Order Picked Up) -> 'In Transit' (All status till delivery) -> 'Delivered'.
     """
     # 1. Numeric code mapping (Shiprocket standard)
     if status_code is not None:
@@ -315,13 +314,14 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
             code = int(status_code)
             if code == 7:
                 return 'Delivered'
-            elif code == 17:
-                return 'Out for Delivery'
-            elif code in [18, 19, 42, 52]:
-                return 'In Transit'
-            elif code == 6:
+            elif code in [6, 42]:
+                # 6 = Manifest / Shipped, 42 = Picked Up
                 return 'Shipped'
-            elif code in [8, 9, 10, 14, 15, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 48, 49, 50, 51, 53, 54]:
+            elif code in [17, 18, 19, 38, 43, 52]:
+                # 17 = Out for delivery, 18 = In Transit, 52 = Reached Destination Hub
+                # All statuses till delivery will be shown in In-Transit
+                return 'In Transit'
+            elif code in [8, 9, 10, 14, 15, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 44, 45, 46, 48, 49, 50, 51, 53, 54]:
                 return 'Cancelled'
         except (ValueError, TypeError):
             pass
@@ -339,23 +339,26 @@ def map_shiprocket_status_to_order_status(raw_status: str, status_code=None) -> 
     ]):
         return 'Cancelled'
 
-    # 3. Delivered checks
-    if any(k in status_upper for k in ['DELIVERED', 'COMPLETED']):
-        return 'Delivered'
-
-    # 4. Out for delivery checks
-    if any(k in status_upper for k in ['OUT FOR DELIVERY', 'OUT_FOR_DELIVERY', 'OFD']):
-        return 'Out for Delivery'
-
-    # 5. In transit checks
+    # 3. In Transit checks (All activities till delivery: out for delivery, hub arrivals, departures, transit)
+    # Note: Check this before Delivered so phrases like 'OUT FOR DELIVERY' or 'DISPATCHED FOR DELIVERY' aren't falsely treated as delivered
     if any(k in status_upper for k in [
+        'OUT FOR DELIVERY', 'OUT_FOR_DELIVERY', 'OFD', 'DISPATCHED FOR DELIVERY',
         'IN TRANSIT', 'TRANSIT', 'REACHED', 'HUB', 'FACILITY', 'DEPARTED',
-        'RECEIVED AT', 'PICKED UP', 'PICKED_UP', 'LINE HAUL', 'CONNECTION'
+        'LINE HAUL', 'CONNECTION', 'SORTING', 'ARRIVED', 'IN FLIGHT', 'CUSTOMS',
+        'ON THE WAY', 'NEAR DESTINATION'
     ]):
         return 'In Transit'
 
-    # 6. Shipped checks
-    if any(k in status_upper for k in ['SHIPPED', 'DISPATCHED', 'MANIFEST', 'PICKUP SCHEDULED', 'READY FOR PICKUP']):
+    # 4. Delivered checks (Only completed handover to recipient)
+    if any(k in status_upper for k in ['DELIVERED', 'COMPLETED', 'SUCCESSFULLY DELIVERED', 'DELIVERY SUCCESSFUL']):
+        return 'Delivered'
+
+    # 5. Shipped checks (Order picked up / Manifested / Handed over to courier)
+    if any(k in status_upper for k in [
+        'PICKED UP', 'PICKED_UP', 'PICKUP COMPLETED', 'ORDER PICKED UP', 
+        'PACKAGE PICKED UP', 'PICKED', 'SHIPPED', 'DISPATCHED', 
+        'MANIFEST', 'PICKUP SCHEDULED', 'READY FOR PICKUP'
+    ]):
         return 'Shipped'
 
     return 'In Transit'
@@ -373,7 +376,7 @@ def get_active_trackable_orders() -> list:
         SELECT id, order_number, user_id, status, courier_partner, tracking_number,
                tracking_url, estimated_delivery_date, last_tracking_fetch, tracking_status_raw
         FROM orders
-        WHERE status IN ('Shipped', 'In Transit', 'Out for Delivery')
+        WHERE status IN ('Shipped', 'In Transit')
           AND tracking_number IS NOT NULL
           AND TRIM(tracking_number) != ''
         ORDER BY last_tracking_fetch ASC NULLS FIRST, id DESC

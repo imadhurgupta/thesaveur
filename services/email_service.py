@@ -189,14 +189,13 @@ def send_login_alert_email(user_email, user_name):
 
 def _render_email_tracking_stepper(current_status):
     """
-    Render a 5-stage tracking progress bar for email clients:
-    Order Confirmed -> Shipped -> In Transit -> Out for Delivery -> Delivered
+    Render a 4-stage tracking progress bar for email clients:
+    Order Confirmed -> Shipped (Picked Up) -> In Transit (All activities till delivery) -> Delivered
     """
     stages = [
         ('Order Confirmed', 'Confirmed'),
         ('Shipped', 'Shipped'),
         ('In Transit', 'In Transit'),
-        ('Out for Delivery', 'Out for Delivery'),
         ('Delivered', 'Delivered')
     ]
     status_ranks = {
@@ -205,8 +204,8 @@ def _render_email_tracking_stepper(current_status):
         'Placed': 1,
         'Shipped': 2,
         'In Transit': 3,
-        'Out for Delivery': 4,
-        'Delivered': 5
+        'Out for Delivery': 3,  # mapped to In Transit
+        'Delivered': 4
     }
     cur_rank = status_ranks.get(current_status, 1)
 
@@ -229,7 +228,7 @@ def _render_email_tracking_stepper(current_status):
             dot = str(idx)
 
         cells.append(f"""
-        <td style="width: 20%; padding: 4px 2px; text-align: center; vertical-align: top;">
+        <td style="width: 25%; padding: 4px 2px; text-align: center; vertical-align: top;">
             <div style="display: inline-block; width: 22px; height: 22px; line-height: 20px; border-radius: 50%; background: {bg}; border: 1.5px solid {border}; color: {color}; font-size: 11px; font-weight: 700; margin-bottom: 4px;">
                 {dot}
             </div>
@@ -363,7 +362,6 @@ def send_admin_order_notification(order_data, new_status, old_status=None, items
         'Processing': ('#0d9488', '#f0fdfa', '#0f766e'),
         'Shipped': ('#0284c7', '#f0f9ff', '#0369a1'),
         'In Transit': ('#3b82f6', '#eff6ff', '#1d4ed8'),
-        'Out for Delivery': ('#8b5cf6', '#f5f3ff', '#6d28d9'),
         'Delivered': ('#16a34a', '#f0fdf4', '#15803d'),
         'Cancelled': ('#dc2626', '#fef2f2', '#b91c1c'),
         'Refunded': ('#7c3aed', '#faf5ff', '#6d28d9'),
@@ -653,13 +651,11 @@ def send_order_tracking_email(user_email, user_name, order_number, status, track
 
     status_titles = {
         'Shipped': 'Your Order Has Been Shipped',
-        'In Transit': 'Your Package is In Transit',
-        'Out for Delivery': 'Your Package is Out for Delivery'
+        'In Transit': 'Your Package is In Transit'
     }
     status_descriptions = {
-        'Shipped': f"Great news! Your order <strong>#{order_number}</strong> has been dispatched via <strong>{courier_display}</strong> and is currently on its way to you.",
-        'In Transit': f"Your package for order <strong>#{order_number}</strong> is in transit between logistics hubs with <strong>{courier_display}</strong>.",
-        'Out for Delivery': f"Your package for order <strong>#{order_number}</strong> is <strong>out for delivery today</strong> with your local <strong>{courier_display}</strong> courier agent. Please ensure someone is available at the delivery address to receive it."
+        'Shipped': f"Great news! Your order <strong>#{order_number}</strong> has been picked up by <strong>{courier_display}</strong> and is dispatched.",
+        'In Transit': f"Your package for order <strong>#{order_number}</strong> is in transit between logistics checkpoints with <strong>{courier_display}</strong>."
     }
 
     heading = status_titles.get(status, f"Order Tracking: {status}")
@@ -743,12 +739,12 @@ def send_order_shipped_email(user_email, user_name, order_number, tracking_url, 
 
 
 def send_order_out_for_delivery_email(user_email, user_name, order_number, tracking_url, courier_partner=None, tracking_number=None, estimated_delivery_date=None):
-    """Explicit helper for Out for Delivery status email."""
+    """Explicit helper for Out for Delivery status email (mapped to In Transit)."""
     return send_order_tracking_email(
         user_email=user_email,
         user_name=user_name,
         order_number=order_number,
-        status='Out for Delivery',
+        status='In Transit',
         tracking_url=tracking_url,
         courier_partner=courier_partner,
         tracking_number=tracking_number,
@@ -1008,11 +1004,12 @@ def send_order_status_update_email(order_id, new_status, host_url=None):
                     notify_admin=False  # Admin notified explicitly below
                 )
             elif new_status in ['Shipped', 'In Transit', 'Out for Delivery']:
+                normalized_tracking_status = 'In Transit' if new_status == 'Out for Delivery' else new_status
                 send_order_tracking_email(
                     user_email=user_email,
                     user_name=user_name,
                     order_number=order_number,
-                    status=new_status,
+                    status=normalized_tracking_status,
                     tracking_url=tracking_url,
                     courier_partner=order_dict.get('courier_partner'),
                     tracking_number=order_dict.get('tracking_number'),
