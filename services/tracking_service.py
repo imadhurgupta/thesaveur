@@ -692,14 +692,15 @@ _bg_stop_event = threading.Event()
 
 def _tracking_scheduler_loop():
     """Background loop polling active orders based on configured interval."""
-    print("[SHIPROCKET SCHEDULER] In-app background tracking scheduler started.")
+    print("[LOGISTICS SCHEDULER] In-app background courier tracking scheduler started.")
     while not _bg_stop_event.is_set():
         try:
-            enabled = get_system_setting('AUTO_TRACKING_ENABLED', '1') == '1'
-            if enabled:
+            sr_enabled = get_system_setting('AUTO_TRACKING_ENABLED', '1') == '1'
+            sg_enabled = get_system_setting('SHIPGLOBAL_AUTO_SYNC', '1') == '1'
+            if sr_enabled or sg_enabled:
                 sync_all_active_orders()
         except Exception as loop_err:
-            print(f"[SHIPROCKET SCHEDULER ERROR] {loop_err}")
+            print(f"[LOGISTICS SCHEDULER ERROR] {loop_err}")
 
         # Default interval: 30 minutes (configurable in settings)
         try:

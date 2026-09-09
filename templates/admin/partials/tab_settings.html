@@ -118,12 +118,19 @@
         <form id="shipglobal-settings-form" onsubmit="saveShipGlobalSettings(event)" style="display: flex; flex-direction: column; gap: 18px;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div>
-              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account Email</label>
-              <input type="email" id="sg-email" class="od-form-control" placeholder="e.g. test@shipglobal.in" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account Email / API Login</label>
+              <input type="email" id="sg-email" class="od-form-control" autocomplete="off" placeholder="e.g. albertmassey890@gmail.com" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
+              <small style="color: #64748b; font-size: 0.73rem; display: block; margin-top: 4px;">Registered email / API login for ShipGlobal Label API.</small>
             </div>
             <div>
-              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account Password</label>
-              <input type="password" id="sg-password" class="od-form-control" placeholder="••••••••••••••••" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
+              <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">ShipGlobal Account / API Password</label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="sg-password" class="od-form-control" autocomplete="new-password" placeholder="••••••••••••••••" style="width: 100%; padding: 10px 42px 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" />
+                <button type="button" onclick="toggleSgPasswordVisibility()" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex; align-items: center;" title="Show / Hide Password">
+                  <svg id="sg-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <small style="color: #64748b; font-size: 0.73rem; display: block; margin-top: 4px;">Use your API password from <em>ShipGlobal Dashboard &rarr; Settings &rarr; API</em>.</small>
             </div>
           </div>
 
@@ -143,11 +150,20 @@
 
             <div style="display: flex; flex-direction: column; justify-content: center;">
               <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
-                <input type="checkbox" id="sg-mock-mode" style="width: 18px; height: 18px; accent-color: #0284c7;" />
-                <span style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Enable Sandbox / Mock Mode</span>
+                <input type="checkbox" id="sg-auto-sync" style="width: 18px; height: 18px; accent-color: #0284c7;" checked />
+                <span style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Enable Automated Live Courier Sync (ShipGlobal / CIRRO)</span>
               </label>
-              <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; margin-left: 28px;">Leave unchecked for <strong>Real Live Mode (Production)</strong>. Check only for simulated offline tests.</small>
+              <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; margin-left: 28px;">Continuously monitors active shipments and syncs live checkpoints via CIRRO &amp; ShipGlobal APIs.</small>
             </div>
+          </div>
+
+          <!-- Advanced Mode & Sync Status Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; flex-wrap: wrap; gap: 10px;">
+            <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="sg-mock-mode" style="width: 16px; height: 16px; accent-color: #0284c7;" />
+              <span style="font-size: 0.84rem; font-weight: 600; color: #334155;">Enable Offline / Sandbox Simulation Mode</span>
+            </label>
+            <span id="sg-last-sync-label" style="font-size: 0.74rem; color: #64748b; font-weight: 600;">Last Live Sync: Awaiting first run</span>
           </div>
 
           <!-- Action Buttons Row -->
@@ -159,6 +175,10 @@
             <button type="button" id="btn-test-sg" onclick="testShipGlobalConnection()" style="background: #ffffff; color: #0284c7; border: 1.5px solid #0284c7; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               Test Connection
+            </button>
+            <button type="button" id="btn-sync-all-sg" onclick="syncAllShipGlobalShipments()" style="background: #0f766e; color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Synchronize all active ShipGlobal and CIRRO packages now">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>Sync All ShipGlobal Orders Now</span>
             </button>
           </div>
 
@@ -440,10 +460,26 @@
         const mockCheck = document.getElementById('sg-mock-mode');
         const badge = document.getElementById('sg-connection-badge');
 
-        if (emailInput && data.email) emailInput.value = data.email;
+        const autoSyncCheck = document.getElementById('sg-auto-sync');
+        const lastSyncEl = document.getElementById('sg-last-sync-label');
+
+        if (emailInput && (!emailInput.value || emailInput.value === 'test@merchant.com')) {
+          if (data.email) emailInput.value = data.email;
+        }
         if (passInput && data.has_password) passInput.placeholder = '•••••••••••••••• (Saved in secure database)';
         if (serviceSelect && data.default_service) serviceSelect.value = data.default_service;
         if (mockCheck) mockCheck.checked = !!data.mock_mode;
+        if (autoSyncCheck) autoSyncCheck.checked = (data.auto_sync !== false);
+
+        if (lastSyncEl && data.last_sync) {
+          try {
+            const parsed = typeof data.last_sync === 'string' ? JSON.parse(data.last_sync) : data.last_sync;
+            const ts = parsed.timestamp ? new Date(parsed.timestamp).toLocaleTimeString() : '';
+            lastSyncEl.textContent = `Last Live Sync: ${ts} (${parsed.total || 0} shipments, ${parsed.updated || 0} updated)`;
+          } catch(e) {
+            lastSyncEl.textContent = `Last Live Sync: ${data.last_sync}`;
+          }
+        }
 
         if (badge) {
           if (data.is_configured) {
@@ -466,12 +502,30 @@
       .catch(err => console.warn('Could not load ShipGlobal settings:', err));
   }
 
+  function toggleSgPasswordVisibility() {
+    const input = document.getElementById('sg-password');
+    const icon = document.getElementById('sg-eye-icon');
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (icon) {
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+      }
+    } else {
+      input.type = 'password';
+      if (icon) {
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    }
+  }
+
   function saveShipGlobalSettings(e) {
     if (e) e.preventDefault();
     const email = document.getElementById('sg-email').value.trim();
     const password = document.getElementById('sg-password').value.trim();
     const default_service = document.getElementById('sg-service').value;
     const mock_mode = document.getElementById('sg-mock-mode').checked;
+    const auto_sync = document.getElementById('sg-auto-sync') ? document.getElementById('sg-auto-sync').checked : true;
     const btn = document.getElementById('btn-save-sg-settings');
     const fb = document.getElementById('sg-feedback-box');
 
@@ -487,7 +541,8 @@
         email: email,
         password: password,
         default_service: default_service,
-        mock_mode: mock_mode
+        mock_mode: mock_mode,
+        auto_sync: auto_sync
       })
     })
     .then(r => r.json())
@@ -513,6 +568,43 @@
         btn.innerHTML = 'Save ShipGlobal Settings';
       }
       if (typeof showToast === 'function') showToast('error', 'Failed to save ShipGlobal settings.');
+    });
+  }
+
+  function syncAllShipGlobalShipments() {
+    const btn = document.getElementById('btn-sync-all-sg');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.innerHTML = '<span style="display:inline-block; animation:spin 0.8s linear infinite;">⏳</span> Syncing ShipGlobal / CIRRO...';
+    }
+
+    fetch('/api/admin/shipglobal/sync-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = originalText;
+      }
+      if (data.success) {
+        showToast('success', data.message || 'ShipGlobal live tracking synchronized successfully!');
+        loadShipGlobalSettings();
+      } else {
+        showToast('error', data.error || 'Failed to synchronize ShipGlobal shipments.');
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = originalText;
+      }
+      showToast('error', 'Network error while synchronizing ShipGlobal tracking.');
     });
   }
 
@@ -544,18 +636,23 @@
           fb.style.background = '#ecfdf5';
           fb.style.color = '#065f46';
           fb.style.border = '1px solid #a7f3d0';
-          fb.innerHTML = `<strong>Connected:</strong> ${data.message}`;
+          fb.innerHTML = `<strong>Connected (Live):</strong> ${data.message}`;
+          const badge = document.getElementById('sg-connection-badge');
+          if (badge) {
+            badge.style.background = '#ecfdf5';
+            badge.style.color = '#059669';
+            badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Live Production Ready';
+          }
         } else {
           fb.style.background = '#fef2f2';
           fb.style.color = '#991b1b';
           fb.style.border = '1px solid #fecaca';
-          fb.innerHTML = `<strong>Connection Failed:</strong> ${data.message}`;
+          fb.innerHTML = `<strong>Live Connection Failed:</strong> ${data.message}<br><small style="margin-top:4px; display:inline-block;">Tip: Verify that you are using your ShipGlobal <strong>API Password</strong> (found under <em>Settings &rarr; API</em> in the ShipGlobal portal), not a basic web login password.</small>`;
         }
       }
       if (typeof showToast === 'function') {
         showToast(data.success ? 'success' : 'error', data.message);
       }
-      loadShipGlobalSettings();
     })
     .catch(() => {
       if (btn) {

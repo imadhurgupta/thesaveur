@@ -270,6 +270,9 @@ def api_admin_get_shipglobal_settings():
     mock_mode = get_system_setting('SHIPGLOBAL_MOCK_MODE', '0') == '1'
     customer_name = get_system_setting('SHIPGLOBAL_CUSTOMER_NAME', '')
 
+    auto_sync = get_system_setting('SHIPGLOBAL_AUTO_SYNC', '1') == '1'
+    last_sync = get_system_setting('SHIPGLOBAL_LAST_BULK_SYNC', '')
+
     return jsonify({
         'success': True,
         'email': email,
@@ -277,6 +280,8 @@ def api_admin_get_shipglobal_settings():
         'default_service': default_service,
         'supported_services': SUPPORTED_SERVICES,
         'mock_mode': mock_mode,
+        'auto_sync': auto_sync,
+        'last_sync': last_sync,
         'customer_name': customer_name,
         'is_configured': client.is_configured()
     })
@@ -308,6 +313,10 @@ def api_admin_save_shipglobal_settings():
         mock_mode = '1' if data.get('mock_mode') in [True, '1', 'true', 'on'] else '0'
         set_system_setting('SHIPGLOBAL_MOCK_MODE', mock_mode)
 
+    if 'auto_sync' in data:
+        auto_sync = '1' if data.get('auto_sync') in [True, '1', 'true', 'on'] else '0'
+        set_system_setting('SHIPGLOBAL_AUTO_SYNC', auto_sync)
+
     return jsonify({
         'success': True,
         'message': 'ShipGlobal configuration saved successfully!'
@@ -318,7 +327,7 @@ def api_admin_save_shipglobal_settings():
 @admin_required
 def api_admin_test_shipglobal_connection():
     """Test authentication against live ShipGlobal API (/customers.php)."""
-    from services.shipglobal_service import ShipGlobalClient, get_system_setting
+    from services.shipglobal_service import ShipGlobalClient, get_system_setting, set_system_setting
     data = request.get_json(silent=True) or {}
     email = (data.get('email') or '').strip()
     password = (data.get('password') or '').strip()
@@ -331,5 +340,23 @@ def api_admin_test_shipglobal_connection():
 
     client = ShipGlobalClient(email=email, password=password)
     result = client.test_connection()
+    if result.get('success') and not result.get('is_mock'):
+        if email:
+            set_system_setting('SHIPGLOBAL_EMAIL', email)
+        if password:
+            set_system_setting('SHIPGLOBAL_PASSWORD', password)
     return jsonify(result)
+
+
+@admin_system_bp.route('/api/admin/shipglobal/sync-all', methods=['POST'], endpoint='api_admin_sync_all_shipglobal')
+@admin_required
+def api_admin_sync_all_shipglobal():
+    """Manually trigger live courier synchronization for all active ShipGlobal and CIRRO orders."""
+    from services.shipglobal_service import sync_all_active_shipglobal_orders
+    summary = sync_all_active_shipglobal_orders(host_url=request.host_url)
+    return jsonify({
+        'success': True,
+        'summary': summary,
+        'message': f"Synchronized {summary.get('total', 0)} ShipGlobal shipments ({summary.get('updated', 0)} updated)!"
+    })
 
