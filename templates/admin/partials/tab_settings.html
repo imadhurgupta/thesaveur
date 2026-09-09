@@ -143,10 +143,10 @@
 
             <div style="display: flex; flex-direction: column; justify-content: center;">
               <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
-                <input type="checkbox" id="sg-mock-mode" style="width: 18px; height: 18px; accent-color: #0284c7;" checked />
-                <span style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Enable Sandbox / Simulated Mode</span>
+                <input type="checkbox" id="sg-mock-mode" style="width: 18px; height: 18px; accent-color: #0284c7;" />
+                <span style="font-size: 0.88rem; font-weight: 600; color: #1e293b;">Enable Sandbox / Mock Mode</span>
               </label>
-              <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; margin-left: 28px;">Allows seamless one-click test waybills and label generation without live balance.</small>
+              <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; margin-left: 28px;">Leave unchecked for <strong>Real Live Mode (Production)</strong>. Check only for simulated offline tests.</small>
             </div>
           </div>
 
@@ -447,13 +447,19 @@
 
         if (badge) {
           if (data.is_configured) {
-            badge.style.background = '#ecfdf5';
-            badge.style.color = '#059669';
-            badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Connected (Ready)';
+            if (data.mock_mode) {
+              badge.style.background = '#fffbeb';
+              badge.style.color = '#d97706';
+              badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Sandbox / Mock Mode';
+            } else {
+              badge.style.background = '#ecfdf5';
+              badge.style.color = '#059669';
+              badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Live Production Ready';
+            }
           } else {
-            badge.style.background = '#fffbeb';
-            badge.style.color = '#d97706';
-            badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Credentials Missing';
+            badge.style.background = '#fef2f2';
+            badge.style.color = '#dc2626';
+            badge.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span> Credentials Missing';
           }
         }
       })

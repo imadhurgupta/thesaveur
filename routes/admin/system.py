@@ -266,8 +266,8 @@ def api_admin_get_shipglobal_settings():
 
     email = get_system_setting('SHIPGLOBAL_EMAIL') or os.environ.get('SHIPGLOBAL_EMAIL', '')
     has_password = bool(get_system_setting('SHIPGLOBAL_PASSWORD') or os.environ.get('SHIPGLOBAL_PASSWORD', ''))
-    default_service = get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'UBI-CLASSIC')
-    mock_mode = get_system_setting('SHIPGLOBAL_MOCK_MODE', '1') == '1'
+    default_service = get_system_setting('SHIPGLOBAL_DEFAULT_SERVICE', 'CIRRO-CLASSIC')
+    mock_mode = get_system_setting('SHIPGLOBAL_MOCK_MODE', '0') == '1'
     customer_name = get_system_setting('SHIPGLOBAL_CUSTOMER_NAME', '')
 
     return jsonify({
@@ -292,7 +292,7 @@ def api_admin_save_shipglobal_settings():
 
     email = (data.get('email') or '').strip()
     password = (data.get('password') or '').strip()
-    service = (data.get('default_service') or 'UBI-CLASSIC').strip()
+    service = (data.get('default_service') or 'CIRRO-CLASSIC').strip()
 
     if email:
         set_system_setting('SHIPGLOBAL_EMAIL', email)
@@ -317,11 +317,17 @@ def api_admin_save_shipglobal_settings():
 @admin_system_bp.route('/api/admin/shipglobal-settings/test', methods=['POST'], endpoint='api_admin_test_shipglobal_connection')
 @admin_required
 def api_admin_test_shipglobal_connection():
-    """Test authentication against ShipGlobal API (/customers.php)."""
-    from services.shipglobal_service import ShipGlobalClient
+    """Test authentication against live ShipGlobal API (/customers.php)."""
+    from services.shipglobal_service import ShipGlobalClient, get_system_setting
     data = request.get_json(silent=True) or {}
-    email = data.get('email')
-    password = data.get('password')
+    email = (data.get('email') or '').strip()
+    password = (data.get('password') or '').strip()
+
+    # Fallback to saved credentials if field was left blank
+    if not email:
+        email = get_system_setting('SHIPGLOBAL_EMAIL')
+    if not password:
+        password = get_system_setting('SHIPGLOBAL_PASSWORD')
 
     client = ShipGlobalClient(email=email, password=password)
     result = client.test_connection()

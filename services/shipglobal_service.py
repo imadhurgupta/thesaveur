@@ -131,12 +131,13 @@ class ShipGlobalClient:
             raise Exception(f"ShipGlobal Connection Error: {req_err}")
 
     def test_connection(self) -> dict:
-        """Test authentication against ShipGlobal API."""
+        """Test authentication against live ShipGlobal API."""
         if not self.is_configured():
             return {
                 'success': False,
                 'configured': False,
-                'message': 'ShipGlobal email or password is not configured.'
+                'is_mock': False,
+                'message': 'ShipGlobal email or password is not configured. Please configure your live credentials.'
             }
         try:
             token = self.login()
@@ -144,20 +145,14 @@ class ShipGlobalClient:
             return {
                 'success': True,
                 'configured': True,
-                'message': f'Connected successfully to ShipGlobal as {self.email} ({customer_name})!'
+                'is_mock': False,
+                'message': f'Connected successfully to ShipGlobal Live Production API as {self.email} ({customer_name})!'
             }
         except Exception as e:
-            # Check if mock mode is on
-            if get_system_setting('SHIPGLOBAL_MOCK_MODE', '1') == '1' and ('Connection Error' in str(e) or 'Failed' in str(e)):
-                return {
-                    'success': True,
-                    'configured': True,
-                    'is_mock': True,
-                    'message': f'[Sandbox/Mock Mode] Validated simulated ShipGlobal connection for {self.email}.'
-                }
             return {
                 'success': False,
                 'configured': True,
+                'is_mock': False,
                 'message': str(e)
             }
 
@@ -261,8 +256,16 @@ class ShipGlobalClient:
             "retry": False
         }
 
-        # Try live API request if configured
-        if self.is_configured():
+        is_mock = get_system_setting('SHIPGLOBAL_MOCK_MODE', '0') == '1'
+
+        if not is_mock and not self.is_configured():
+            return {
+                'success': False,
+                'error': 'ShipGlobal is in Real Live Mode, but email/password are not configured. Please configure your live credentials in Admin Settings.'
+            }
+
+        # Live API request if configured and not explicitly in mock mode
+        if self.is_configured() and not is_mock:
             try:
                 token = self.get_token()
                 headers = {
@@ -281,11 +284,12 @@ class ShipGlobalClient:
 
                     return {
                         'success': True,
+                        'is_mock': False,
                         'waybill_number': waybill,
                         'order_number': res_data.get('order_number', order_ref),
                         'label_url': label_url,
                         'service': service,
-                        'message': 'ShipGlobal shipping label generated successfully!'
+                        'message': f'ShipGlobal live label & waybill ({waybill}) generated successfully!'
                     }
                 elif resp.status_code == 409:
                     # Duplicate order, download=true retrieves saved label
@@ -296,24 +300,26 @@ class ShipGlobalClient:
                     label_url = self._save_pdf_label(order_id, waybill, pdf_b64)
                     return {
                         'success': True,
+                        'is_mock': False,
                         'waybill_number': waybill,
                         'order_number': order_ref,
                         'label_url': label_url,
                         'service': service,
-                        'message': 'Retrieved existing ShipGlobal label for this order.'
+                        'message': 'Retrieved existing ShipGlobal live label for this order.'
                     }
                 else:
                     err_text = resp.text
                     print(f"[SHIPGLOBAL ERROR] addOrder failed ({resp.status_code}): {err_text}")
-                    if get_system_setting('SHIPGLOBAL_MOCK_MODE', '1') != '1':
-                        return {'success': False, 'error': f"ShipGlobal API error: {err_text}"}
+                    return {'success': False, 'error': f"ShipGlobal Live API error ({resp.status_code}): {err_text}"}
             except Exception as api_err:
                 print(f"[SHIPGLOBAL API EXCEPTION] {api_err}")
-                if get_system_setting('SHIPGLOBAL_MOCK_MODE', '1') != '1':
-                    return {'success': False, 'error': str(api_err)}
+                return {'success': False, 'error': f"ShipGlobal Live API Exception: {str(api_err)}"}
 
-        # Sandbox / Simulated label generation
-        return self._generate_simulated_label(order_id, order_ref, service)
+        if is_mock:
+            # Sandbox / Simulated label generation
+            return self._generate_simulated_label(order_id, order_ref, service)
+
+        return {'success': False, 'error': 'Failed to execute ShipGlobal Live API.'}
 
     def _save_pdf_label(self, order_id: int, waybill: str, pdf_b64: str) -> str:
         """Decode base64 PDF and save into static/labels/ directory."""
