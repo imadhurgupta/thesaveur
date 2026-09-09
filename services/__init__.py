@@ -11,7 +11,9 @@ from services.email_service import (
     send_custom_html_email, send_otp_email, send_login_alert_email,
     send_order_confirmation_email, send_order_shipped_email,
     send_order_tracking_email, send_order_out_for_delivery_email,
-    send_order_delivered_email, send_order_status_update_email,
+    send_order_delivered_email, send_order_cancelled_email,
+    send_order_refunded_email, send_generic_order_status_email,
+    send_order_status_update_email, send_admin_order_notification,
     queue_otp_email, queue_login_alert_email, queue_order_confirmation_email,
     queue_order_shipped_email, queue_order_out_for_delivery_email,
     queue_order_delivered_email, queue_order_status_update_email
