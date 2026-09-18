@@ -644,9 +644,11 @@ button:active:not(:disabled),
    ============================================================ */
 .hero {
   position: relative;
-  height: 65vh;
-  min-height: 420px;
-  max-height: 540px;
+  /* Fixed 3200×1200 px ratio (8:3) — consistent across ALL devices */
+  aspect-ratio: 8 / 3;
+  height: auto;
+  min-height: unset;
+  max-height: unset;
   margin: 150px auto 32px;
   max-width: 1440px;
   width: calc(100% - 48px);
@@ -1893,6 +1895,7 @@ button:active:not(:disabled),
 @media (min-width: 1280px) {
   .container { max-width: 1720px; }
   .hero { max-width: 1720px; }
+  /* aspect-ratio stays 16/5 — no override needed */
 }
 
 /* ── Laptop / Small Desktop (max 1024px) ─────────────────── */
@@ -1917,8 +1920,7 @@ button:active:not(:disabled),
   .values-section      { padding: 60px 0; }
   .contact-section     { padding: 72px 0; }
 
-  /* Hero */
-  .hero { min-height: 560px; }
+  /* Hero — aspect-ratio: 16/5 is inherited; no override needed */
 
   /* About img */
   .about-img-wrap { aspect-ratio: 1 / 1; max-width: 380px; margin: 0 auto; }
@@ -1936,11 +1938,8 @@ button:active:not(:disabled),
   .navbar              { padding: 10px 16px; border-radius: var(--radius-lg); }
   .nav-logo-text       { font-size: 1rem; }
 
-  /* Hero */
+  /* Hero — keep same 16:5 aspect-ratio, just adjust margin/width for tablet */
   .hero {
-    height: 56.25vw !important; /* 16:9 Landscape Aspect Ratio */
-    min-height: 320px !important;
-    max-height: 420px !important;
     margin: 125px auto 24px !important;
     width: calc(100% - 24px) !important;
     border-radius: var(--radius-lg) !important;
