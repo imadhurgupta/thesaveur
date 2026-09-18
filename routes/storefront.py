@@ -95,53 +95,78 @@ def sitemap():
     try:
         pages = []
         host_url = request.host_url.rstrip('/')
+        today = datetime.utcnow().strftime('%Y-%m-%d')
 
-        # 1. Static pages
-        static_urls = [
-            '/',
-            '/products',
-            '/about',
-            '/contact',
-            '/cart'
+        # ── 1. Core static pages ────────────────────────────────
+        static_pages = [
+            ('/',             'daily',   '1.0'),
+            ('/products',     'daily',   '0.9'),
+            ('/about',        'monthly', '0.7'),
+            ('/contact',      'monthly', '0.7'),
+            ('/track-order',  'weekly',  '0.6'),
         ]
-        for url in static_urls:
+        for url, freq, priority in static_pages:
             pages.append({
-                'loc': f"{host_url}{url}",
-                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
-                'changefreq': 'daily',
-                'priority': '1.0' if url == '/' else '0.8'
+                'loc':        f"{host_url}{url}",
+                'lastmod':    today,
+                'changefreq': freq,
+                'priority':   priority
             })
 
-        # 2. Dynamic products pages
         db = get_db()
-        products_list = db.execute("SELECT id FROM products").fetchall()
+
+        # ── 2. Category filter pages ────────────────────────────
+        categories = db.execute(
+            "SELECT name FROM categories ORDER BY display_order ASC"
+        ).fetchall()
+        for cat in categories:
+            try:
+                cat_name = cat['name']
+            except (KeyError, TypeError):
+                cat_name = cat[0]
+            pages.append({
+                'loc':        f"{host_url}/products?category={cat_name.lower()}",
+                'lastmod':    today,
+                'changefreq': 'weekly',
+                'priority':   '0.8'
+            })
+
+        # ── 3. Individual product pages ─────────────────────────
+        products_rows = db.execute(
+            "SELECT id, updated_at FROM products"
+        ).fetchall()
         db.close()
 
-        for prod in products_list:
+        for prod in products_rows:
             try:
-                pid = prod['id']
+                pid      = prod['id']
+                lastmod  = (prod['updated_at'] or today)[:10]
             except (KeyError, TypeError):
-                pid = prod[0]
+                pid     = prod[0]
+                lastmod = today
             pages.append({
-                'loc': f"{host_url}/product/{pid}",
-                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'loc':        f"{host_url}/product/{pid}",
+                'lastmod':    lastmod,
                 'changefreq': 'weekly',
-                'priority': '0.7'
+                'priority':   '0.7'
             })
 
-        # Generate XML
-        xml_sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        xml_sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        # ── Build XML ───────────────────────────────────────────
+        xml  = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
+        xml += '        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
+        xml += '        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9\n'
+        xml += '        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">\n'
         for page in pages:
-            xml_sitemap += '  <url>\n'
-            xml_sitemap += f"    <loc>{page['loc']}</loc>\n"
-            xml_sitemap += f"    <lastmod>{page['lastmod']}</lastmod>\n"
-            xml_sitemap += f"    <changefreq>{page['changefreq']}</changefreq>\n"
-            xml_sitemap += f"    <priority>{page['priority']}</priority>\n"
-            xml_sitemap += '  </url>\n'
-        xml_sitemap += '</urlset>\n'
+            xml += '  <url>\n'
+            xml += f"    <loc>{page['loc']}</loc>\n"
+            xml += f"    <lastmod>{page['lastmod']}</lastmod>\n"
+            xml += f"    <changefreq>{page['changefreq']}</changefreq>\n"
+            xml += f"    <priority>{page['priority']}</priority>\n"
+            xml += '  </url>\n'
+        xml += '</urlset>\n'
 
-        return Response(xml_sitemap, mimetype='application/xml')
+        return Response(xml, mimetype='application/xml')
     except Exception as e:
         print(f"[SITEMAP ERROR] {e}")
         return "Internal Server Error", 500
