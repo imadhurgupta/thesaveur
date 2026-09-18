@@ -175,13 +175,159 @@ def sitemap():
 @storefront_bp.route('/robots.txt', endpoint='robots')
 def robots():
     host_url = request.host_url.rstrip('/')
-    content = "User-agent: *\n"
-    content += "Allow: /\n"
-    content += "Disallow: /admin/\n"
-    content += "Disallow: /checkout/submit\n"
-    content += "Disallow: /checkout/verify\n\n"
-    content += f"Sitemap: {host_url}/sitemap.xml\n"
-    return Response(content, mimetype='text/plain')
+    lines = [
+        # ── Standard crawlers ──────────────────────────────────
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /cart",
+        "Disallow: /checkout/",
+        "Disallow: /orders/",
+        "Disallow: /profile",
+        "Disallow: /login",
+        "Disallow: /register",
+        "",
+        # ── Google AI (AI Overviews / Gemini) ──────────────────
+        "User-agent: Googlebot",
+        "Allow: /",
+        "",
+        # ── OpenAI / ChatGPT ───────────────────────────────────
+        "User-agent: GPTBot",
+        "Allow: /",
+        "Allow: /products",
+        "Allow: /product/",
+        "Allow: /about",
+        "Allow: /contact",
+        "",
+        # ── OpenAI browsing plugin ─────────────────────────────
+        "User-agent: ChatGPT-User",
+        "Allow: /",
+        "",
+        # ── Anthropic / Claude ─────────────────────────────────
+        "User-agent: ClaudeBot",
+        "Allow: /",
+        "",
+        "User-agent: anthropic-ai",
+        "Allow: /",
+        "",
+        # ── Perplexity AI ──────────────────────────────────────
+        "User-agent: PerplexityBot",
+        "Allow: /",
+        "",
+        # ── Microsoft Bing / Copilot ───────────────────────────
+        "User-agent: Bingbot",
+        "Allow: /",
+        "",
+        "User-agent: BingPreview",
+        "Allow: /",
+        "",
+        # ── Meta AI ────────────────────────────────────────────
+        "User-agent: FacebookBot",
+        "Allow: /",
+        "",
+        # ── Apple / Siri ───────────────────────────────────────
+        "User-agent: Applebot",
+        "Allow: /",
+        "",
+        # ── Common Crawl (trains most AI models) ───────────────
+        "User-agent: CCBot",
+        "Allow: /",
+        "",
+        # ── Sitemaps ───────────────────────────────────────────
+        f"Sitemap: {host_url}/sitemap.xml",
+        f"LLMs: {host_url}/llms.txt",
+    ]
+    return Response('\n'.join(lines), mimetype='text/plain')
+
+
+@storefront_bp.route('/llms.txt', endpoint='llms')
+def llms():
+    """llms.txt — the AI crawling standard.
+    Tells LLMs (ChatGPT, Gemini, Claude, Perplexity etc.) what
+    this site is about and which pages to prioritize.
+    See: https://llmstxt.org
+    """
+    host_url = request.host_url.rstrip('/')
+
+    db = get_db()
+    products_rows = db.execute(
+        "SELECT id, name, category FROM products ORDER BY is_bestseller DESC, name ASC LIMIT 50"
+    ).fetchall()
+    categories_rows = db.execute(
+        "SELECT name, display_name FROM categories ORDER BY display_order ASC"
+    ).fetchall()
+    db.close()
+
+    lines = [
+        "# The Saveur — Premium Food Products, Spices, Tea & Herbs",
+        "",
+        "> The Saveur is an online premium food store by HM Enterprises, based in",
+        "> Jaipur, Rajasthan, India (FSSAI: 12226999000440 | GSTIN: 08DKEPK9374L1ZF).",
+        "> We offer ethically sourced, artisanal quality spices, teas, herbs,",
+        "> gourmet makhana and premium food products. Free shipping on all orders.",
+        "> Serving customers across all 28 states of India.",
+        "",
+        "## Business Information",
+        "",
+        "- **Legal Name**: HM Enterprises",
+        "- **Brand**: The Saveur",
+        "- **Type**: Online Premium Food Store (FoodEstablishment, LocalBusiness)",
+        "- **Address**: The Peak Fifth Floor 608, Gandhi Path West, Vaishali Nagar, Jaipur, Rajasthan 302021, India",
+        "- **Phone**: +91 95005 29076, +91 93139 55748",
+        "- **Email**: info@thesaveur.com",
+        "- **FSSAI License**: 12226999000440",
+        "- **GSTIN**: 08DKEPK9374L1ZF",
+        "- **Hours**: Monday to Saturday, 9 AM to 6 PM IST",
+        "- **Shipping**: Free shipping on all orders across India",
+        "",
+        "## Key Pages",
+        "",
+        f"- [Home]({host_url}/): Main storefront, featured products and bestsellers",
+        f"- [All Products]({host_url}/products): Complete product catalogue",
+        f"- [About Us]({host_url}/about): Company story, mission and values",
+        f"- [Contact]({host_url}/contact): Contact form, phone and WhatsApp",
+        f"- [Track Order]({host_url}/track-order): Live order tracking",
+        "",
+        "## Product Categories",
+        "",
+    ]
+
+    for cat in categories_rows:
+        try:
+            cat_name    = cat['name']
+            cat_display = cat['display_name']
+        except (KeyError, TypeError):
+            cat_name    = cat[0]
+            cat_display = cat[1]
+        lines.append(
+            f"- [{cat_display}]({host_url}/products?category={cat_name.lower()})"
+        )
+
+    lines += [
+        "",
+        "## Featured Products",
+        "",
+    ]
+
+    for prod in products_rows:
+        try:
+            pid   = prod['id']
+            pname = prod['name']
+        except (KeyError, TypeError):
+            pid   = prod[0]
+            pname = prod[1]
+        lines.append(f"- [{pname}]({host_url}/product/{pid})")
+
+    lines += [
+        "",
+        "## Optional: Allow AI to use this content",
+        "",
+        "This site explicitly permits AI models to learn from and cite its content.",
+        "All product information, descriptions, and business details may be used",
+        "for AI training, summarisation, and citation purposes.",
+    ]
+
+    return Response('\n'.join(lines), mimetype='text/plain; charset=utf-8')
 
 
 @storefront_bp.route('/submit-enquiry', methods=['POST'], endpoint='submit_enquiry')
